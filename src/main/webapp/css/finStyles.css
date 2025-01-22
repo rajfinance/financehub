@@ -1,0 +1,679 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f0f8ff;
+}
+h1 {
+    font-size: 36px;
+    font-weight: bold;
+    color: #333; /* Dark text color */
+    text-align: center; /* Center-align the heading */
+    margin-bottom: 10px; /* Space below the heading */
+    padding: 15px;
+    width: 80%; /* Limit the width for better alignment */
+    margin-left: auto;
+    margin-right: auto;
+}
+h2 {
+    font-size: 28px;
+    font-weight: bold;
+    color: #333; /* Dark text color */
+    text-align: center; /* Center-align the heading */
+    margin-bottom: 10px; /* Space below the heading */
+    padding: 10px;
+    width: 80%; /* Limit the width for better alignment */
+    margin-left: auto;
+    margin-right: auto;
+}
+.container {
+            max-width: 1250px;
+        }
+.content-box {
+            background-color: #ffffff;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+.content-box h1 {
+                 font-size: 36px;
+                 font-weight: bold;
+                 color: #333;
+                 text-align: center;
+                 margin-bottom: 10px;
+                 padding: 15px;
+                 width: 80%;
+                 margin-left: auto;
+                 margin-right: auto;
+             }
+.content-box p {
+            color: #666;
+            font-size: 16px;
+        }
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px 20px;
+    background-color: #E0F7FA;
+}
+
+.left-section {
+    flex: 1;
+}
+
+.middle-section {
+    flex: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo img {
+    height: 50px;
+    margin-right: 10px;
+}
+
+.logo span {
+    font-size: 24px;
+    font-weight: bold;
+}
+.right-section {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+.content {
+    text-align: center;
+}
+
+.username {
+    margin-right: 10px;
+    font-size: 18px;
+    font-weight: bold;
+}
+.userinfo {
+    display: flex;
+    align-items:center;
+}
+.userinfo span {
+    color: black;
+    margin-right: 15px;
+    font-weight: bold;
+    font-size: 20px;
+}
+.userinfo img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.signin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 20px;
+}
+
+.signin-link {
+    display: flex;
+    align-items: center; /* Align image and text vertically in the center */
+    text-decoration: none; /* Remove default link underline */
+}
+.login-image {
+    width: 30px;
+    height: 30px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.signin-link span {
+    color: black;
+    font-weight: bold;
+    font-size: 16px;
+    margin-right: 10px;
+}
+.signin-link span:hover {
+    color: #00796B;
+}
+.logout {
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* MENU jsp style */
+
+.menu-bar {
+    background-color: #5F9EA0; /* Green background */
+    padding: 10px 0; /* Vertical padding */
+    text-align: center; /* Center the menu horizontally */
+}
+
+.menu-items {
+    list-style-type: none; /* Remove bullets */
+    display: flex; /* Horizontal layout */
+    justify-content: end; /* Center menu items */
+    margin-right: 15px;
+}
+
+.menu-items li {
+    margin: 0 0px; /* Space between items */
+}
+
+.menu-items a {
+    text-decoration: none; /* Remove underline */
+    color: white; /* White text color */
+    font-size: 16px;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.menu-items a:hover {
+    background-color: #4682B4; /* Darker green on hover */
+    color: white;
+}
+
+.menu-items a.active {
+    background-color: #333; /* Dark background for active item */
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .menu-items {
+        flex-direction: column; /* Stack items vertically */
+        align-items: center; /* Center menu items */
+    }
+
+    .menu-items li {
+        margin: 10px 0; /* Vertical spacing between items */
+    }
+}
+
+.menu-bar {
+    background-color: #006494;
+    padding: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.menu-bar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+}
+
+.menu-bar ul li {
+    margin: 0 10px;
+}
+
+.menu-bar ul li a {
+    text-decoration: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.menu-bar ul li.active a {
+    font-weight: bold;
+    background-color: #4682B4;
+    border-radius: 5px;
+}
+.menu-bar ul li a:hover {
+    background-color: #4682B4; /* Steel Blue */
+}
+
+.sidebar {
+    width: 200px;
+    float: left;
+    padding: 10px;
+    background-color: #B0C4DE;
+    margin-right: 0px;
+}
+
+.sidebar ul {
+    list-style-type: none;
+}
+
+.sidebar ul li {
+    margin: 10px 0;
+}
+
+.sidebar ul li a {
+    text-decoration: none;
+    color: #00354A;
+    display: block;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+/* Main content area */
+.main-content {
+    display: flex;
+    padding: 0px;
+    justify-content: space-between;
+}
+
+/* Page content */
+#page-content {
+    flex-grow: 1;
+    background-color: #fff;
+    padding: 10px;
+    min-height: fit-content;
+    border: 1px solid #ccc;
+    text-align: center;
+}
+
+/* Hiding submenus by default */
+.sidebar {
+    display: none;
+}
+
+/* Main Content Area */
+
+.signup-body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 400px;
+    box-sizing: border-box;
+}
+
+.signup {
+    width: 100%;
+    max-width: 560px;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* Login page css*/
+.login-page {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 350px;
+            background-color: #f0f8ff; /* Light blue background */
+        }
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    background-color: #ffffff; /* White background for the form */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+.login-form h1 {
+    font-size: 24px;
+    color: #333; /* Dark text color */
+    margin-bottom: 10px;
+}
+
+.input-group {
+    display: flex;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.input-group label {
+    display: block;
+    width:50%;
+    margin-bottom: 5px;
+    font-weight: bold;
+    margin-right: 20px;
+    line-height: 1;
+    text-align:left;
+    color: #555; /* Medium gray text */
+}
+
+.input-group input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc; /* Light gray border */
+    border-radius: 4px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.input-group input:focus {
+    border-color: #5f9ea0; /* Cadet blue border on focus */
+    box-shadow: 0 0 5px rgba(95, 158, 160, 0.5);
+}
+
+button[type="submit"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #006494; /* Cadet blue background */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+button[type="submit"]:hover {
+    background-color: #4682b4; /* Steel blue on hover */
+}
+
+.signup-link {
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.signup-link a {
+    color: #5f9ea0; /* Cadet blue link color */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.signup-link a:hover {
+    text-decoration: underline;
+}
+
+/* form style*/
+/* Main container for the form */
+.form-container {
+    max-width: 800px;
+    margin: 0px auto;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+}
+
+/* Heading styles */
+.form-container h1 {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 24px;
+    color: #333;
+}
+
+/* Error and Success message styles */
+.form-container div {
+    margin-bottom: 0px;
+    display:flex;
+    align-items:center;
+}
+
+.form-container .success-message,
+.form-container .error-message {
+    font-weight: bold;
+    text-align: center;
+    margin-left: 100px;
+}
+
+.form-container .success-message {
+    color: green;
+}
+
+.form-container .error-message {
+    color: red;
+}
+
+/* Style for labels */
+.form-container label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #555;
+    width:80%;
+    text-align: left;
+}
+
+/* Style for mandatory field symbol */
+.form-container .mandatory {
+    color: red;
+}
+
+/* Input field styles */
+.form-container input[type="text"],
+.form-container input[type="number"],
+.form-container input[type="date"],
+.form-container input[type="checkbox"] {
+    width: 100%;
+    padding: 8px 12px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    background-color: #fff;
+    transition: border 0.3s ease-in-out;
+}
+
+/* Focused input field styles */
+.form-container input[type="text"]:focus,
+.form-container input[type="date"]:focus {
+    border-color: #4CAF50;
+    outline: none;
+}
+
+/* Disabled input field styles */
+.form-container input[disabled] {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+}
+
+/* Checkbox styling */
+.form-container input[type="checkbox"] {
+    width: auto;
+    margin-left: 0;
+}
+.form-container select {
+    width: 100%;
+    padding: 8px 12px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    background-color: #fff;
+    transition: border 0.3s ease-in-out;
+}
+
+/* Focused select field styles */
+.form-container select:focus {
+    border-color: #4CAF50;
+    outline: none;
+}
+
+/* Disabled select field styles */
+.form-container select[disabled] {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+}
+
+/* Button style */
+.form-container button {
+    background-color: #006494;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out;
+    width: 100%;
+}
+
+.form-container button:hover {
+    background-color: #4682B4;
+}
+
+/* Responsive behavior */
+@media (max-width: 600px) {
+    .form-container {
+        padding: 15px;
+    }
+
+    .form-container h1 {
+        font-size: 20px;
+    }
+
+    .form-container input[type="text"],
+    .form-container input[type="date"],
+    .form-container button {
+        font-size: 14px;
+    }
+}
+
+/* Styling the report buttons */
+.report-buttons {
+    display: flex;
+    justify-content: center;
+}
+.pdf-btn, .print-btn {
+    border: none;
+    padding: 0;            /* Remove padding to let image fit naturally */
+    margin: 0 10px;        /* Space between the buttons */
+    cursor: pointer;
+    font-size: 0;          /* Disable text to avoid any unwanted text showing */
+    background-color: transparent; /* Make the background transparent */
+    display: inline-flex;  /* Align images in the center of the button */
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s ease; /* Smooth effect on hover */
+}
+
+/* Hover effect for buttons */
+.pdf-btn:hover, .print-btn:hover {
+    transform: scale(1.1); /* Slight zoom effect on hover */
+}
+
+/* Styling the button icons (images) */
+.pdf-btn img, .print-btn img {
+    width: 50px;                 /* Set desired width */
+        height: 50px;                /* Set desired height */
+        object-fit: contain;         /* Keep the aspect ratio intact */
+        background-color: transparent; /* Ensure the background is fully transparent */
+        border: none;                /* Remove any border that might be causing the issue */
+        box-shadow: none;            /* Remove shadow in case it's creating a visual artifact */
+        display: block;              /* Prevent any inline spacing issues */
+        margin: 0;                   /* Remove default margin */
+        padding: 0;
+}
+
+/* Styling for the report content */
+#reportContent {
+    width: 85%;
+    margin: 0 auto;
+}
+#reportContent th{
+    background-color: #006494;
+    color: white;
+    text-align: center;
+    font-size: 16px;
+    padding: 10px 15px;
+}
+
+#reportContent th.second{
+    background-color: #E3F2FD;
+    color: black;
+}
+
+#reportContent tr:nth-child(even) {
+    background-color: #f2f2f2;  /* Light gray for even rows for better readability */
+}
+#reportContent td {
+    padding: 8px 15px;
+}
+/* Action column for edit and delete buttons */
+#reportContent td a {
+    margin-right: 15px;          /* Add space between the edit and delete buttons */
+}
+
+#reportContent .delete-btn img, #reportContent .edit-btn img {
+    width: 20px;   /* Icon size */
+    height: 20px;  /* Icon size */
+}
+
+/* Tab container */
+.tabs {
+    display: flex;               /* Align buttons horizontally */
+    justify-content: center; /* Align buttons to the left */
+    margin: 20px 0;              /* Space above and below the tabs */
+}
+
+/* Tab buttons */
+.tab-button {
+    background-color: #B0C4DE;   /* Light Steel Blue to match sidebar background */
+    color: #00354A;               /* Dark navy text */
+    padding: 10px 20px;           /* Padding around the text */
+    font-size: 16px;              /* Font size */
+    border: 2px solid transparent;/* Transparent border */
+    border-radius: 5px;           /* Rounded corners */
+    cursor: pointer;             /* Pointer cursor for interaction */
+    margin-right: 10px;           /* Space between the buttons */
+    transition: all 0.3s ease;    /* Smooth transition for hover effect */
+    text-align: center;           /* Center the text inside the button */
+}
+
+/* Active tab button */
+.tab-button.active {
+    background-color: #006494;   /* Dark blue background for active button */
+    color: white;                 /* White text for active tab */
+    font-weight: bold;            /* Bold text for emphasis */
+    border-color: #004F6C;        /* Subtle border to highlight the active tab */
+}
+
+/* Hover effect for tab buttons */
+.tab-button:hover {
+    background-color: #4B88A2;   /* Light blue background on hover */
+    color: white;                 /* White text on hover */
+    border-color: #00354A;        /* Dark border on hover */
+}
+
+/* Style for the content within the tabs */
+.tab-content {
+    padding: 20px;                /* Padding inside the tab content area */
+    background-color: #FFFFFF;    /* White background for the content */
+    border: 1px solid #B0C4DE;    /* Light border to match the sidebar */
+    border-radius: 5px;           /* Rounded corners for content */
+    margin-top: 20px;             /* Space between tabs and content */
+}
+
+.year-header {
+    font-size: 24px;                 /* Set a larger font size for emphasis */
+    font-weight: bold;               /* Bold text for prominence */
+    color: white;                    /* White text for contrast */
+    background-color: #006494;       /* Dark blue background */
+    padding: 10px 20px;              /* Padding to give space around the text */
+    border-radius: 5px;              /* Rounded corners */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);  /* Subtle shadow for a clean look */
+}
