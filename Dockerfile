@@ -11,6 +11,6 @@ WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
 
-RUN jar tf /app/your-application.jar
+RUN jar tf /app/app.jar
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
