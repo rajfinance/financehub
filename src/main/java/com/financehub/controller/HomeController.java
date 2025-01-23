@@ -14,6 +14,7 @@ import java.text.DecimalFormat;
 public class HomeController {
     @GetMapping("/")
     public String index() {
+        System.out.println("inside the index method");
         return "index";
     }
 
