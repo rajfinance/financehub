@@ -115,6 +115,7 @@
 			<resource>
 				<directory>src/main/</directory>
 				<includes>
+					<include>resources/*</include>
 					<include>webapp/**/*</include>
 				</includes>
 			</resource>
