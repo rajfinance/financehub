@@ -3,13 +3,15 @@ WORKDIR /app
 COPY pom.xml ./
 COPY src ./src
 
-RUN mvn clean install 
+RUN mvn clean package
 
 FROM openjdk:17-jdk-slim
 
 WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
+
+RUN jar tf /app/target/*.jar
 
 RUN jar tf /app/app.jar
 
