@@ -9,8 +9,6 @@ FROM openjdk:17-jdk-slim
 
 WORKDIR /app
 
-RUN jar tf /app/target/FinanceHub-1.0.jar
-
 COPY --from=build /app/target/*.jar app.jar
 
 RUN jar tf /app/app.jar
