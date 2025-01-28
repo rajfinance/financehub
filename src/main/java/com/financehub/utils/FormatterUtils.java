@@ -126,6 +126,8 @@ public class FormatterUtils {
                 cell.setTextAlignment(TextAlignment.RIGHT).setPaddingRight(10);
             } else if(isHeader == 3) {
                 cell.setTextAlignment(TextAlignment.RIGHT).setPaddingRight(10).setBold().setBackgroundColor(new DeviceRgb(241,248,233));
+            } else if(isHeader == 4) {
+                cell.setTextAlignment(TextAlignment.CENTER).setBold().setBackgroundColor(new DeviceRgb(241,248,233));
             }
         }
         return cell;
@@ -198,4 +200,51 @@ public class FormatterUtils {
         totAdvance = String.format("Total Advance Amount : "+formatInIndianStyle(totAdv));
         return totAdvance;
     }
+
+    public Period parsePeriod(String periodString) {
+        int years = 0, months = 0, days = 0;
+
+        if (periodString.contains("year")) {
+            String yearPart = periodString.split("year")[0].trim();
+            years = Integer.parseInt(yearPart.split(" ")[yearPart.split(" ").length - 1]);
+        }
+
+        if (periodString.contains("month")) {
+            String monthPart = periodString.split("month")[0].trim();
+            months = Integer.parseInt(monthPart.split(" ")[monthPart.split(" ").length - 1]);
+        }
+
+        if (periodString.contains("day")) {
+            String dayPart = periodString.split("day")[0].trim();
+            days = Integer.parseInt(dayPart.split(" ")[dayPart.split(" ").length - 1]);
+        }
+
+        return Period.of(years, months, days);
+    }
+
+    public String formatPeriod(Period period) {
+        int years = period.getYears();
+        int months = period.getMonths();
+        int days = period.getDays();
+
+        StringBuilder formattedPeriod = new StringBuilder();
+        if (years > 0) {
+            formattedPeriod.append(years).append(" year").append(years > 1 ? "s" : "");
+        }
+        if (months > 0) {
+            if (formattedPeriod.length() > 0) {
+                formattedPeriod.append(" ");
+            }
+            formattedPeriod.append(months).append(" month").append(months > 1 ? "s" : "");
+        }
+        if (days > 0) {
+            if (formattedPeriod.length() > 0) {
+                formattedPeriod.append(" ");
+            }
+            formattedPeriod.append(days).append(" day").append(days > 1 ? "s" : "");
+        }
+
+        return formattedPeriod.toString().isEmpty() ? "0 days" : formattedPeriod.toString();
+    }
+
 }

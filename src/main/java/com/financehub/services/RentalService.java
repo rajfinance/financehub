@@ -25,11 +25,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.OutputStream;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.Period;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -167,15 +166,32 @@ public class RentalService {
                 .map(RentPaymentDTO::new)
                 .collect(Collectors.toList());
 
+        Comparator<Owner> ownerComparator = Comparator.comparing(Owner::getAdvanceDate);
+
         Map<Owner, RentSummaryDTO> paymentsByOwner = rentPaymentDTOs.stream()
                 .collect(Collectors.groupingBy(RentPaymentDTO::getOwner,
+                        () -> new TreeMap<>(ownerComparator),
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
                                 payments -> {
                                     List<RentPaymentDTO> sortedPayments = payments.stream()
-                                            .sorted(Comparator.comparing(RentPaymentDTO::getRentPeriodStart))
+                                            .sorted(Comparator.comparing(RentPaymentDTO::getRentPeriodStart)
+                                            .thenComparing(RentPaymentDTO::getPaidOn))
                                             .collect(Collectors.toList());
-                                    return new RentSummaryDTO(sortedPayments, calculateTotalAmount(sortedPayments));
+
+                                    LocalDate periodStart = sortedPayments.stream()
+                                            .map(RentPaymentDTO::getRentPeriodStart)
+                                            .min(LocalDate::compareTo)
+                                            .orElse(null);
+
+                                    LocalDate periodEnd = sortedPayments.stream()
+                                            .map(RentPaymentDTO::getRentPeriodEnd)
+                                            .max(LocalDate::compareTo)
+                                            .orElse(null);
+
+                                    String totalPeriod = calculateTotalPeriod(periodStart, periodEnd);
+
+                                    return new RentSummaryDTO(sortedPayments, calculateTotalAmount(sortedPayments),totalPeriod);
                                 }
                         )
                 ));
@@ -201,8 +217,10 @@ public class RentalService {
                                     .collect(Collectors.toList());
 
                             String totalAmount = entry.getValue().getTotalAmount();
-                            return new RentSummaryDTO(formattedPayments, totalAmount);
-                        }
+                            return new RentSummaryDTO(formattedPayments, totalAmount,entry.getValue().getTotalPeriod());
+                        },
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new
                 ));
 
         return formattedPaymentsByOwner;
@@ -212,6 +230,37 @@ public class RentalService {
                 .mapToDouble(RentPaymentDTO::getAmount)
                 .sum());
     }
+    private String calculateTotalPeriod(LocalDate periodStart, LocalDate periodEnd) {
+        if (periodStart == null || periodEnd == null) {
+            return "No period available";
+        }
+        periodEnd = periodEnd.plusDays(1);
+
+        Period period = Period.between(periodStart, periodEnd);
+        int years = period.getYears();
+        int months = period.getMonths();
+        int days = period.getDays();
+
+        StringBuilder totalPeriod = new StringBuilder();
+        if (years > 0) {
+            totalPeriod.append(years).append(" year").append(years > 1 ? "s" : "");
+        }
+        if (months > 0) {
+            if (totalPeriod.length() > 0) {
+                totalPeriod.append(" ");
+            }
+            totalPeriod.append(months).append(" month").append(months > 1 ? "s" : "");
+        }
+        if (days > 0) {
+            if (totalPeriod.length() > 0) {
+                totalPeriod.append(" ");
+            }
+            totalPeriod.append(days).append(" day").append(days > 1 ? "s" : "");
+        }
+
+        return totalPeriod.toString().isEmpty() ? "0 days" : totalPeriod.toString();
+    }
+
 
     public void generateOwnersPdf(OutputStream outputStream, List<OwnerDTO> owners) {
         PdfWriter writer = new PdfWriter(outputStream);
@@ -268,19 +317,33 @@ public class RentalService {
         PdfWriter writer = new PdfWriter(outputStream);
         PdfDocument pdf = new PdfDocument(writer);
         Document document = new Document(pdf);
+        Comparator<Owner> ownerComparator = Comparator.comparing(Owner::getAdvanceDate);
+
         Map<Owner, String> ownerTotalPayments = paymentsByOwner.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getTotalAmount()));
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> entry.getValue().getTotalPeriod()+"&"+entry.getValue().getTotalAmount(),
+                        (e1, e2) -> e1,
+                        () -> new TreeMap<>(ownerComparator)
+                ));
 
         double grandTotal = ownerTotalPayments.values().stream()
                 .mapToDouble(amount -> {
                     try {
-                        String numericAmount = amount.replaceAll("[^0-9.]", "");
+                        String numericAmount = amount.split("&")[1].replaceAll("[^0-9.]", "");
                         return Double.parseDouble(numericAmount);
                     } catch (NumberFormatException e) {
                         return 0.0;
                     }
                 })
                 .sum();
+
+        Period grandTotalPeriod = ownerTotalPayments.values().stream()
+                .map(value -> {
+                    return formatterUtils.parsePeriod(value.split("&")[0]);
+                })
+                .reduce(Period.ZERO, Period::plus);
+
+        String grandTotalPeriodstring = formatterUtils.formatPeriod(grandTotalPeriod);
 
         document.add(new Paragraph("RENT PAYMENTS REPORT")
                 .setBold()
@@ -291,6 +354,11 @@ public class RentalService {
             int serialNo = 1;
             Owner owner = entry.getKey();
             RentSummaryDTO rentSummary = entry.getValue();
+
+            String ownerValue = ownerTotalPayments.get(owner);
+            String[] ownerParts = ownerValue.split("&");
+            String totalPeriod = ownerParts[0];
+            String totalAmount = ownerParts[1];
 
             document.add(new Paragraph()
                     .add(new Text("Owner : " + owner.getName())
@@ -318,46 +386,55 @@ public class RentalService {
             table.addHeaderCell(formatterUtils.createStyledCell("Rent Period", 0));
             table.addHeaderCell(formatterUtils.createStyledCell("PaidOn", 0));
             table.addHeaderCell(formatterUtils.createStyledCell("Amount", 0));
-            double ownerTotal = 0;
             for (RentPaymentDTO payment : rentSummary.getPayments()) {
                 table.addCell(formatterUtils.createStyledCell(String.valueOf(serialNo++), 1));
                 table.addCell(formatterUtils.createStyledCell(formatterUtils.formatDateToCustomPattern(payment.getRentPeriodStart())+" - "+formatterUtils.formatDateToCustomPattern(payment.getRentPeriodEnd()), 1));
                 table.addCell(formatterUtils.createStyledCell(formatterUtils.formatDate(payment.getPaidOn()), 1));
                 table.addCell(formatterUtils.createStyledCell(formatterUtils.formatInIndianStyle(payment.getAmount()), 2));
-                ownerTotal += payment.getAmount();
             }
-            table.addCell(new Cell(1, 3)
-                    .add(new Paragraph("Total Payment :"))
+            table.addCell(new Cell(1,1)
+                    .add(new Paragraph("Total Period "))
                     .setBackgroundColor(new DeviceRgb(241,248,233))
-                    .setTextAlignment(TextAlignment.RIGHT).setPaddingRight(50)
+                    .setTextAlignment(TextAlignment.CENTER).setPaddingRight(5)
+                    .setVerticalAlignment(VerticalAlignment.MIDDLE)
                     .setBold());
-            table.addCell(formatterUtils.createStyledCell(formatterUtils.formatInIndianStyle(ownerTotal), 2));
+            table.addCell(formatterUtils.createStyledCell(totalPeriod,4));
+            table.addCell(new Cell(1, 1)
+                    .add(new Paragraph("Total Payment "))
+                    .setBackgroundColor(new DeviceRgb(241,248,233))
+                    .setTextAlignment(TextAlignment.CENTER).setPaddingRight(5)
+                    .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                    .setBold());
+            table.addCell(formatterUtils.createStyledCell(totalAmount, 3));
 
             document.add(table);
             document.add(new Paragraph("\n"));
         }
 
-        Table summaryTable = new Table(2);
+        Table summaryTable = new Table(3);
         summaryTable.setWidth(UnitValue.createPercentValue(70));
         summaryTable.setHorizontalAlignment(HorizontalAlignment.CENTER);
-        Cell titleCell = new Cell(1, 2);
+        Cell titleCell = new Cell(1, 3);
         titleCell.add(new Paragraph("OWNER WISE TOTALS").setTextAlignment(TextAlignment.CENTER).setBold());
         titleCell.setBackgroundColor(new DeviceRgb(0, 100, 148));
         titleCell.setFontColor(new DeviceRgb(255,255,255));
         titleCell.setPadding(5);
         summaryTable.addHeaderCell(titleCell);
         summaryTable.addHeaderCell(formatterUtils.createStyledCell("Owner", 0));
+        summaryTable.addHeaderCell(formatterUtils.createStyledCell("Total Period", 0));
         summaryTable.addHeaderCell(formatterUtils.createStyledCell("Total Payment", 0));
 
         for (Map.Entry<Owner, String> entry : ownerTotalPayments.entrySet()) {
             summaryTable.addCell(formatterUtils.createStyledCell(String.valueOf(entry.getKey().getName()), 1));
-            summaryTable.addCell(formatterUtils.createStyledCell(entry.getValue(), 2));
+            summaryTable.addCell(formatterUtils.createStyledCell(String.valueOf(entry.getValue().split("&")[0]), 1));
+            summaryTable.addCell(formatterUtils.createStyledCell(entry.getValue().split("&")[1], 2));
         }
         summaryTable.addCell(new Cell()
                 .add(new Paragraph("Grand Total"))
                 .setBackgroundColor(new DeviceRgb(241,248,233))
-                .setTextAlignment(TextAlignment.CENTER)
+                .setTextAlignment(TextAlignment.CENTER).setVerticalAlignment(VerticalAlignment.MIDDLE)
                 .setBold());
+        summaryTable.addCell(formatterUtils.createStyledCell(grandTotalPeriodstring, 4));
         summaryTable.addCell(formatterUtils.createStyledCell(formatterUtils.formatInIndianStyle(grandTotal), 3));
 
         document.add(summaryTable);

@@ -17,10 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.io.OutputStream;
 import java.text.DateFormatSymbols;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Controller
 @RequestMapping("/api/work")
@@ -130,7 +127,7 @@ public class WorkController {
 @GetMapping("/salaryReport")
 public String getSalaryReport(Model model) {
     Map<Integer, List<SalaryDTO>> salaries = workService.getAllSalaries();
-    Map<Integer, String> yearWiseTotals = new HashMap<>();
+    Map<Integer, String> yearWiseTotals = new TreeMap<>();
     double totalSum = 0.0;
 
     for (Map.Entry<Integer, List<SalaryDTO>> entry : salaries.entrySet()) {

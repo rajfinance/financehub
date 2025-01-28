@@ -1,5 +1,6 @@
 <%@ page import="java.util.*" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <body>
 <c:if test="${not empty payments}">
 <div class="report-buttons">
@@ -42,7 +43,9 @@
                 </tr>
             </c:forEach>
             <tr style="font-weight: bold; background-color: #F1F8E9;height: 30px;">
-                <td colspan="3" style="text-align: right;">Total for Owner:</td>
+                <td style="text-align: right;">Total Period : </td>
+                <td style="text-align: center;">${owner.value.totalPeriod}</td>
+                <td style="text-align: right;">Total Paid : </td>
                 <td style="text-align: right; padding-right: 5px;">${owner.value.totalAmount}</td><td></td>
             </tr>
         </tbody>
@@ -50,24 +53,27 @@
     <br>
     </c:forEach>
 <div class="summary">
-            <h2 class="year-header" style="width: 50%;margin: auto;">Owner Wise Totals</h2>
-            <table style="width: 50%; border-collapse: collapse; font-family: Arial, sans-serif; margin: auto;">
+            <h2 class="year-header" style="width: 60%;margin: auto;">Owner Wise Totals</h2>
+            <table style="width: 60%; border-collapse: collapse; font-family: Arial, sans-serif; margin: auto;">
                 <thead style="background-color: #E3F2FD; color: black; text-align: center; font-size: 16px;">
                     <tr style="height: 30px;">
                         <th class="second">Owner</th>
-                        <th class="second">Total Rent</th>
+                        <th class="second">Total Period
+                        <th class="second">Total Rent Paid</th>
                     </tr>
                 </thead>
                 <tbody style="text-align: center;">
                     <c:forEach var="ownerEntry" items="${ownerTotalPayments}">
                         <tr style="height: 30px;">
                             <td>${ownerEntry.key.name}</td>
-                            <td style="text-align: right; padding-right: 15px;">${ownerEntry.value}</td>
+                            <td>${fn:split(ownerEntry.value, '&')[0]}</td>
+                            <td style="text-align: right; padding-right: 15px;">${fn:split(ownerEntry.value, '&')[1]}</td>
                         </tr>
                     </c:forEach>
                     <tr style="font-weight: bold; background-color: #F1F8E9;height: 30px;">
                         <td>Grand Total:</td>
-                        <td style="text-align: right; padding-right: 15px;">${grandTotal}</td>
+                        <td>${fn:split(grandTotal,'&')[0]}</td>
+                        <td style="text-align: right; padding-right: 15px;">${fn:split(grandTotal,'&')[1]}</td>
                     </tr>
                 </tbody>
             </table>

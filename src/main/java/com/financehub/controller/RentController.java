@@ -19,8 +19,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.Period;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @Controller
@@ -114,13 +117,20 @@ public class RentController {
     @GetMapping("/rentPaymentReport")
     public String getRentPaymentReport(Model model) {
         Map<Owner, RentSummaryDTO> paymentsByOwner = rentalService.getPaymentsGroupedByOwner();
+
+        Comparator<Owner> ownerComparator = Comparator.comparing(Owner::getAdvanceDate);
+
         Map<Owner, String> ownerTotalPayments = paymentsByOwner.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getTotalAmount()));
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        entry -> entry.getValue().getTotalPeriod()+"&"+entry.getValue().getTotalAmount(),
+                        (e1, e2) -> e1,
+                        () -> new TreeMap<>(ownerComparator)
+                ));
 
         double grandTotal = ownerTotalPayments.values().stream()
                 .mapToDouble(amount -> {
                     try {
-                        String numericAmount = amount.replaceAll("[^0-9.]", "");
+                        String numericAmount = amount.split("&")[1].replaceAll("[^0-9.]", "");
                         return Double.parseDouble(numericAmount);
                     } catch (NumberFormatException e) {
                         return 0.0;
@@ -128,9 +138,17 @@ public class RentController {
                 })
                 .sum();
 
+        Period grandTotalPeriod = ownerTotalPayments.values().stream()
+                .map(value -> {
+                    return formatterUtils.parsePeriod(value.split("&")[0]);
+                })
+                .reduce(Period.ZERO, Period::plus);
+
+        String grandTotalPeriodstring = formatterUtils.formatPeriod(grandTotalPeriod);
+
         model.addAttribute("payments", paymentsByOwner);
         model.addAttribute("ownerTotalPayments", ownerTotalPayments);
-        model.addAttribute("grandTotal",formatterUtils.formatInIndianStyle(grandTotal));
+        model.addAttribute("grandTotal",grandTotalPeriodstring+"&"+formatterUtils.formatInIndianStyle(grandTotal));
         return "rent/PaymentsReport";
     }
     @DeleteMapping("/deleteOwner")
