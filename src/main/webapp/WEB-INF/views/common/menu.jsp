@@ -46,6 +46,12 @@
         <li><a href="/api/investments/report">Investment Report</a></li>
     </ul>
 </div>
+<div class="sidebar" id="expenses" style="display: none;">
+    <ul>
+        <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/add')">Add Expenses</a></li>
+        <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/reports')">Reports </a></li>
+    </ul>
+</div>
 <div class="sidebar" id="rentals" style="display: none;">
     <ul>
         <li><a href="javascript:void(0);" onclick="loadContent('/api/rent/owners/add')">Add Owner</a></li>
@@ -57,12 +63,6 @@
     <ul>
         <li><a href="/api/loans/apply">Apply for Loan</a></li>
         <li><a href="/api/loans/track">Track Loan</a></li>
-    </ul>
-</div>
-<div class="sidebar" id="expenses" style="display: none;">
-    <ul>
-        <li><a href="/api/expenses/add">Add Expense</a></li>
-        <li><a href="/api/expenses/report">Expense Report</a></li>
     </ul>
 </div>
 <div id="page-content">
