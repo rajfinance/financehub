@@ -20,10 +20,10 @@
         <c:if test="${not empty sessionScope.username}">
             <li><a href="#" onclick="loadPage('home')">Home</a></li>
             <li><a href="#" onclick="loadPage('professional')">Professional</a></li>
-            <li><a href="#" onclick="loadPage('investments')">Investments</a></li>
             <li><a href="#" onclick="loadPage('rentals')">Rentals</a></li>
-            <li><a href="#" onclick="loadPage('loans')">Loans</a></li>
             <li><a href="#" onclick="loadPage('expenses')">Expenses</a></li>
+            <li><a href="#" onclick="loadPage('loans')">Loans</a></li>
+            <li><a href="#" onclick="loadPage('investments')">Investments</a></li>
             <li><a href="/api/logout">Logout</a></li>
         </c:if>
     </ul>
@@ -40,15 +40,10 @@
         <li><a href="javascript:void(0);" onclick="loadContent('/api/work/workReport')">Report</a></li>
     </ul>
 </div>
-<div class="sidebar" id="investments" style="display: none;">
-    <ul>
-        <li><a href="/api/investments/add">Add Investment</a></li>
-        <li><a href="/api/investments/report">Investment Report</a></li>
-    </ul>
-</div>
 <div class="sidebar" id="expenses" style="display: none;">
     <ul>
         <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/add')">Add Expenses</a></li>
+        <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/categories')">Manage Categories</a></li>
         <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/reports')">Reports </a></li>
     </ul>
 </div>
@@ -57,6 +52,12 @@
         <li><a href="javascript:void(0);" onclick="loadContent('/api/rent/owners/add')">Add Owner</a></li>
         <li><a href="javascript:void(0);" onclick="loadContent('/api/rent/payments/add')">Add Rent </a></li>
         <li><a href="javascript:void(0);" onclick="loadContent('/api/rent/reports')">Reports</a></li>
+    </ul>
+</div>
+<div class="sidebar" id="investments" style="display: none;">
+    <ul>
+        <li><a href="/api/investments/add">Add Investment</a></li>
+        <li><a href="/api/investments/report">Investment Report</a></li>
     </ul>
 </div>
 <div class="sidebar" id="loans" style="display: none;">
