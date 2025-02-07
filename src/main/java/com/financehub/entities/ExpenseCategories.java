@@ -13,7 +13,7 @@ public class ExpenseCategories {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     @Column(name = "user_id", nullable=false)
-    private int userId;
+    private Long userId;
     private String name;
     private String icon;
     private boolean enabled;

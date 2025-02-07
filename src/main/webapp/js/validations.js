@@ -77,6 +77,23 @@ function validForm(formId){
     else if(formId=="addRentPayment"){
         return validateRentPaymentForm();
     }
+    else if(formId=="categoryForm"){
+        return validateCategories();
+    }
+}
+function validateCategories(){
+    const categoryName = document.getElementById("categoryName").value.trim();
+    const sortOrder = document.getElementById("sortOrder").value.trim();
+
+    if (categoryName === "") {
+        alert("Category Name is required");
+        return false;
+    }
+    if (sortOrder === "" || isNaN(sortOrder)) {
+        alert("Sort Order must be a valid number");
+        return false;
+    }
+    return true;
 }
 function validateExperienceForm() {
         const companyName = document.getElementById("companyName").value.trim();

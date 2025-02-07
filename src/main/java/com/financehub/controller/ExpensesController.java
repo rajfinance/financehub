@@ -12,7 +12,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/api/expenses")
@@ -21,25 +23,27 @@ public class ExpensesController {
     public ExpensesService expensesService;
    @Autowired
    public UserService userService;
-    @GetMapping("/categories")
-    public String showCategories(Model model) {
+    private void addCategoryListToModel(Model model) {
         List<ExpenseCategories> categories = expensesService.getAllCategories(userService.getUserId());
         model.addAttribute("categories", categories);
+    }
+    @GetMapping("/categories")
+    public String showCategories(Model model) {
+        addCategoryListToModel(model);
         return "expenses/manageExpenseCategories";
     }
-    @PostMapping("/save")
-    @ResponseBody
-    public String addCategory(@RequestParam ExpensesCategoriesDTO expensesCategoriesDTO,
-                                       HttpSession session) {
+    @PostMapping("/categorySave")
+    public String addCategory(@ModelAttribute ExpensesCategoriesDTO expensesCategoriesDTO,Model model) {
         expensesService.saveCategory(expensesCategoriesDTO);
-        return "redirect:/categories/list";
+        addCategoryListToModel(model);
+        return "expenses/manageExpenseCategories";
     }
 
-    @PostMapping("/delete")
-    @ResponseBody
-    public String deleteCategory(@RequestParam int id) {
-        categoryService.deleteCategory(id);
-        return "Deleted";
+    @PostMapping("/categoryDelete")
+    public String deleteCategory(@RequestParam int id,Model model) {
+        expensesService.deleteCategoryByID(id);
+        addCategoryListToModel(model);
+        return "expenses/manageExpenseCategories";
     }
     @GetMapping("/add")
     public String addExpenses(@RequestParam(value = "id", required = false) Long id, Model model) {

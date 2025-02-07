@@ -6,15 +6,16 @@
 </head>
 <body>
 <div class="form-container">
-<h2>Manage Expense Categories</h2>
+<h2>Expense Categories</h2>
 
-<form id="categoryForm">
+<form id="categoryForm" action="/api/expenses/categorySave" method="post" onsubmit="submitForm(event)">
+    <input type="hidden" name="categoryId" id="categoryId">
     <table style="width:100%;">
         <tr>
             <td><label for="categoryName">Name:</label></td>
-            <td><input type="text" name="name" id="categoryName" placeholder="Enter category name" style="width: 200px;" required></td>
+            <td><input type="text" name="categoryName" id="categoryName" placeholder="Enter category name" style="width: 200px;" required></td>
             <td><label for="iconPath">Icon Path:</label></td>
-            <td><input type="text" name="icon" id="iconPath" placeholder="Enter icon path (e.g., images/icon.png)"></td>
+            <td><input type="text" name="iconPath" id="iconPath" placeholder="Enter icon path (e.g., images/icon.png)"></td>
         </tr>
         <tr>
             <td><label for="sortOrder">Sort Order:</label></td>
@@ -29,8 +30,7 @@
     </div>
 </form>
 
-
-<br><br>
+<br>
 
 <div id="reportContent">
 <c:if test="${not empty categories}">
@@ -52,10 +52,10 @@
                 <td>${category.sortOrder}</td>
                 <td>${category.enabled ? 'Yes' : 'No'}</td>
                 <td>
-                <a href="javascript:void(0);" onclick="loadEditPageContent('/api/rent/add?id=${payment.id}', '#page-content')" style="text-decoration: none;">
+                <a href="javascript:void(0);" onclick="editCategory('${category.id}', '${category.name}', '${category.icon}', ${category.sortOrder}, ${category.enabled})" style="text-decoration: none;">
                     <img src="${pageContext.request.contextPath}/images/edit-icon.png" alt="Edit" style="width: 20px; height: 20px; margin-right: 20px;margin-left: 15px;">
                 </a>
-                <a href="javascript:void(0);" class="delete-btn" data-report-type="rentPaymentReport" data-id=${payment.id} onclick="deleteEntity(this,'Payment','/api/rent/\')">
+                <a href="javascript:void(0);" class="delete-btn" data-report-type="categoryForm" data-id="${category.id}" onclick="deleteCategoryEntity(this,'Category','/api/expenses/')">
                     <img src="${pageContext.request.contextPath}/images/delete-icon.png" alt="Delete" style="width: 20px; height: 20px;">
                 </a>
                 </td>
@@ -65,7 +65,7 @@
 </table>
 </c:if>
 <c:if test="${empty categories}">
-    <h2 style="text-align: center; color: #333;padding-bottom: 10px;">No Expenses Categories Available.</h2>
+    <h2 style="text-align: center; color: #333;padding-bottom: 10px;">No Categories Available.</h2>
 </c:if>
 </div>
 

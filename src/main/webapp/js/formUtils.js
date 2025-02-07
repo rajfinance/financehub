@@ -106,6 +106,31 @@ function deleteEntity(anchor, entityType, apiEndpoint) {
         });
     }
 }
+function editCategory(id, name, icon, sortOrder, enabled) {
+    document.getElementById("categoryId").value = id;
+    document.getElementById("categoryName").value = name;
+    document.getElementById("iconPath").value = icon;
+    document.getElementById("sortOrder").value = sortOrder;
+    document.getElementById("enabled").checked = enabled;
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function deleteCategoryEntity(element, entityName, apiUrl) {
+    let categoryId = element.getAttribute("data-id");
+    if (!confirm(`Are you sure you want to delete this ${entityName}?`)) {
+        return;
+    }
+    fetch(apiUrl + "categoryDelete?id=" + categoryId, {
+        method: "POST"
+    })
+    .then(response => response.text())
+    .then(html => {
+        alert("Category Deleted Successfully!");
+        document.getElementById('page-content').innerHTML = html;
+    })
+    .catch(error => console.error("Error deleting category:", error));
+}
+
 
 function activateTab(event) {
     const tabs = document.querySelectorAll(".tab-btn");

@@ -4,7 +4,8 @@ import lombok.Data;
 
 @Data
 public class ExpensesCategoriesDTO {
-    String name;
+    Long categoryId;
+    String categoryName;
     String iconPath;
     int sortOrder;
     boolean enabled;
