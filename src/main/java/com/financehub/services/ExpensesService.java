@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ExpensesService {
@@ -18,6 +19,12 @@ public class ExpensesService {
     public ExpensesCategoriesRepository expensesCategoriesRepository;
     public List<ExpenseCategories> getAllCategories(Long userId) {
         return expensesCategoriesRepository.findByUserIdOrderBySortOrder(userId);
+    }
+    public List<ExpenseCategories> getEnabledCategories(Long userId){
+        return expensesCategoriesRepository.findByUserIdOrderBySortOrder(userId)
+                .stream()
+                .filter(ExpenseCategories::isEnabled)
+                .collect(Collectors.toList());
     }
 
     public void saveCategory(ExpensesCategoriesDTO expensesCategoriesDTO) {

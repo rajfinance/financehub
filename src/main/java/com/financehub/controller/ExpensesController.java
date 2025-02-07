@@ -47,7 +47,8 @@ public class ExpensesController {
     }
     @GetMapping("/add")
     public String addExpenses(@RequestParam(value = "id", required = false) Long id, Model model) {
-
+        List<ExpenseCategories> categories = expensesService.getEnabledCategories(userService.getUserId());
+        model.addAttribute("categories", categories);
         return "expenses/addExpenses";
     }
 

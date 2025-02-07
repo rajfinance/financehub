@@ -131,26 +131,10 @@ function deleteCategoryEntity(element, entityName, apiUrl) {
     .catch(error => console.error("Error deleting category:", error));
 }
 
-
-function activateTab(event) {
-    const tabs = document.querySelectorAll(".tab-btn");
-    const contents = document.querySelectorAll(".tab-content");
-
-    tabs.forEach(t => t.classList.remove("active"));
-    contents.forEach(c => c.classList.remove("active"));
-
-    event.target.classList.add("active");
-    const targetTab = document.getElementById(event.target.getAttribute("data-tab"));
-    if (targetTab) targetTab.classList.add("active");
-}
-
 function calculateExpenses() {
         let total = 0;
         document.querySelectorAll(".expense").forEach(input => {
             total += parseFloat(input.value) || 0;
         });
         document.getElementById("totalExpense").value = total;
-
-        let income = parseFloat(document.getElementById("income").value) || 0;
-        document.getElementById("remaining").value = income - total;
 }
