@@ -10,7 +10,17 @@
 <div class="container">
 <div class="expenses">
 <h2>Monthly Expenses</h2>
-        <form action="saveExpenses.jsp" method="post">
+<c:if test="${not empty message}">
+        <div style="color: green; text-align: center; font-weight: bold;">
+            ${message}
+        </div>
+</c:if>
+<c:if test="${not empty error}">
+    <div style="color: red; text-align: center; font-weight: bold;">
+        ${error}
+    </div>
+</c:if>
+        <form id="expensesForm" method="post" action="/api/expenses/save" onsubmit="submitForm(event)">
             <div class="form-group">
                 <label>Month:</label>
                 <input type="month" name="month" required>
@@ -29,7 +39,7 @@
                             <img src="${pageContext.request.contextPath}/${category.icon}" alt="${category.name}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;">
                                 ${category.name}
                         </label>
-                        <input type="number" class="expense" name="${fn:toLowerCase(fn:replace(category.name, ' ', '_'))}" oninput="calculateExpenses()">
+                        <input type="number" class="expenses" name="expenses[${category.id}]" oninput="calculateExpenses()">
                     </div>
                 </c:forEach>
             </div>

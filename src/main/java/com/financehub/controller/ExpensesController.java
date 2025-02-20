@@ -1,5 +1,6 @@
 package com.financehub.controller;
 
+import com.financehub.dtos.ExpenseRequest;
 import com.financehub.dtos.ExpensesCategoriesDTO;
 import com.financehub.dtos.OwnerDTO;
 import com.financehub.entities.ExpenseCategories;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +52,17 @@ public class ExpensesController {
         List<ExpenseCategories> categories = expensesService.getEnabledCategories(userService.getUserId());
         model.addAttribute("categories", categories);
         return "expenses/addExpenses";
+    }
+
+    @PostMapping("/save")
+    public String saveExpenses(@ModelAttribute ExpenseRequest expenseRequest, RedirectAttributes redirectAttributes) {
+        try {
+            expensesService.saveExpense(expenseRequest);
+            redirectAttributes.addFlashAttribute("message", "Expenses saved successfully!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to save expenses: " + e.getMessage());
+        }
+        return "redirect:/api/expenses/add";
     }
 
 }

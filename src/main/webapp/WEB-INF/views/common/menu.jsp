@@ -42,8 +42,8 @@
 </div>
 <div class="sidebar" id="expenses" style="display: none;">
     <ul>
-        <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/add')">Add Expenses</a></li>
         <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/categories')">Categories</a></li>
+        <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/add')">Add Expenses</a></li>
         <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/reports')">Reports </a></li>
     </ul>
 </div>

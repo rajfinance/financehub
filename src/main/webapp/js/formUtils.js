@@ -47,7 +47,6 @@ function submitForm(event) {
         if(!validForm(formId)){
             return;
         }
-
         const formData = new FormData(form);
         fetch(form.action, {
             method: 'POST',
@@ -133,7 +132,7 @@ function deleteCategoryEntity(element, entityName, apiUrl) {
 
 function calculateExpenses() {
         let total = 0;
-        document.querySelectorAll(".expense").forEach(input => {
+        document.querySelectorAll(".expenses").forEach(input => {
             total += parseFloat(input.value) || 0;
         });
         document.getElementById("totalExpense").value = total;

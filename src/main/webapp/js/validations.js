@@ -80,6 +80,9 @@ function validForm(formId){
     else if(formId=="categoryForm"){
         return validateCategories();
     }
+    else if(formId=="expensesForm"){
+        return true;
+    }
 }
 function validateCategories(){
     const categoryName = document.getElementById("categoryName").value.trim();
