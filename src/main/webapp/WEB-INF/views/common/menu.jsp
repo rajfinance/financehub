@@ -44,7 +44,14 @@
     <ul>
         <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/categories')">Categories</a></li>
         <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/add')">Add Expenses</a></li>
-        <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/reports')">Reports </a></li>
+        <li class="submenu">
+                <a href="javascript:void(0);">Reports</a>
+                <ul class="dropdown">
+                    <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/manageExpenses')">Manage Expenses</a></li>
+                    <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/reports?filter=month')">By Month</a></li>
+                    <li><a href="javascript:void(0);" onclick="loadContent('/api/expenses/reports?filter=user')">By User</a></li>
+                </ul>
+        </li>
     </ul>
 </div>
 <div class="sidebar" id="rentals" style="display: none;">

@@ -286,10 +286,55 @@ h2 {
     text-align: center;
 }
 
-/* Hiding submenus by default */
 .sidebar {
     display: none;
 }
+
+/* Ensure the parent li (with class submenu) is positioned relatively */
+li.submenu {
+    position: relative;
+}
+
+/* Dropdown initially hidden */
+li.submenu ul.dropdown {
+    display: none;
+    position: absolute;
+    top: 0; /* directly below the parent */
+    left: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background-color: #f2f2f2;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-width: 150px;
+    z-index: 1000;
+}
+
+/* Show dropdown when hovering on submenu li */
+li.submenu:hover > ul.dropdown {
+    display: block;
+}
+
+/* Ensure each dropdown item is block-level */
+li.submenu ul.dropdown li {
+    display: block;
+}
+
+/* Dropdown links styling */
+li.submenu ul.dropdown li a {
+    display: block;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: #333;
+    background-color: #f2f2f2;
+}
+
+/* Hover state for dropdown links */
+li.submenu ul.dropdown li a:hover {
+    background-color: #ddd;
+}
+
 
 /* Main Content Area */
 

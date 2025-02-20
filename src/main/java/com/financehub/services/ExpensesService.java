@@ -15,10 +15,7 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -95,5 +92,12 @@ public class ExpensesService {
         expenseEntity.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
 
         expensesRepository.save(expenseEntity);
+    }
+
+    public Set<Integer> getDistinctExpenseYearsForUser(Long id) {
+        return expensesRepository.findByUserId(id)
+                .stream()
+                .map(Expenses::getExpenseYear)
+                .collect(Collectors.toSet());
     }
 }

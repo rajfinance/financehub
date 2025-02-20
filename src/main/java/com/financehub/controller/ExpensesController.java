@@ -17,6 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/api/expenses")
@@ -63,6 +64,13 @@ public class ExpensesController {
             redirectAttributes.addFlashAttribute("error", "Failed to save expenses: " + e.getMessage());
         }
         return "redirect:/api/expenses/add";
+    }
+
+    @GetMapping("/manageExpenses")
+    public String manageExpenses(Model model){
+        Set<Integer> years = expensesService.getDistinctExpenseYearsForUser(userService.getUserId());
+        model.addAttribute("years", years);
+        return "expenses/manageExpenses";
     }
 
 }
