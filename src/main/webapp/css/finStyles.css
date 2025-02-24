@@ -269,6 +269,11 @@ h2 {
     font-weight: bold;
 }
 
+.sidebar ul li a:hover {
+    background-color:#4682b4;
+    color: white;
+}
+
 /* Main content area */
 .main-content {
     display: flex;
@@ -300,14 +305,14 @@ li.submenu ul.dropdown {
     display: none;
     position: absolute;
     top: 0; /* directly below the parent */
-    left: 100%;
+    left: 70%;
     margin: 0;
     padding: 0;
     list-style: none;
-    background-color: #f2f2f2;
+    background-color: #B0C4DE;
     border: 1px solid #ccc;
     border-radius: 4px;
-    min-width: 150px;
+    min-width: 190px;
     z-index: 1000;
 }
 
@@ -326,13 +331,14 @@ li.submenu ul.dropdown li a {
     display: block;
     padding: 8px 12px;
     text-decoration: none;
-    color: #333;
-    background-color: #f2f2f2;
+    color: #00354A;
+    background-color: #B0C4DE;
 }
 
 /* Hover state for dropdown links */
 li.submenu ul.dropdown li a:hover {
-    background-color: #ddd;
+    background-color: #4682b4;
+    color: white;
 }
 
 
@@ -432,6 +438,7 @@ button[type="submit"] {
 
 button[type="submit"]:hover {
     background-color: #4682b4; /* Steel blue on hover */
+    color:white;
 }
 
 .signup-link {

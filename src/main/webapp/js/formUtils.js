@@ -137,3 +137,30 @@ function calculateExpenses() {
         });
         document.getElementById("totalExpense").value = total;
 }
+
+function loadReport() {
+event.preventDefault();
+const year = document.getElementById("year").value;
+    if (year === "") {
+        alert("Please select a year.");
+        return;
+    }
+    const url = `/api/expenses/manageReport?year=${encodeURIComponent(year)}`;
+
+    fetch(url, {
+        method: 'GET'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Network response was not ok " + response.statusText);
+        }
+        return response.text();
+    })
+    .then(html => {
+        document.getElementById('manageReportContainer').innerHTML = html;
+    })
+    .catch(error => {
+        console.error("Error fetching report:", error);
+        alert("Error fetching report. Please try again.");
+    });
+}

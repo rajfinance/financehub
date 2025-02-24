@@ -8,18 +8,22 @@
 </head>
 <body>
 <div class="container">
-<div class="expenses">
+<div class="form-container">
 <h2>Manage Expenses</h2>
-<form action="/expenses/report" method="get">
-        <label for="year">Select Year:</label>
-        <select name="year" id="year" required>
-            <option value="">--Select Year--</option>
+<form method="get">
+<div class="input-group">
+    <label for="year">Select Year<span class="mandatory">*</span>:</label></label>
+    <select id="year" name="year" required>
+        <option value="">--Select Year--</option>
             <c:forEach var="yr" items="${years}">
                 <option value="${yr}">${yr}</option>
             </c:forEach>
-        </select>
-        <button type="submit">Show Report</button>
+    </select>
+</div><br>
+<button type="button" onclick="loadReport()">Show Report</button>
 </form>
+</div>
+<div id="manageReportContainer"></div>
 </div>
 </div>
 </body>

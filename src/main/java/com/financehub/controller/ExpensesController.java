@@ -1,5 +1,6 @@
 package com.financehub.controller;
 
+import com.financehub.dtos.ExpenseReportDTO;
 import com.financehub.dtos.ExpenseRequest;
 import com.financehub.dtos.ExpensesCategoriesDTO;
 import com.financehub.dtos.OwnerDTO;
@@ -49,9 +50,23 @@ public class ExpensesController {
         return "expenses/manageExpenseCategories";
     }
     @GetMapping("/add")
-    public String addExpenses(@RequestParam(value = "id", required = false) Long id, Model model) {
+    public String addExpenses(@RequestParam(value = "id", required = false) Long id,@RequestParam(value="type", required = false) String expenseType, Model model) {
+        double totalExpense =0;
         List<ExpenseCategories> categories = expensesService.getEnabledCategories(userService.getUserId());
         model.addAttribute("categories", categories);
+        ExpenseReportDTO dto = expensesService.getExpenseDetailsById(id);
+        if (dto != null) {
+            dto.setExpenseType(expenseType);
+            model.addAttribute("expenseDetails", dto);
+            if(expenseType.equalsIgnoreCase("plan")) {
+                totalExpense = dto.getPlannedExpenses().values().stream().mapToDouble(Double::doubleValue).sum();
+            }
+            else{
+                totalExpense = dto.getActualExpenses().values().stream().mapToDouble(Double::doubleValue).sum();
+            }
+            model.addAttribute("totalExpense", totalExpense);
+
+        }
         return "expenses/addExpenses";
     }
 
@@ -59,7 +74,11 @@ public class ExpensesController {
     public String saveExpenses(@ModelAttribute ExpenseRequest expenseRequest, RedirectAttributes redirectAttributes) {
         try {
             expensesService.saveExpense(expenseRequest);
-            redirectAttributes.addFlashAttribute("message", "Expenses saved successfully!");
+            if(expenseRequest.getExpenseId()!=null){
+                redirectAttributes.addFlashAttribute("message", "Expenses Updated Successfully!");
+            }else {
+                redirectAttributes.addFlashAttribute("message", "Expenses Saved Successfully!");
+            }
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Failed to save expenses: " + e.getMessage());
         }
@@ -71,6 +90,14 @@ public class ExpensesController {
         Set<Integer> years = expensesService.getDistinctExpenseYearsForUser(userService.getUserId());
         model.addAttribute("years", years);
         return "expenses/manageExpenses";
+    }
+
+    @GetMapping("/manageReport")
+    public String getManageExpenseReport(@RequestParam("year") int year, Model model) {
+        List<ExpenseReportDTO> reports = expensesService.getExpenseReport(year);
+        model.addAttribute("reports", reports);
+        model.addAttribute("year",year);
+        return "expenses/manageExpenseReport";
     }
 
 }

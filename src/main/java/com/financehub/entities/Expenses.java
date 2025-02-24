@@ -26,12 +26,13 @@ public class Expenses {
     @Column(name = "expense_year", nullable = false)
     private Integer expenseYear;
 
-    @Column(name = "expense_type", nullable = false, columnDefinition = "bpchar(1)")
-    private String expenseType;
-
-    @Column(name = "expense_data", nullable = false)
+    @Column(name = "planned_expenses")
     @Convert(converter = ExpenseDetail.class)
-    private Map<Integer, Double> expenseData;
+    private Map<Integer, Double> plannedExpenses;
+
+    @Column(name = "actual_expenses")
+    @Convert(converter = ExpenseDetail.class)
+    private Map<Integer, Double> actualExpenses;
 
     @Column(name = "created_at", columnDefinition = "timestamp default CURRENT_TIMESTAMP")
     private Timestamp createdAt;
@@ -41,11 +42,11 @@ public class Expenses {
 
     public Expenses() {}
 
-    public Expenses(Long userId, Integer expenseMonth, Integer expenseYear, String expenseType, Map<Integer, Double> expenseData) {
+    public Expenses(Long userId, Integer expenseMonth, Integer expenseYear, Map<Integer, Double> plannedExpenses, Map<Integer, Double> actualExpenses) {
         this.userId = userId;
         this.expenseMonth = expenseMonth;
         this.expenseYear = expenseYear;
-        this.expenseType = expenseType;
-        this.expenseData = expenseData;
+        this.plannedExpenses = plannedExpenses;
+        this.actualExpenses = actualExpenses;
     }
 }
