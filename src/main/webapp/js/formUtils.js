@@ -1,9 +1,6 @@
 function loadPage(submenuId) {
-       const allSubmenus = document.querySelectorAll('.sidebar');
-       const pageContent = document.getElementById('page-content');
-       allSubmenus.forEach(function(submenu) {
-           submenu.style.display = 'none';
-       });
+    const pageContent = document.getElementById('page-content');
+
         const allMenuItems = document.querySelectorAll('.menu-bar ul li');
         allMenuItems.forEach(function(menuItem) {
             menuItem.classList.remove('active');
@@ -81,7 +78,13 @@ function deleteEntity(anchor, entityType, apiEndpoint) {
     var entityId = anchor.getAttribute('data-id');
     var reportType = anchor.getAttribute('data-report-type');
     if (confirm(`Are you sure you want to delete this ${entityType}?`)) {
-        fetch(`${apiEndpoint}?id=${entityId}`, {
+        let apiUrl = `${apiEndpoint}?id=${entityId}`;
+       if (entityType.toLowerCase().includes("plan")) {
+            apiUrl += `&type=plan`;
+       } else if (entityType.toLowerCase().includes("actual")) {
+            apiUrl += `&type=actual`;
+       }
+        fetch(apiUrl, {
             method: 'DELETE'
         })
         .then(response => {
@@ -138,14 +141,14 @@ function calculateExpenses() {
         document.getElementById("totalExpense").value = total;
 }
 
-function loadReport() {
+function loadReport(yearId,apiUrl,containerId) {
 event.preventDefault();
-const year = document.getElementById("year").value;
+const year = document.getElementById(yearId).value;
     if (year === "") {
         alert("Please select a year.");
         return;
     }
-    const url = `/api/expenses/manageReport?year=${encodeURIComponent(year)}`;
+    const url = `${apiUrl}?year=${encodeURIComponent(year)}`;
 
     fetch(url, {
         method: 'GET'
@@ -157,10 +160,19 @@ const year = document.getElementById("year").value;
         return response.text();
     })
     .then(html => {
-        document.getElementById('manageReportContainer').innerHTML = html;
+        const container = document.getElementById(containerId);
+        if (!container) {
+            alert("Target container not found.");
+            return;
+        }
+        container.innerHTML = html;
     })
     .catch(error => {
         console.error("Error fetching report:", error);
         alert("Error fetching report. Please try again.");
     });
+}
+function setActive(button) {
+    button.closest('.form-container').querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+    button.classList.add('active');
 }

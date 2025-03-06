@@ -2,12 +2,13 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <body>
 <c:if test="${not empty salaries}">
-<div class="report-buttons">
-    <button id="downloadPdf" class="pdf-btn" data-report="sal" ><img src="${pageContext.request.contextPath}/images/pdf.png" alt="PDF" /></button>
-    <button id="printReport" class="print-btn" data-report="sal"><img src="${pageContext.request.contextPath}/images/print.png" alt="Print" /></button>
-</div>
 <div id="reportContent">
-    <h1 style="text-align: center; color: #333;padding-bottom: 10px;">Salary Report</h1>
+    <h1 class="h1report">Salary Report
+    <div class="report-buttons">
+        <button id="downloadPdf" class="pdf-btn" data-report="sal" ><img src="${pageContext.request.contextPath}/images/pdf.png" alt="PDF" /></button>
+        <button id="printReport" class="print-btn" data-report="sal"><img src="${pageContext.request.contextPath}/images/print.png" alt="Print" /></button>
+    </div>
+    </h1>
 
         <c:forEach var="entry" items="${salaries}">
             <c:set var="year" value="${entry.key}" />

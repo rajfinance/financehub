@@ -10,15 +10,14 @@ import com.financehub.services.ExpensesService;
 import com.financehub.services.UserService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.text.DecimalFormat;
+import java.util.*;
 
 @Controller
 @RequestMapping("/api/expenses")
@@ -65,7 +64,6 @@ public class ExpensesController {
                 totalExpense = dto.getActualExpenses().values().stream().mapToDouble(Double::doubleValue).sum();
             }
             model.addAttribute("totalExpense", totalExpense);
-
         }
         return "expenses/addExpenses";
     }
@@ -91,13 +89,79 @@ public class ExpensesController {
         model.addAttribute("years", years);
         return "expenses/manageExpenses";
     }
-
     @GetMapping("/manageReport")
     public String getManageExpenseReport(@RequestParam("year") int year, Model model) {
         List<ExpenseReportDTO> reports = expensesService.getExpenseReport(year);
         model.addAttribute("reports", reports);
         model.addAttribute("year",year);
         return "expenses/manageExpenseReport";
+    }
+    @GetMapping("/yearWiseActualPlan")
+    public String yearWise(Model model){
+        Set<Integer> years = expensesService.getDistinctExpenseYearsForUser(userService.getUserId());
+        model.addAttribute("years", years);
+        return "expenses/yearWiseActualPlan";
+    }
+    @GetMapping("/yearWiseActualPlanReport")
+    public String getYearWiseActualPlan(@RequestParam("year") int year, Model model) {
+        List<ExpenseReportDTO> reportData = expensesService.getYearlyPlanActual(userService.getUserId(), year);
+
+        Map<Integer, Integer> monthlyPlanTotalMap = new HashMap<>();
+        Map<Integer, Integer> monthlyActualTotalMap = new HashMap<>();
+
+        for (int i = 1; i <= 12; i++) {
+            monthlyPlanTotalMap.put(i, 0);
+            monthlyActualTotalMap.put(i, 0);
+        }
+
+        for (ExpenseReportDTO data : reportData) {
+            int month = data.getMonth();
+            int planAmount = (int) Math.floor(data.getPlanAmount());
+            int actualAmount = (int) Math.floor(data.getActualAmount());
+
+            monthlyPlanTotalMap.put(month, monthlyPlanTotalMap.get(month) + planAmount);
+            monthlyActualTotalMap.put(month, monthlyActualTotalMap.get(month) + actualAmount);
+        }
+
+        model.addAttribute("monthlyPlanTotalMap", monthlyPlanTotalMap);
+        model.addAttribute("monthlyActualTotalMap", monthlyActualTotalMap);
+
+        model.addAttribute("reportData", reportData);
+        model.addAttribute("year", year);
+        return "expenses/yearWiseActualPlanReport";
+    }
+    @GetMapping("/yearSummaryReport")
+    public String getYearSummaryReport(@RequestParam("year") int year, Model model) {
+        Map<String, Double> categorySums = new LinkedHashMap<>();
+        Map<Integer, Double> monthlySums = new HashMap<>();
+        Map<String, Double> categoryAverages = new HashMap<>();
+
+        DecimalFormat decimalFormat = new DecimalFormat("#,###");
+        List<ExpenseReportDTO> report = expensesService.getYearlyCategoryWiseExpenses(year, categorySums, monthlySums, categoryAverages);
+
+        for (ExpenseReportDTO dto : report) {
+            dto.setActualAmountStr(decimalFormat.format(dto.getActualAmount()));
+        }
+        Map<String, String> formattedCategorySums = new LinkedHashMap<>();
+        categorySums.forEach((key, value) -> formattedCategorySums.put(key, decimalFormat.format(value)));
+
+        Map<String, String> formattedCategoryAverages = new LinkedHashMap<>();
+        categoryAverages.forEach((key, value) -> formattedCategoryAverages.put(key, decimalFormat.format(value)));
+
+        Map<Integer, String> formattedMonthlySums = new LinkedHashMap<>();
+        monthlySums.forEach((key, value) -> formattedMonthlySums.put(key, decimalFormat.format(value)));
+
+        model.addAttribute("expenseReport", report);
+        model.addAttribute("categorySums", formattedCategorySums);
+        model.addAttribute("monthlySums", formattedMonthlySums);
+        model.addAttribute("categoryAverages", formattedCategoryAverages);
+        model.addAttribute("year",year);
+        return "expenses/yearSummaryReport";
+    }
+    @DeleteMapping("/deleteAmount")
+    public ResponseEntity<String> deleteExpense(@RequestParam Long id, @RequestParam String type) {
+        expensesService.deleteExpense(id, type);
+        return ResponseEntity.ok("success");
     }
 
 }

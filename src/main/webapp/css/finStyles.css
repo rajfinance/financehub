@@ -20,6 +20,12 @@ h1 {
     margin-left: auto;
     margin-right: auto;
 }
+.h1report {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    width: auto;
+    padding-left: 140px;
+}
 h2 {
     font-size: 28px;
     font-weight: bold;
@@ -99,6 +105,13 @@ h2 {
 }
 .content {
     text-align: center;
+    max-width: 800px;
+    margin: 0px auto;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
 }
 
 .username {
@@ -223,7 +236,7 @@ h2 {
 }
 
 .menu-bar ul li {
-    margin: 0 10px;
+    margin: 0 5px;
 }
 
 .menu-bar ul li a {
@@ -243,37 +256,52 @@ h2 {
     background-color: #4682B4; /* Steel Blue */
 }
 
-.sidebar {
-    width: 200px;
-    float: left;
-    padding: 10px;
-    background-color: #B0C4DE;
-    margin-right: 0px;
+.menu-items > li.menu-item {
+    position: relative;
 }
 
-.sidebar ul {
-    list-style-type: none;
-}
-
-.sidebar ul li {
-    margin: 10px 0;
-}
-
-.sidebar ul li a {
+.menu-items > li.menu-item > a {
     text-decoration: none;
-    color: #00354A;
+    padding: 8px 12px;
     display: block;
-    padding: 10px 15px;
-    border-radius: 5px;
-    transition: all 0.3s ease;
-    font-weight: bold;
 }
 
-.sidebar ul li a:hover {
-    background-color:#4682b4;
-    color: white;
+.menu-items li .dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #006494;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    min-width: 150px;
+    z-index: 1000;
+}
+.menu-items li .dropdown li {
+       padding: 8px 12px;
+       text-align: left;
 }
 
+.menu-items li .dropdown li a {
+    padding: 8px 12px;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.menu-items li.menu-item:hover > .dropdown {
+    display: block;
+}
+.menu-items li .dropdown li:hover > .dropdown {
+    display: block;
+    left: 100%;
+    top: 0;
+}
+
+.menu-items li a:hover {
+    background-color: #4682B4;
+    color: #fff;
+}
 /* Main content area */
 .main-content {
     display: flex;
@@ -284,7 +312,6 @@ h2 {
 /* Page content */
 #page-content {
     flex-grow: 1;
-    background-color: #fff;
     padding: 10px;
     min-height: fit-content;
     border: 1px solid #ccc;
@@ -295,12 +322,10 @@ h2 {
     display: none;
 }
 
-/* Ensure the parent li (with class submenu) is positioned relatively */
 li.submenu {
     position: relative;
 }
 
-/* Dropdown initially hidden */
 li.submenu ul.dropdown {
     display: none;
     position: absolute;
@@ -309,33 +334,26 @@ li.submenu ul.dropdown {
     margin: 0;
     padding: 0;
     list-style: none;
-    background-color: #B0C4DE;
-    border: 1px solid #ccc;
+    background-color: #006494;
     border-radius: 4px;
     min-width: 190px;
     z-index: 1000;
 }
 
-/* Show dropdown when hovering on submenu li */
 li.submenu:hover > ul.dropdown {
     display: block;
 }
 
-/* Ensure each dropdown item is block-level */
 li.submenu ul.dropdown li {
     display: block;
+    padding: 0px;
 }
 
-/* Dropdown links styling */
 li.submenu ul.dropdown li a {
     display: block;
-    padding: 8px 12px;
     text-decoration: none;
-    color: #00354A;
-    background-color: #B0C4DE;
 }
 
-/* Hover state for dropdown links */
 li.submenu ul.dropdown li a:hover {
     background-color: #4682b4;
     color: white;
@@ -573,8 +591,8 @@ button[type="submit"]:hover {
 
 /* Button style */
 .form-container button {
-    background-color: #006494;
-    color: white;
+    background-color: #B0C4DE;
+    color: #00354A;
     padding: 12px 20px;
     border: none;
     border-radius: 4px;
@@ -582,11 +600,22 @@ button[type="submit"]:hover {
     cursor: pointer;
     transition: background-color 0.3s ease-in-out;
     width: 100%;
+    margin: 5px;
 }
 
 .form-container button:hover {
     background-color: #4682B4;
+    color: white;
+    font-weight: bold;
+    border-color: #004F6C;
 }
+.form-container button.active {
+    background-color: #4682B4;
+    color: white;
+    font-weight: bold;
+    border-color: #004F6C;
+}
+
 
 /* Responsive behavior */
 @media (max-width: 600px) {
@@ -640,11 +669,20 @@ button[type="submit"]:hover {
         margin: 0;                   /* Remove default margin */
         padding: 0;
 }
+#yearwise {
+    margin: 0 auto;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+}
 
 /* Styling for the report content */
 #reportContent {
     width: 85%;
     margin: 0 auto;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 5px;
 }
 #reportContent th{
     background-color: #006494;
@@ -713,11 +751,7 @@ button[type="submit"]:hover {
 
 /* Style for the content within the tabs */
 .tab-content {
-    padding: 20px;                /* Padding inside the tab content area */
-    background-color: #FFFFFF;    /* White background for the content */
-    border: 1px solid #B0C4DE;    /* Light border to match the sidebar */
-    border-radius: 5px;           /* Rounded corners for content */
-    margin-top: 20px;             /* Space between tabs and content */
+    border-radius: 5px;
 }
 
 .year-header {
@@ -761,7 +795,7 @@ button[type="submit"]:hover {
         /* Grid Layout for Expenses */
         .grid-container {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 10px;
         }
         .grid-item {
@@ -776,7 +810,7 @@ button[type="submit"]:hover {
             text-align: center;
         }
 .expenses {
-    width: 800px;
+    width: 1000px;
     margin: 0px auto;
     padding: 20px;
     border-radius: 8px;
@@ -845,4 +879,36 @@ button[type="submit"]:hover {
 /* Change the inner circle color */
 .form-group input[type="radio"]:checked + label::before {
     background-color: white;
+}
+
+.myTable,
+.myTable th,
+.myTable td {
+    border: 1px solid #000;
+    border-collapse: collapse;
+    font-size: 11px;
+    width: 100%;
+    padding-right: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 2px;
+}
+
+.myTable td{
+    text-align: right;
+}
+.summaryTable {
+    border: 1px solid #000;
+    width: 80%;
+    padding: 5px;
+    margin: 0 auto;
+    border-collapse: collapse;
+}
+.summaryTable th {
+    border: 1px solid #000;
+    padding: 5px;
+}
+.summaryTable td {
+    border: 1px solid #000;
+    padding: 5px;
 }

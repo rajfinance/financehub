@@ -8,10 +8,8 @@
             <button class="tab-button active" onclick="showReport('ownersReport')">Owners</button>
             <button class="tab-button" onclick="showReport('rentPaymentReport')">Rent Payments</button>
         </div>
-        <div class="tab-content" id="ownersReport" style="display:none;">
-        </div>
-        <div class="tab-content" id="rentPaymentReport" style="display:none;">
-        </div>
     </div>
+    <div class="tab-content" id="ownersReport" style="display:none;"></div>
+    <div class="tab-content" id="rentPaymentReport" style="display:none;"></div>
 </body>
 </html>

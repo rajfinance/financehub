@@ -4,12 +4,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Manage Expenses</title>
+    <title>YearWise Plan Expenses</title>
 </head>
 <body>
 <div class="container">
 <div class="form-container">
-<h2>Manage Expenses</h2>
+<h2>Year Wise Expenses</h2>
 <form method="get">
 <div class="input-group">
     <label for="year">Select Year<span class="mandatory">*</span>:</label></label>
@@ -20,11 +20,14 @@
             </c:forEach>
     </select>
 </div><br>
-<button type="button" onclick="loadReport()">Show Report</button>
+<div class="button-group">
+    <button type="button" onclick="setActive(this); loadReport('year','/api/expenses/manageReport','ReportContainer')">Manage</button>
+    <button type="button" onclick="setActive(this); loadReport('year','/api/expenses/yearWiseActualPlanReport','ReportContainer')">Plan vs Actual</button>
+    <button type="button" onclick="setActive(this); loadReport('year','/api/expenses/yearSummaryReport','ReportContainer')">Summary</button>
+</div>
 </form>
 </div>
-<div id="manageReportContainer"></div>
-</div>
+<div id="ReportContainer"></div>
 </div>
 </body>
 </html>

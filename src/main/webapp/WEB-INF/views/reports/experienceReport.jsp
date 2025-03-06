@@ -3,16 +3,18 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <body>
 <c:if test="${not empty companies}">
-    <div class="report-buttons">
-        <button id="downloadPdf" class="pdf-btn" data-report="exp">
-            <img src="${pageContext.request.contextPath}/images/pdf.png" alt="PDF" />
-        </button>
-        <button id="printReport" class="print-btn" data-report="exp">
-            <img src="${pageContext.request.contextPath}/images/print.png" alt="Print" />
-        </button>
-    </div>
+
     <div id="reportContent">
-        <h1 style="text-align: center; color: #333;">Total Experience</h1>
+        <h1 class="h1report">Total Experience
+            <div class="report-buttons">
+                <button id="downloadPdf" class="pdf-btn" data-report="exp">
+                    <img src="${pageContext.request.contextPath}/images/pdf.png" alt="PDF" />
+                </button>
+                <button id="printReport" class="print-btn" data-report="exp">
+                    <img src="${pageContext.request.contextPath}/images/print.png" alt="Print" />
+                </button>
+            </div>
+        </h1>
         <table style="width: 100%; margin: 10px auto; border-collapse: collapse; font-family: Arial, sans-serif;">
             <thead style="background-color: #006494; color: white; text-align: left; font-size: 16px;">
                 <tr>

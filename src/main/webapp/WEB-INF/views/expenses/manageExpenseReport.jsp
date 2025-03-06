@@ -2,8 +2,8 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <body>
 <c:if test="${not empty reports}">
-<div id="reportContent" style="width:80%">
-    <h2>Expenses Year - ${year}</h2>
+<div id="reportContent">
+    <h2>Manage Expenses For Year - ${year}</h2>
     <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
         <thead>
             <tr>
@@ -25,7 +25,7 @@
                         style="text-decoration: none;margin-right:10px;">
                         <img src="${pageContext.request.contextPath}/images/edit-icon.png" alt="Edit" style="width: 20px; height: 20px; margin-right: 20px;margin-left: 15px;">
                     </a>
-                    <a href="javascript:void(0);" class="delete-btn" data-report-type="ownersReport" data-id=${owner.ownerId} onclick="deleteEntity(this,'Owner','/api/deleteOwner')">
+                    <a href="javascript:void(0);" class="delete-btn" data-report-type="manageReport_${year}_ReportContainer" data-id=${report.id} onclick="deleteEntity(this,'Plan Amount','/api/expenses/deleteAmount')">
                         <img src="${pageContext.request.contextPath}/images/delete-icon.png" alt="Delete" style="width: 20px; height: 20px;">
                     </a>
                     </td>
@@ -36,7 +36,7 @@
                         style="text-decoration: none;margin-right:10px;">
                         <img src="${pageContext.request.contextPath}/images/edit-icon.png" alt="Edit" style="width: 20px; height: 20px; margin-right: 20px;margin-left: 15px;">
                     </a>
-                    <a href="javascript:void(0);" class="delete-btn" data-report-type="ownersReport" data-id=${owner.ownerId} onclick="deleteEntity(this,'Owner','/api/deleteOwner')">
+                    <a href="javascript:void(0);" class="delete-btn" data-report-type="manageReport_${year}_ReportContainer" data-id=${report.id} onclick="deleteEntity(this,'Actual Amount','/api/expenses/deleteAmount')">
                         <img src="${pageContext.request.contextPath}/images/delete-icon.png" alt="Delete" style="width: 20px; height: 20px;">
                     </a>
                     </td>

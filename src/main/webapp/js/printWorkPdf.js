@@ -13,14 +13,27 @@ function showReport(reportType) {
     fetchReportContent(reportType);
 }
 function prepareUrl(reportType){
+    let year = null;
+    if (reportType.includes("_")) {
+        let parts = reportType.split("_");
+        reportType = parts[0];
+        year = parts[1];
+    }
+    let baseUrl = "";
     if(reportType === "expReport"|| reportType==="salaryReport")
-        return'/api/work/'+reportType;
+        baseUrl = '/api/work/'+reportType;
     else if(reportType === "ownersReport"|| reportType==="rentPaymentReport")
-        return '/api/rent/'+reportType;
+        baseUrl = '/api/rent/'+reportType;
+    else if(reportType === "manageReport")
+        baseUrl = '/api/expenses/'+reportType;
+    return year ? `${baseUrl}?year=${year}` : baseUrl;
 }
 
 function fetchReportContent(reportType) {
     const url = prepareUrl(reportType);
+    if (reportType.includes("_")) {
+        reportType = reportType.split("_")[2];
+    }
     fetch(url)
         .then(response => response.text())
         .then(data => {

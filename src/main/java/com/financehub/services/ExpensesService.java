@@ -9,6 +9,7 @@ import com.financehub.entities.Expenses;
 import com.financehub.repositories.ExpensesCategoriesRepository;
 import com.financehub.repositories.ExpensesRepository;
 import com.financehub.utils.FormatterUtils;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -126,7 +127,9 @@ public class ExpensesService {
 
     public List<ExpenseReportDTO> getExpenseReport(int year) {
         List<Expenses> expenses = expensesRepository.findByExpenseYearAndUserId(year, userService.getUserId());
-        return expenses.stream().map(expense -> {
+        return expenses.stream()
+           .sorted(Comparator.comparing(Expenses::getExpenseMonth))
+           .map(expense -> {
             double totalPlanAmount = 0.0;
             double totalActualAmount = 0.0;
             if (expense.getPlannedExpenses() != null) {
@@ -147,7 +150,7 @@ public class ExpensesService {
                     expense.getPlannedExpenses(),
                     expense.getActualExpenses(),
                     totalPlanAmount,
-                    totalActualAmount
+                    totalActualAmount,""
             );
         }).collect(Collectors.toList());
     }
@@ -162,9 +165,169 @@ public class ExpensesService {
                     expense.getExpenseMonth(),"",
                     expense.getPlannedExpenses(),
                     expense.getActualExpenses(),
-                    0,0
+                    0,0,""
             );
         }
         return null;
+    }
+
+    public List<ExpenseReportDTO> getYearlyPlanActual(Long userId, int year) {
+        List<Object[]> results = expensesRepository.getYearlyPlanActual(userId, year);
+        Set<Integer> categoryIds = new HashSet<>();
+        for (Object[] row : results) {
+            Map<Integer, Double> plannedMap = (Map<Integer, Double>) row[1];
+            Map<Integer, Double> actualMap = (Map<Integer, Double>) row[2];
+            categoryIds.addAll(plannedMap.keySet());
+            categoryIds.addAll(actualMap.keySet());
+        }
+
+        Map<Integer, String> categoryMap = expensesCategoriesRepository.findCategoryNamesByIds(new ArrayList<>(categoryIds))
+                .stream().collect(Collectors.toMap( row -> (Integer) ((Object[]) row)[0], row -> (String) ((Object[]) row)[1]));
+
+        Map<String, Map<Integer, double[]>> categoryMonthData = new LinkedHashMap<>();
+
+        for (Object[] row : results) {
+            Integer month = (Integer) row[0];
+            Map<Integer, Double> plannedMap = (Map<Integer, Double>) row[1];
+            Map<Integer, Double> actualMap = (Map<Integer, Double>) row[2];
+
+            for (Map.Entry<Integer, Double> entry : plannedMap.entrySet()) {
+                String category = categoryMap.get(entry.getKey());
+                if (category == null) continue;
+
+                double plannedValue = entry.getValue();
+                categoryMonthData.putIfAbsent(category, new LinkedHashMap<>());
+                categoryMonthData.get(category).putIfAbsent(month, new double[]{0.0, 0.0});
+                categoryMonthData.get(category).get(month)[0] += plannedValue;
+            }
+
+            for (Map.Entry<Integer, Double> entry : actualMap.entrySet()) {
+                String category = categoryMap.get(entry.getKey());
+                if (category == null) continue;
+
+                double actualValue = entry.getValue();
+                categoryMonthData.putIfAbsent(category, new LinkedHashMap<>());
+                categoryMonthData.get(category).putIfAbsent(month, new double[]{0.0, 0.0});
+                categoryMonthData.get(category).get(month)[1] += actualValue;
+            }
+        }
+
+        List<ExpenseReportDTO> reportList = new ArrayList<>();
+        for (String category : categoryMonthData.keySet()) {
+            for (int month = 1; month <= 12; month++) {
+                double planAmount = categoryMonthData.get(category).getOrDefault(month, new double[]{0.0, 0.0})[0];
+                double actualAmount = categoryMonthData.get(category).getOrDefault(month, new double[]{0.0, 0.0})[1];
+                reportList.add(new ExpenseReportDTO(0,year, month,"",null,null, planAmount, actualAmount,category));
+            }
+        }
+
+        return reportList;
+    }
+    @Transactional
+    public void deleteExpense(Long expenseId, String type) {
+        boolean hasPlan = expensesRepository.existsByIdAndPlannedExpensesNotNull(expenseId);
+        boolean hasActual = expensesRepository.existsByIdAndActualExpensesNotNull(expenseId);
+
+        if ("plan".equalsIgnoreCase(type)) {
+            if (hasActual) {
+                expensesRepository.clearPlanById(expenseId);
+            } else {
+                expensesRepository.deleteById(Math.toIntExact(expenseId));
+            }
+        } else if ("actual".equalsIgnoreCase(type)) {
+            if (hasPlan) {
+                expensesRepository.clearActualById(expenseId);
+            } else {
+                expensesRepository.deleteById(Math.toIntExact(expenseId));
+            }
+        }
+    }
+
+    public List<ExpenseReportDTO> getYearlyCategoryWiseExpenses(int year, Map<String, Double> categorySums, Map<Integer, Double> monthlySums, Map<String, Double> categoryAverages) {
+        List<Expenses> expenses = expensesRepository.findByUserIdAndExpenseYear(userService.getUserId(),year);
+
+        Set<Integer> categoryIds = expenses.stream()
+                .flatMap(expense -> expense.getActualExpenses().keySet().stream())
+                .collect(Collectors.toSet());
+
+        List<Object[]> categoryData = (List<Object[]>) expensesCategoriesRepository.findCategoryNamesByIds(new ArrayList<>(categoryIds));
+
+        LinkedHashMap<String, Integer> categorySortedMap = categoryData.stream()
+                .sorted(Comparator.comparing(row -> (Integer) row[2]))
+                .collect(Collectors.toMap(
+                        row -> (String) row[1],
+                        row -> (Integer) row[2],
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new
+                ));
+
+        Map<Integer, String> categoryMap = categoryData.stream()
+                .collect(Collectors.toMap(
+                        row -> (Integer) row[0],
+                        row -> (String) row[1]
+                ));
+
+        Map<String, double[]> categoryMonthData = new LinkedHashMap<>();
+        double[] totalMonthlySums = new double[12];
+
+        for (Expenses expense : expenses) {
+            int month = expense.getExpenseMonth();
+
+            if (expense.getActualExpenses() != null) {
+                for (Map.Entry<Integer, Double> entry : expense.getActualExpenses().entrySet()) {
+                    Integer categoryId = entry.getKey();
+                    Double actualAmount = entry.getValue();
+
+                    String categoryName = categoryMap.get(categoryId);
+                    if (categoryName == null) continue;
+
+                    categoryMonthData.putIfAbsent(categoryName, new double[13]);
+
+                    categoryMonthData.get(categoryName)[month - 1] += actualAmount;
+                    categoryMonthData.get(categoryName)[12] += actualAmount;
+                    totalMonthlySums[month - 1] += actualAmount;
+                }
+            }
+        }
+
+        categorySortedMap.forEach((categoryName, sortOrder) -> {
+            double totalForCategory = categoryMonthData.getOrDefault(categoryName, new double[13])[12];
+            categorySums.put(categoryName, totalForCategory);
+            categoryAverages.put(categoryName, totalForCategory / 12);
+        });
+
+        for (int i = 0; i < 12; i++) {
+            monthlySums.put(i + 1, totalMonthlySums[i]);
+        }
+
+        List<ExpenseReportDTO> reportList = new ArrayList<>();
+        for (Map.Entry<String, double[]> entry : categoryMonthData.entrySet()) {
+            String category = entry.getKey();
+            double[] values = entry.getValue();
+
+            for (int i = 0; i < 12; i++) {
+                if (values[i] > 0) {
+                    reportList.add(new ExpenseReportDTO(
+                            0, year, i + 1, formatterUtils.getMonthName(i + 1),
+                            null, null, 0.0, values[i], category
+                    ));
+                }
+            }
+        }
+
+        reportList.sort(Comparator.comparing(dto -> categorySortedMap.getOrDefault(dto.getCategory(), Integer.MAX_VALUE)));
+
+        Map<String, Double> sortedCategorySums = categorySums.entrySet()
+                .stream()
+                .sorted(Comparator.comparing(entry -> categorySortedMap.getOrDefault(entry.getKey(), Integer.MAX_VALUE)))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new
+                ));
+        categorySums.clear();
+        categorySums.putAll(sortedCategorySums);
+        return reportList;
     }
 }

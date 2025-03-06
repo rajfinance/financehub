@@ -2,12 +2,13 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <body>
 <c:if test="${not empty owners}">
-<div class="report-buttons">
-    <button id="downloadPdf" class="pdf-btn" data-report="sal" ><img src="${pageContext.request.contextPath}/images/pdf.png" alt="PDF" /></button>
-    <button id="printReport" class="print-btn" data-report="sal"><img src="${pageContext.request.contextPath}/images/print.png" alt="Print" /></button>
-</div>
 <div id="reportContent" style="width:100%">
-    <h1>Owners Report</h1>
+    <h1 class="h1report">Owners Report
+    <div class="report-buttons">
+        <button id="downloadPdf" class="pdf-btn" data-report="sal" ><img src="${pageContext.request.contextPath}/images/pdf.png" alt="PDF" /></button>
+        <button id="printReport" class="print-btn" data-report="sal"><img src="${pageContext.request.contextPath}/images/print.png" alt="Print" /></button>
+    </div>
+    </h1>
     <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
         <thead>
             <tr>

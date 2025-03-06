@@ -15,7 +15,10 @@ public class ExpenseReportDTO {
     private Map<Integer, Double> actualExpenses;
     private double planAmount;
     private double actualAmount;
-    public ExpenseReportDTO(int id, int expenseYear, int month,String monthStr,Map<Integer, Double> plannedExpenses,Map<Integer, Double> actualExpenses,double planAmount,double actualAmount) {
+    private String planAmountStr;
+    private String actualAmountStr;
+    private String category;
+    public ExpenseReportDTO(int id, int expenseYear, int month,String monthStr,Map<Integer, Double> plannedExpenses,Map<Integer, Double> actualExpenses,double planAmount,double actualAmount,String category) {
         this.id = id;
         this.expenseYear = expenseYear;
         this.month = month;
@@ -24,5 +27,6 @@ public class ExpenseReportDTO {
         this.actualExpenses = actualExpenses;
         this.planAmount = planAmount;
         this.actualAmount = actualAmount;
+        this.category = category;
     }
 }

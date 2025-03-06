@@ -3,12 +3,13 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 <body>
 <c:if test="${not empty payments}">
-<div class="report-buttons">
-    <button id="downloadPdf" class="pdf-btn" data-report="sal" ><img src="${pageContext.request.contextPath}/images/pdf.png" alt="PDF" /></button>
-    <button id="printReport" class="print-btn" data-report="sal"><img src="${pageContext.request.contextPath}/images/print.png" alt="Print" /></button>
-</div>
 <div id="reportContent">
-    <h1>Rent Payments Report</h1>
+    <h1 class="h1report">Rent Payments Report
+    <div class="report-buttons">
+        <button id="downloadPdf" class="pdf-btn" data-report="sal" ><img src="${pageContext.request.contextPath}/images/pdf.png" alt="PDF" /></button>
+        <button id="printReport" class="print-btn" data-report="sal"><img src="${pageContext.request.contextPath}/images/print.png" alt="Print" /></button>
+    </div>
+    </h1>
     <c:forEach var="owner" items="${payments}">
     <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
         <thead>
