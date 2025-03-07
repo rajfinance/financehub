@@ -51,33 +51,10 @@ function fetchReportContent(reportType) {
 function attachReportListeners(reportContainer, reportType) {
     const downloadPdfButton = reportContainer.querySelector('#downloadPdf');
     const printReportButton = reportContainer.querySelector('#printReport');
-
    if (downloadPdfButton) {
            downloadPdfButton.addEventListener('click', function () {
-               fetch('/api/pdf/'+reportType+'Pdf', {
-                           method: 'GET',
-                           headers: {
-                               'Accept': 'application/pdf',
-                           }
-                       })
-                       .then(response => {
-                               if (!response.ok) {
-                                   throw new Error(`HTTP error! Status: ${response.status}`);
-                               }
-                               return response.blob();
-                           })
-                           .then(blob => {
-                               const link = document.createElement('a');
-                               link.href = URL.createObjectURL(blob);
-                               link.download = reportType+'.pdf';
-                               link.click();
-
-                               URL.revokeObjectURL(link.href);
-                           })
-                           .catch(error => {
-                               console.error('Error downloading PDF:', error);
-                           });
-               });
+                downloadPdf(reportType);
+           });
        }
 
        if (printReportButton) {
@@ -135,4 +112,40 @@ function attachReportListeners(reportContainer, reportType) {
                });
            });
        }
+}
+function downloadPdf(param) {
+    let parts = param.split("|");
+    let reportType = parts[0];
+    let year = parts.length > 1 ? parts[1] : "";
+
+    let apiUrl = `/api/pdf/${reportType}Pdf`;
+    if (year) {
+        apiUrl += `?year=${year}`;
+    }
+
+    fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/pdf',
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        const fileName = year ? `${reportType}_${year}.pdf` : `${reportType}.pdf`;
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    })
+    .catch(error => {
+        console.error('Error downloading PDF:', error);
+    });
 }

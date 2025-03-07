@@ -8,21 +8,26 @@
 </head>
 <body>
 <div class="container">
-<div id="yearwise" style="background-color: #f9f9f9; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); font-family: Arial, sans-serif;margin-top:20px;">
-<h2>Summary Of Expenses For Year - ${year}</h2>
+<div id="yearwise" style="background-color: #f9f9f9; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); font-family: Arial, sans-serif;margin-top:5px;">
+<h1 class="h1report">YEARLY EXPENSE SUMMARY - ${year}
+    <div class="report-buttons">
+        <button id="downloadPdf" class="pdf-btn" onclick="downloadPdf('yearSummary|${year}')" ><img src="${pageContext.request.contextPath}/images/pdf.png" alt="PDF" /></button>
+        <button id="printReport" class="print-btn" onclick="printReport()"><img src="${pageContext.request.contextPath}/images/print.png" alt="Print" /></button>
+    </div>
+</h1>
 <table class="summaryTable">
     <thead>
-        <tr>
+        <tr style="height: 40px;background-color: #006494;color: white;">
             <th>Category</th>
             <th>JAN</th> <th>FEB</th> <th>MAR</th> <th>APR</th> <th>MAY</th>
             <th>JUN</th> <th>JUL</th> <th>AUG</th> <th>SEP</th> <th>OCT</th>
-            <th>NOV</th> <th>DEC</th> <th>TOTAL</th> <th>AVERAGE</th>
+            <th>NOV</th> <th>DEC</th> <th>TOTAL</th> <th>AVG</th>
         </tr>
     </thead>
     <tbody>
         <c:forEach var="entry" items="${categorySums}">
             <tr>
-                <td>${entry.key}</td>
+                <td style="text-align: left;font-weight: bold;padding-left: 10px;">${entry.key}</td>
                 <c:forEach begin="1" end="12" var="month">
                     <c:set var="amount" value="0" />
                     <c:forEach var="expense" items="${expenseReport}">
@@ -32,16 +37,17 @@
                     </c:forEach>
                     <td>${amount}</td>
                 </c:forEach>
-                <td>${entry.value}</td>
-                <td>${categoryAverages[entry.key]}</td>
+                <td><strong>${entry.value}</strong></td>
+                <td><strong>${categoryAverages[entry.key]}</strong></td>
             </tr>
             </c:forEach>
-            <tr class="total-row">
-                <td><strong>Total</strong></td>
+            <tr style="height: 30px;background-color: #006494;color: white;">
+                <td style="text-align: left;font-weight: bold;padding-left: 10px;"><strong>Total</strong></td>
                 <c:forEach begin="1" end="12" var="month">
                     <td><strong>${monthlySums[month]}</strong></td>
                 </c:forEach>
-                <td colspan="2"></td>
+                <td><strong>${grandTotal}</strong></td>
+                <td><strong>${totalAverage}</strong></td>
             </tr>
     </tbody>
 </table>

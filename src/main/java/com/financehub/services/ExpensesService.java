@@ -1,6 +1,5 @@
 package com.financehub.services;
 
-import com.financehub.dtos.ExpenseDetail;
 import com.financehub.dtos.ExpenseReportDTO;
 import com.financehub.dtos.ExpenseRequest;
 import com.financehub.dtos.ExpensesCategoriesDTO;
@@ -9,13 +8,26 @@ import com.financehub.entities.Expenses;
 import com.financehub.repositories.ExpensesCategoriesRepository;
 import com.financehub.repositories.ExpensesRepository;
 import com.financehub.utils.FormatterUtils;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.colors.DeviceGray;
+import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.HorizontalAlignment;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.VerticalAlignment;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
+import java.io.OutputStream;
 import java.sql.Timestamp;
-import java.time.LocalDate;
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.*;
@@ -181,9 +193,22 @@ public class ExpensesService {
             categoryIds.addAll(actualMap.keySet());
         }
 
-        Map<Integer, String> categoryMap = expensesCategoriesRepository.findCategoryNamesByIds(new ArrayList<>(categoryIds))
-                .stream().collect(Collectors.toMap( row -> (Integer) ((Object[]) row)[0], row -> (String) ((Object[]) row)[1]));
+        List<Object[]> categoryData = (List<Object[]>) expensesCategoriesRepository.findCategoryNamesByIds(new ArrayList<>(categoryIds));
 
+        LinkedHashMap<String, Integer> categorySortedMap = categoryData.stream()
+                .sorted(Comparator.comparing(row -> (Integer) row[2]))
+                .collect(Collectors.toMap(
+                        row -> (String) row[1],
+                        row -> (Integer) row[2],
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new
+                ));
+
+        Map<Integer, String> categoryMap = categoryData.stream()
+                .collect(Collectors.toMap(
+                        row -> (Integer) row[0],
+                        row -> (String) row[1]
+                ));
         Map<String, Map<Integer, double[]>> categoryMonthData = new LinkedHashMap<>();
 
         for (Object[] row : results) {
@@ -220,6 +245,7 @@ public class ExpensesService {
                 reportList.add(new ExpenseReportDTO(0,year, month,"",null,null, planAmount, actualAmount,category));
             }
         }
+        reportList.sort(Comparator.comparingInt(r -> categorySortedMap.getOrDefault(r.getCategory(), Integer.MAX_VALUE)));
 
         return reportList;
     }
@@ -330,4 +356,122 @@ public class ExpensesService {
         categorySums.putAll(sortedCategorySums);
         return reportList;
     }
+
+    public Map<String, Object> getYearlyExpenseData(int year) {
+
+        Map<String, Double> categorySums = new LinkedHashMap<>();
+        Map<Integer, Double> monthlySums = new HashMap<>();
+        Map<String, Double> categoryAverages = new HashMap<>();
+
+        DecimalFormat decimalFormat = new DecimalFormat("#,###");
+        List<ExpenseReportDTO> report = getYearlyCategoryWiseExpenses(year, categorySums, monthlySums, categoryAverages);
+
+        double grandTotalSum = categorySums.values().stream().mapToDouble(Double::doubleValue).sum();
+        double grandTotalAverage = categoryAverages.values().stream().mapToDouble(Double::doubleValue).sum();
+
+        for (ExpenseReportDTO dto : report) {
+            dto.setActualAmountStr(decimalFormat.format(dto.getActualAmount()));
+        }
+        Map<String, String> formattedCategorySums = new LinkedHashMap<>();
+        categorySums.forEach((key, value) -> formattedCategorySums.put(key, decimalFormat.format(value)));
+
+        Map<String, String> formattedCategoryAverages = new LinkedHashMap<>();
+        categoryAverages.forEach((key, value) -> formattedCategoryAverages.put(key, decimalFormat.format(value)));
+
+        Map<Integer, String> formattedMonthlySums = new LinkedHashMap<>();
+        monthlySums.forEach((key, value) -> formattedMonthlySums.put(key, decimalFormat.format(value)));
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("expenseReport", report);
+        data.put("categorySums", formattedCategorySums);
+        data.put("monthlySums", formattedMonthlySums);
+        data.put("categoryAverages", formattedCategoryAverages);
+        data.put("grandTotal", decimalFormat.format(grandTotalSum));
+        data.put("totalAverage", decimalFormat.format(grandTotalAverage));
+        data.put("year", year);
+
+        return data;
+    }
+public void generateYearlyExpensePdf(OutputStream outputStream, Map<String, Object> data) {
+    try {
+        PdfWriter writer = new PdfWriter(outputStream);
+        PdfDocument pdfDoc = new PdfDocument(writer);
+        pdfDoc.setDefaultPageSize(PageSize.A4.rotate());
+        Document document = new Document(pdfDoc);
+
+        Paragraph title = new Paragraph("YEARLY EXPENSE SUMMARY - " + data.get("year"))
+                .setFontSize(20)
+                .setBold()
+                .setTextAlignment(TextAlignment.CENTER).setMarginBottom(10);
+        document.add(title);
+
+        @SuppressWarnings("unchecked")
+        Map<String, String> categorySums = (Map<String, String>) data.get("categorySums");
+        @SuppressWarnings("unchecked")
+        List<ExpenseReportDTO> expenseReport = (List<ExpenseReportDTO>) data.get("expenseReport");
+        @SuppressWarnings("unchecked")
+        Map<Integer, String> monthlySums = (Map<Integer, String>) data.get("monthlySums");
+        @SuppressWarnings("unchecked")
+        Map<String, String> formattedCategoryAverages = (Map<String, String>) data.get("categoryAverages");
+
+        String grandTotal = (String) data.get("grandTotal");
+        String totalAverage = (String) data.get("totalAverage");
+
+        Map<String, String[]> categoryMonthData = new HashMap<>();
+        for (ExpenseReportDTO expense : expenseReport) {
+            categoryMonthData.putIfAbsent(expense.getCategory(), new String[12]);
+            String[] monthlyValues = categoryMonthData.get(expense.getCategory());
+            monthlyValues[expense.getMonth() - 1] = expense.getActualAmountStr();
+        }
+
+        float[] columnWidths = new float[]{3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2};
+        Table table = new Table(columnWidths).useAllAvailableWidth();
+        table.setAutoLayout();
+        table.setHorizontalAlignment(HorizontalAlignment.CENTER);
+        //table.setMarginLeft(-15);
+
+        String[] headers = {"CATEGORY", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "TOTAL", "AVG"};
+        for (String header : headers) {
+            table.addHeaderCell(new Cell()
+                    .add(new Paragraph(header))
+                    .setBold()
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                    .setFontColor(new DeviceRgb(255,255,255))
+                    .setBackgroundColor(new DeviceRgb(0, 100, 148)));
+        }
+
+        for (Map.Entry<String, String> entry : categorySums.entrySet()) {
+            String category = entry.getKey();
+            table.addCell(new Cell().add(new Paragraph(category)).setBold().setPaddingLeft(5));
+
+            String[] monthlyExpenses = categoryMonthData.getOrDefault(category, new String[12]);
+            for (int month = 0; month < 12; month++) {
+                String value = (monthlyExpenses[month] != null) ? monthlyExpenses[month] : "0";
+                table.addCell(new Cell().add(new Paragraph(value)).setTextAlignment(TextAlignment.RIGHT));
+            }
+
+            String total = entry.getValue();
+            String avg = formattedCategoryAverages.getOrDefault(category, "0");
+
+            table.addCell(new Cell().add(new Paragraph(total)).setTextAlignment(TextAlignment.RIGHT).setBold());
+            table.addCell(new Cell().add(new Paragraph(avg)).setTextAlignment(TextAlignment.RIGHT).setBold());
+        }
+
+        table.addCell(new Cell().add(new Paragraph("Total")).setBold().setBackgroundColor(new DeviceRgb(241,248,233)));
+        for (int month = 1; month <= 12; month++) {
+            String monthTotal = monthlySums.getOrDefault(month, "0");
+            table.addCell(new Cell().add(new Paragraph(monthTotal)).setBold().setTextAlignment(TextAlignment.RIGHT).setBackgroundColor(new DeviceRgb(241,248,233)));
+        }
+
+        table.addCell(new Cell().add(new Paragraph(grandTotal)).setBold().setTextAlignment(TextAlignment.RIGHT).setBackgroundColor(new DeviceRgb(241,248,233)));
+        table.addCell(new Cell().add(new Paragraph(totalAverage)).setBold().setTextAlignment(TextAlignment.RIGHT).setBackgroundColor(new DeviceRgb(241,248,233)));
+
+        document.add(table);
+        document.close();
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+
 }

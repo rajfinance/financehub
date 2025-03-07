@@ -1,29 +1,3 @@
-function loadPage(submenuId) {
-    const pageContent = document.getElementById('page-content');
-
-        const allMenuItems = document.querySelectorAll('.menu-bar ul li');
-        allMenuItems.forEach(function(menuItem) {
-            menuItem.classList.remove('active');
-        });
-        const clickedMenuItem = Array.from(allMenuItems).find(item => {
-                return item.querySelector('a').getAttribute('onclick').includes(submenuId);
-        });
-        if (clickedMenuItem) {
-                clickedMenuItem.classList.add('active');
-        }
-
-        const selectedSubmenu = document.getElementById(submenuId);
-        if(submenuId!='home') selectedSubmenu.style.display = 'block';
-        fetch('/' + submenuId)
-            .then(response => response.text())
-            .then(html => {
-                pageContent.innerHTML = html;
-            })
-            .catch(error => {
-                console.error('Error loading content:', error);
-                pageContent.innerHTML = '<p>There was an error loading the content.</p>';
-            });
-}
 function loadContent(apiUrl) {
     const pageContent = document.getElementById('page-content');
     fetch(apiUrl)
@@ -148,8 +122,10 @@ const year = document.getElementById(yearId).value;
         alert("Please select a year.");
         return;
     }
-    const url = `${apiUrl}?year=${encodeURIComponent(year)}`;
+    let lastValue = apiUrl.split("/").pop();
 
+    const url = `${apiUrl}?year=${encodeURIComponent(year)}`;
+    const container = document.getElementById(containerId);
     fetch(url, {
         method: 'GET'
     })
@@ -160,7 +136,6 @@ const year = document.getElementById(yearId).value;
         return response.text();
     })
     .then(html => {
-        const container = document.getElementById(containerId);
         if (!container) {
             alert("Target container not found.");
             return;
@@ -171,6 +146,7 @@ const year = document.getElementById(yearId).value;
         console.error("Error fetching report:", error);
         alert("Error fetching report. Please try again.");
     });
+    attachReportListeners(container,lastValue);
 }
 function setActive(button) {
     button.closest('.form-container').querySelectorAll('button').forEach(btn => btn.classList.remove('active'));

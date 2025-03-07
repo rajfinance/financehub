@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/login.css">
     <script>
         function validateForm() {
             const username = document.getElementById("username").value;

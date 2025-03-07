@@ -132,30 +132,8 @@ public class ExpensesController {
     }
     @GetMapping("/yearSummaryReport")
     public String getYearSummaryReport(@RequestParam("year") int year, Model model) {
-        Map<String, Double> categorySums = new LinkedHashMap<>();
-        Map<Integer, Double> monthlySums = new HashMap<>();
-        Map<String, Double> categoryAverages = new HashMap<>();
-
-        DecimalFormat decimalFormat = new DecimalFormat("#,###");
-        List<ExpenseReportDTO> report = expensesService.getYearlyCategoryWiseExpenses(year, categorySums, monthlySums, categoryAverages);
-
-        for (ExpenseReportDTO dto : report) {
-            dto.setActualAmountStr(decimalFormat.format(dto.getActualAmount()));
-        }
-        Map<String, String> formattedCategorySums = new LinkedHashMap<>();
-        categorySums.forEach((key, value) -> formattedCategorySums.put(key, decimalFormat.format(value)));
-
-        Map<String, String> formattedCategoryAverages = new LinkedHashMap<>();
-        categoryAverages.forEach((key, value) -> formattedCategoryAverages.put(key, decimalFormat.format(value)));
-
-        Map<Integer, String> formattedMonthlySums = new LinkedHashMap<>();
-        monthlySums.forEach((key, value) -> formattedMonthlySums.put(key, decimalFormat.format(value)));
-
-        model.addAttribute("expenseReport", report);
-        model.addAttribute("categorySums", formattedCategorySums);
-        model.addAttribute("monthlySums", formattedMonthlySums);
-        model.addAttribute("categoryAverages", formattedCategoryAverages);
-        model.addAttribute("year",year);
+        Map<String, Object> data = expensesService.getYearlyExpenseData(year);
+        model.addAllAttributes(data);
         return "expenses/yearSummaryReport";
     }
     @DeleteMapping("/deleteAmount")

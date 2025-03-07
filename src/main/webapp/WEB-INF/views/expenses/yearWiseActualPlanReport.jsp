@@ -9,7 +9,7 @@
 </head>
 <body>
 <div class="container">
-<div id="yearwise" style="background-color: #f9f9f9; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); font-family: Arial, sans-serif;margin-top:20px;">
+<div id="yearwise" style="background-color: #f9f9f9; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); font-family: Arial, sans-serif;margin-top:5px;">
 <h2>Plan & Actual Expenses For Year - ${year}</h2>
 <c:set var="months" value="JAN,FEB,MAR,APR,MAY,JUN,JUL,AUG,SEP,OCT,NOV,DEC" />
 <c:set var="monthArray" value="${fn:split(months, ',')}" />

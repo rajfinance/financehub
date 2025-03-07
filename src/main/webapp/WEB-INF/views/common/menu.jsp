@@ -3,13 +3,6 @@
 <script src="/js/validations.js"></script>
 <script src="/js/formUtils.js"></script>
 <script src="/js/printWorkPdf.js"></script>
-<script>
-    window.onload = function() {
-        if ('${not empty sessionScope.username}') {
-            loadPage('home');
-        }
-    };
-</script>
 <div class="menu-bar">
     <ul class="menu-items">
         <c:if test="${empty sessionScope.username}">
