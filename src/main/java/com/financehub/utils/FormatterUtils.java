@@ -45,14 +45,7 @@ public class FormatterUtils {
         return MONTH_NAMES.getOrDefault(month, "Unknown");
     }
 
-    public String formatDate(java.util.Date date) {
-        if (date == null) {
-            return "";
-        }
-        SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
-        return dateFormatter.format(date);
-    }
-    public String formatDate(java.time.LocalDate date) {
+    public String formatDate(LocalDate date) {
         if (date == null) {
             return "";
         }

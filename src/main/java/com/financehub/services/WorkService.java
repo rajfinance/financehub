@@ -52,10 +52,27 @@ public class WorkService {
     @Autowired
     private UserService userService;
 
+    public List<CompanyDTO> getUniqueCompaniesByUserName() {
+        List<CompanyDTO> companyDTOs = null;
+        if (userService.getUserId() != 0) {
+            List<Company> companies = companyRepository.findCompaniesByUserId(userService.getUserId());
+
+            companyDTOs = companies.stream()
+                    .sorted(Comparator.comparing(Company::getExperienceFrom))
+                    .collect(Collectors.collectingAndThen(
+                            Collectors.toMap(Company::getCompanyName, CompanyDTO::new,
+                                    (existing, replacement) -> existing, LinkedHashMap::new
+                            ),
+                            map -> new ArrayList<>(map.values())
+                    ));
+        }
+        return companyDTOs;
+    }
     public List<CompanyDTO> getCompaniesByUserName() {
         List<CompanyDTO> companyDTOs = null;
         if (userService.getUserId() != 0) {
             List<Company> companies = companyRepository.findCompaniesByUserId(userService.getUserId());
+
             companyDTOs =companies.stream()
                     .sorted(Comparator.comparing(Company::getExperienceFrom))
                     .map(CompanyDTO::new)
@@ -147,7 +164,9 @@ public class WorkService {
                         Collectors.collectingAndThen(
                                 Collectors.toList(),
                                 list -> list.stream()
-                                        .sorted(Comparator.comparing(SalaryDTO::getDateCredited))
+                                        .sorted(Comparator.comparing(SalaryDTO::getYear)
+                                                .thenComparing(SalaryDTO::getMonth)
+                                                .thenComparing(SalaryDTO::getDateCredited))
                                         .toList())));
     }
 

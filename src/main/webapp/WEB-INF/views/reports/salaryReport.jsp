@@ -1,4 +1,5 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <body>
 <c:if test="${not empty salaries}">
@@ -31,7 +32,7 @@
                     <c:forEach var="salary" items="${salariesList}">
                         <tr>
                             <td>${salary.companyName}</td>
-                            <td>${salary.monthName}</td>
+                            <td style="text-align: left; padding-left: 60px;">${salary.monthName}</td>
                             <td>${salary.formattedDateCredited}</td>
                             <td style="text-align: right; padding-right: 5px;">${salary.formattedSalaryAmount}</td>
                             <td>

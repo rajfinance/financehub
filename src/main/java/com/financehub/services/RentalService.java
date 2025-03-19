@@ -204,7 +204,7 @@ public class RentalService {
                                     .map(payment -> {
                                         String formattedStartDate = formatterUtils.formatDateToCustomPattern(payment.getRentPeriodStart());
                                         String formattedEndDate = formatterUtils.formatDateToCustomPattern(payment.getRentPeriodEnd());
-                                        String formattedPaidOn = formatterUtils.formatDate(payment.getPaidOn());
+                                        String formattedPaidOn = formatterUtils.formatDateToCustomPattern(payment.getPaidOn());
                                         String formattedAmount = formatterUtils.formatInIndianStyle(payment.getAmount());
 
                                         payment.setFormattedRentPeriodStart(formattedStartDate);

@@ -82,7 +82,7 @@ public class WorkController {
         for (int i = 0; i < 12; i++) {
             monthAbbreviations.add(months[i].substring(0, 3));
         }
-        List<CompanyDTO> companies = workService.getCompaniesByUserName();
+        List<CompanyDTO> companies = workService.getUniqueCompaniesByUserName();
         model.addAttribute("companies", companies);
         model.addAttribute("monthAbbreviations", monthAbbreviations);
         model.addAttribute("action", action);
@@ -137,7 +137,7 @@ public String getSalaryReport(Model model) {
 
         for (SalaryDTO salary : salaryList) {
             if (salary.getDateCredited() != null) {
-                salary.setFormattedDateCredited(formatterUtils.formatDate(salary.getDateCredited()));
+                salary.setFormattedDateCredited(formatterUtils.formatDateToCustomPattern(salary.getDateCredited()));
             }
             if (salary.getSalaryAmount() != null) {
                 double salaryAmount = salary.getSalaryAmount();
