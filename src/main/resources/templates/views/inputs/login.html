@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - RajaFinanceHub</title>
+</head>
+<body>
+<div th:replace="~{common/header :: header}"></div>
+
+<div class="login-page">
+    <main class="login-container">
+        <div class="login-form">
+            <h1>Login</h1>
+
+            <div th:if="${error != null}" style="color: red; text-align: center; font-weight: bold;" th:text="${error}"></div>
+
+            <form th:action="@{/api/perform_login}" method="post" onsubmit="return validateLoginForm()">
+                <div class="input-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required="required" />
+                </div>
+                <div class="input-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required="required" />
+                </div>
+                <button type="submit">Login</button>
+            </form>
+            <div class="signup-link">
+                <p>Don't have an account? <a th:href="@{/signup}" href="/signup">Sign Up</a></p>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

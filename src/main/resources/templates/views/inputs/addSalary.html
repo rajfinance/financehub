@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:if="${session.username != null}">
+    <div class="form-container">
+        <h1 th:text="${action == 'edit'} ? 'Edit Salary' : 'Add Salary'">Add Salary</h1>
+
+        <div th:if="${successMessage != null}" style="color: green; text-align: center; font-weight: bold; margin-left: 280px;" th:text="${successMessage}"></div>
+
+        <form id="addSalaryForm" th:action="@{/api/work/addSalary}" method="post" onsubmit="submitForm(event)">
+            <input th:if="${action == 'edit'}" type="hidden" name="salaryId" th:value="${salary?.salaryId}" />
+
+            <div>
+                <label for="companyId">Company Name<span class="mandatory">*</span>:</label>
+                <select id="companyId" name="companyId" required="required">
+                    <option value="">Select Company</option>
+                    <th:block th:each="company : ${companies}">
+                        <option th:value="${company.companyId}" th:selected="${salary != null and company.companyId == salary.companyId}" th:text="${company.companyName}"></option>
+                    </th:block>
+                    <th:block th:if="${companies == null or companies.isEmpty()}">
+                        <option value="">No companies available</option>
+                    </th:block>
+                </select>
+            </div>
+
+            <div>
+                <label for="month">Month<span class="mandatory">*</span>:</label>
+                <select id="month" name="month" required="required">
+                    <option value="">Select Month</option>
+                    <th:block th:each="month, status : ${monthAbbreviations}">
+                        <option th:value="${status.count}" th:selected="${salary != null and status.count == salary.month}" th:text="${month}"></option>
+                    </th:block>
+                </select>
+            </div>
+
+            <div>
+                <label for="year">Year<span class="mandatory">*</span>:</label>
+                <input type="number" id="year" name="year" min="2000" max="2100" th:value="${salary != null ? salary.year : ''}" required="required" />
+            </div>
+
+            <div>
+                <label for="dateCredited">Date Credited<span class="mandatory">*</span>:</label>
+                <input type="date" id="dateCredited" name="dateCredited" th:value="${salary != null ? salary.dateCredited : ''}" required="required" max="9999-12-31" />
+            </div>
+
+            <div>
+                <label for="salaryAmount">Salary Amount<span class="mandatory">*</span>:</label>
+                <input type="number" id="salaryAmount" name="salaryAmount" th:value="${salary != null and salary.salaryAmount != null ? salary.salaryAmount : ''}" step="0.01" required="required" />
+            </div>
+
+            <button type="submit" th:text="${action == 'edit'} ? 'Update Salary' : 'Add Salary'">Add Salary</button>
+        </form>
+    </div>
+</th:block>
+<th:block th:if="${session.username == null}">
+    <p>Please log in to access this page.</p>
+</th:block>
+</body>
+</html>

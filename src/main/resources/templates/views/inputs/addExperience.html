@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:if="${session.username != null}">
+    <div class="form-container">
+        <h1 th:text="${action == 'edit'} ? 'Edit Experience' : 'Add Experience'">Add Experience</h1>
+
+        <div th:if="${successMessage != null}" style="color: green; text-align: center; font-weight: bold; margin-left: 200px;" th:text="${successMessage}"></div>
+
+        <div th:if="${error != null}" style="color: red; text-align: center; font-weight: bold; margin-left: 100px;">
+            <span th:text="${error}"></span> <a th:href="@{/api/work/workReport}" href="/api/work/workReport" style="color: blue;">View Experience</a>
+        </div>
+
+        <form id="addExperience" th:action="@{/api/work/addExperience}" method="post" onsubmit="submitForm(event)">
+            <input th:if="${action == 'edit'}" type="hidden" name="companyId" th:value="${company?.companyId}" />
+
+            <div>
+                <label for="companyName">Company Name<span class="mandatory">*</span>:</label>
+                <input type="text" id="companyName" name="companyName" th:value="${company != null ? company.companyName : ''}" required="required" />
+            </div>
+
+            <div>
+                <label for="clientName">Client Name<span class="mandatory">*</span>:</label>
+                <input type="text" id="clientName" name="clientName" th:value="${company != null ? company.clientName : ''}" required="required" />
+            </div>
+
+            <div>
+                <label for="projectName">Project Name<span class="mandatory">*</span>:</label>
+                <input type="text" id="projectName" name="projectName" th:value="${company != null ? company.projectName : ''}" required="required" />
+            </div>
+
+            <div>
+                <label for="fromDate">Experience From (MM/DD/YYYY)<span class="mandatory">*</span>:</label>
+                <input type="date" id="fromDate" name="fromDate" th:value="${company != null ? company.fromDate : ''}" required="required" max="9999-12-31" class="styled-date" />
+            </div>
+
+            <div>
+                <label>Currently Employed <input type="checkbox" id="currentlyEmployed" name="currentlyEmployed" th:checked="${company != null and company.currentlyEmployed}" onclick="toggleToDate()" /></label>
+            </div>
+
+            <div>
+                <label for="toDate">Experience To (MM/DD/YYYY):</label>
+                <input type="date" id="toDate" name="toDate" th:value="${company != null and company.toDate != null ? company.toDate : ''}" th:disabled="${company != null and company.currentlyEmployed}" max="9999-12-31" />
+            </div>
+
+            <button type="submit" th:text="${action == 'edit'} ? 'Update Experience' : 'Add Experience'">Add Experience</button>
+        </form>
+    </div>
+</th:block>
+<th:block th:if="${session.username == null}">
+    <p>Please log in to access this page.</p>
+</th:block>
+</body>
+</html>

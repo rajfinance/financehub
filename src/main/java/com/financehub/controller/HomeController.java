@@ -16,49 +16,53 @@ public class HomeController {
     public String index() {
         return "index";
     }
+    @GetMapping("/error")
+    public String error() {
+        return "error";
+    }
 
     @GetMapping("/login")
     public String showLoginPage(Model model) {
         model.addAttribute("userDTO", new LoginDTO());
         return "inputs/login";
     }
+
     @GetMapping("/signup")
     public String showSignupPage() {
         return "inputs/signup";
     }
     @GetMapping("/home")
-    public String loadHomePage(Model model,HttpSession session) {
-         model.addAttribute("username", session.getAttribute("username"));
+    public String loadHomePage(Model model, HttpSession session) {
+        String username = (String) session.getAttribute("username");
+        if (username == null) {
+            return "redirect:/login";
+        }
+        model.addAttribute("username", username);
         return "login/dashboard";
     }
+
     @GetMapping("/professional")
     public String loadProfessionalPage(Model model) {
-       // model.addAttribute("professionalData", professionalService.getData());
-        return "login/professional";
+        return "views/login/professional";
     }
 
     @GetMapping("/investments")
     public String loadInvestmentsPage(Model model) {
-       // model.addAttribute("investmentData", investmentService.getData());
-        return "login/investments";
+        return "views/login/investments";
     }
 
     @GetMapping("/rentals")
     public String loadRentalsPage(Model model) {
-        //model.addAttribute("rentalsData", rentalsService.getData());
-        return "login/rentals";
+        return "views/login/rentals";
     }
 
     @GetMapping("/loans")
     public String loadLoansPage(Model model) {
-        //model.addAttribute("loansData", loansService.getData());
-        return "login/loans";
+        return "views/login/loans";
     }
 
     @GetMapping("/expenses")
     public String loadExpensesPage(Model model) {
-        //model.addAttribute("expensesData", expensesService.getData());
-        return "login/expenses";
+        return "views/login/expenses";
     }
-
 }

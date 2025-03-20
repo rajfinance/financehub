@@ -1,3 +1,17 @@
+function validateLoginForm() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    if (username === "") {
+        alert("Username cannot be empty");
+        return false;
+    }
+    if (password === "") {
+        alert("Password cannot be empty");
+        return false;
+    }
+    return true;
+}
 function isValidDate(dateString) {
         const dateParts = dateString.split('-');
 

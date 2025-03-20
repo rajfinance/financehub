@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:if="${session.username != null}">
+    <div class="content">
+        <h1>Professional Reports</h1>
+        <div class="tabs">
+            <button class="tab-button active" onclick="showReport('expReport')">Experience Report</button>
+            <button class="tab-button" onclick="showReport('salaryReport')">Salary Report</button>
+        </div>
+    </div>
+    <div class="tab-content" id="expReport" style="display:none;"></div>
+    <div class="tab-content" id="salaryReport" style="display:none;"></div>
+</th:block>
+<th:block th:if="${session.username == null}">
+    <p>Please log in to access this page.</p>
+</th:block>
+</body>
+</html>

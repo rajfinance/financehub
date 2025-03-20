@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:if="${session.username != null}">
+    <th:block th:if="${salaries != null and not salaries.isEmpty()}">
+        <div id="reportContent">
+            <h1 class="h1report">Salary Report
+                <div class="report-buttons">
+                    <button id="downloadPdf" class="pdf-btn" data-report="sal">
+                        <img th:src="@{/images/pdf.png}" src="/images/pdf.png" alt="PDF" />
+                    </button>
+                    <button id="printReport" class="print-btn" data-report="sal">
+                        <img th:src="@{/images/print.png}" src="/images/print.png" alt="Print" />
+                    </button>
+                </div>
+            </h1>
+
+            <th:block th:each="entry : ${salaries}">
+                <div class="year-header" th:text="'YEAR - ' + ${entry.key}"></div>
+
+                <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+                    <thead style="background-color: #E3F2FD; color: black; text-align: center; height: 25px; font-size: 16px;">
+                    <tr>
+                        <th class="second">Company</th>
+                        <th class="second">Month</th>
+                        <th class="second">Date Credited</th>
+                        <th class="second">Salary Amount</th>
+                        <th class="second" style="padding: 10px 15px;" rowspan="2">Action</th>
+                    </tr>
+                    </thead>
+                    <tbody style="text-align: -webkit-center; text-transform: capitalize;">
+                    <th:block th:each="salary : ${entry.value}">
+                        <tr>
+                            <td th:text="${salary.companyName}"></td>
+                            <td style="text-align: left; padding-left: 60px;" th:text="${salary.monthName}"></td>
+                            <td th:text="${salary.formattedDateCredited}"></td>
+                            <td style="text-align: right; padding-right: 5px;" th:text="${salary.formattedSalaryAmount}"></td>
+                            <td>
+                                <a href="javascript:void(0);"
+                                   th:onclick="'loadEditPageContent(\'/api/work/addSalary?action=edit&id=' + ${salary.salaryId} + '\', \'#page-content\')'"
+                                   style="text-decoration: none;">
+                                    <img th:src="@{/images/edit-icon.png}" src="/images/edit-icon.png" alt="Edit" style="width: 20px; height: 20px; margin-right: 20px; margin-left: 15px;" />
+                                </a>
+                                <a href="javascript:void(0);" class="delete-btn" th:attr="data-report-type='salaryReport', data-id=${salary.salaryId}" th:onclick="'deleteEntity(this, \'salary\', \'/api/work/deleteSalary\')'">
+                                    <img th:src="@{/images/delete-icon.png}" src="/images/delete-icon.png" alt="Delete" style="width: 20px; height: 20px;" />
+                                </a>
+                            </td>
+                        </tr>
+                    </th:block>
+                    <tr style="font-weight: bold; background-color: #F1F8E9; height: 30px;">
+                        <td colspan="3" style="text-align: right;">Total for Year:</td>
+                        <td style="text-align: right; padding-right: 5px;" th:text="${yearWiseTotals[entry.key]}"></td>
+                        <td></td>
+                    </tr>
+                    </tbody>
+                </table>
+                <br>
+            </th:block>
+
+            <br>
+            <div class="summary">
+                <h2 class="year-header" style="width: 50%; margin: auto;">Year-Wise Totals</h2>
+                <table style="width: 50%; border-collapse: collapse; font-family: Arial, sans-serif; margin: auto;">
+                    <thead style="background-color: #E3F2FD; color: black; text-align: center; font-size: 16px;">
+                    <tr style="height: 30px;">
+                        <th class="second">Year</th>
+                        <th class="second">Total Salary</th>
+                    </tr>
+                    </thead>
+                    <tbody style="text-align: center;">
+                    <th:block th:each="yearEntry : ${yearWiseTotals}">
+                        <tr style="height: 30px;">
+                            <td th:text="${yearEntry.key}"></td>
+                            <td style="text-align: right; padding-right: 15px;" th:text="${yearEntry.value}"></td>
+                        </tr>
+                    </th:block>
+                    <tr style="font-weight: bold; background-color: #F1F8E9; height: 30px;">
+                        <td>Grand Total:</td>
+                        <td style="text-align: right; padding-right: 15px;" th:text="${totalSum}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </th:block>
+    <th:block th:if="${salaries == null or salaries.isEmpty()}">
+        <h2 style="text-align: center; color: #333; padding-bottom: 10px;">No Salary Data Available.</h2>
+    </th:block>
+</th:block>
+<th:block th:if="${session.username == null}">
+    <p>Please log in to access this page.</p>
+</th:block>
+</body>
+</html>

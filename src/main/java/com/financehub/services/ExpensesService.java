@@ -8,8 +8,6 @@ import com.financehub.entities.Expenses;
 import com.financehub.repositories.ExpensesCategoriesRepository;
 import com.financehub.repositories.ExpensesRepository;
 import com.financehub.utils.FormatterUtils;
-import com.itextpdf.kernel.colors.ColorConstants;
-import com.itextpdf.kernel.colors.DeviceGray;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;

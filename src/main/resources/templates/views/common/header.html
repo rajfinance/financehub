@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="header">
+    <!-- CSS and JS within the fragment -->
+    <link rel="stylesheet" th:href="@{/css/finStyles.css}" href="/css/finStyles.css">
+    <script th:src="@{/js/validations.js}" src="/js/validations.js"></script>
+    <script th:src="@{/js/formUtils.js}" src="/js/formUtils.js"></script>
+    <script th:src="@{/js/printWorkPdf.js}" src="/js/printWorkPdf.js"></script>
+
+    <header>
+        <div class="header-container">
+            <div class="left-section"></div>
+            <div class="middle-section">
+                <div class="logo">
+                    <img th:src="@{/images/financehublogo.png}" src="/images/financehublogo.png" alt="Logo">
+                    <span>RajaFinanceHub</span>
+                </div>
+            </div>
+            <div class="right-section">
+                <div class="userinfo">
+                    <th:block th:if="${session.username != null}">
+                        <span th:text="${session.username}"></span>
+                        <img th:src="@{/images/signin.png}" src="/images/signin.png" alt="User Image" class="user-image">
+                    </th:block>
+                    <th:block th:if="${session.username == null}">
+                        <div class="signin">
+                            <a th:href="@{/login}" href="/login" class="signin-link">
+                                <span>SignIn</span>
+                                <img th:src="@{/images/signin.png}" src="/images/signin.png" alt="Login" class="login-image">
+                            </a>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <th:block th:replace="~{common/menu :: menu}"></th:block>
+</div>
+</body>
+</html>
