@@ -376,8 +376,8 @@ public class ExpensesService {
         Map<String, String> formattedCategoryAverages = new LinkedHashMap<>();
         categoryAverages.forEach((key, value) -> formattedCategoryAverages.put(key, decimalFormat.format(value)));
 
-        Map<Integer, String> formattedMonthlySums = new LinkedHashMap<>();
-        monthlySums.forEach((key, value) -> formattedMonthlySums.put(key, decimalFormat.format(value)));
+        Map<String, String> formattedMonthlySums = new LinkedHashMap<>();
+        monthlySums.forEach((key, value) -> formattedMonthlySums.put(String.valueOf(key), decimalFormat.format(value)));
 
         Map<String, Object> data = new HashMap<>();
         data.put("expenseReport", report);

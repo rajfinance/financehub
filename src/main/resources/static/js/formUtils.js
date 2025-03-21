@@ -82,6 +82,15 @@ function deleteEntity(anchor, entityType, apiEndpoint) {
         });
     }
 }
+function callEditCategory(element) {
+        const id = element.getAttribute('data-id') || '';
+        const name = element.getAttribute('data-name') || '';
+        const icon = element.getAttribute('data-icon') || '';
+        const sortOrder = element.getAttribute('data-sort-order') || '';
+        const enabled = element.getAttribute('data-enabled') === 'true';
+
+        editCategory(id, name, icon, sortOrder, enabled);
+}
 function editCategory(id, name, icon, sortOrder, enabled) {
     document.getElementById("categoryId").value = id;
     document.getElementById("categoryName").value = name;

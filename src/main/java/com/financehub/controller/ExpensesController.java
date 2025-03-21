@@ -106,26 +106,31 @@ public class ExpensesController {
     public String getYearWiseActualPlan(@RequestParam("year") int year, Model model) {
         List<ExpenseReportDTO> reportData = expensesService.getYearlyPlanActual(userService.getUserId(), year);
 
-        Map<Integer, Integer> monthlyPlanTotalMap = new HashMap<>();
-        Map<Integer, Integer> monthlyActualTotalMap = new HashMap<>();
-
+        Map<String, String> monthlyPlanTotalMap = new HashMap<>();
+        Map<String, String> monthlyActualTotalMap = new HashMap<>();
+        DecimalFormat df = new DecimalFormat("#,##0");
         for (int i = 1; i <= 12; i++) {
-            monthlyPlanTotalMap.put(i, 0);
-            monthlyActualTotalMap.put(i, 0);
+            monthlyPlanTotalMap.put(String.valueOf(i), "0");
+            monthlyActualTotalMap.put(String.valueOf(i), "0");
         }
 
         for (ExpenseReportDTO data : reportData) {
-            int month = data.getMonth();
+            String month = String.valueOf(data.getMonth());
             int planAmount = (int) Math.floor(data.getPlanAmount());
             int actualAmount = (int) Math.floor(data.getActualAmount());
 
-            monthlyPlanTotalMap.put(month, monthlyPlanTotalMap.get(month) + planAmount);
-            monthlyActualTotalMap.put(month, monthlyActualTotalMap.get(month) + actualAmount);
-        }
+            int currentPlanTotal = monthlyPlanTotalMap.containsKey(month)
+                    ? Integer.parseInt(monthlyPlanTotalMap.get(month).replace(",", ""))
+                    : 0;
+            int currentActualTotal = monthlyActualTotalMap.containsKey(month)
+                    ? Integer.parseInt(monthlyActualTotalMap.get(month).replace(",", ""))
+                    : 0;
 
+            monthlyPlanTotalMap.put(month, df.format(currentPlanTotal + planAmount));
+            monthlyActualTotalMap.put(month, df.format(currentActualTotal + actualAmount));
+        }
         model.addAttribute("monthlyPlanTotalMap", monthlyPlanTotalMap);
         model.addAttribute("monthlyActualTotalMap", monthlyActualTotalMap);
-
         model.addAttribute("reportData", reportData);
         model.addAttribute("year", year);
         return "expenses/yearWiseActualPlanReport";
