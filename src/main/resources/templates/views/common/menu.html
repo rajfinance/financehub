@@ -18,8 +18,7 @@
 
             <!-- Show user menu if the user is logged in -->
             <th:block th:if="${session.username != null}">
-                <li class="menu-item"><a href="javascript:void(0);" th:onclick="'loadContent(\'/home\')'">Home</a></li>
-
+                <li class="menu-item"><a th:href="@{/api/home}">Home</a></li>
                 <li class="menu-item">
                     <a href="#">Professional</a>
                     <ul class="dropdown">
@@ -76,7 +75,7 @@
 
     <!-- Content Section -->
     <th:block th:if="${session.username != null}">
-        <div class="main-content">
+        <div class="main-content" id="mainContent">
             <div id="username" style="display: none;" th:text="${session.username}"></div>
             <div id="page-content"></div>
         </div>

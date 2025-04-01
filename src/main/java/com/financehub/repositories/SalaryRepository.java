@@ -12,4 +12,6 @@ public interface SalaryRepository extends JpaRepository<Salary, Long> {
     @Query("SELECT s FROM Salary s WHERE s.user = :user ORDER BY s.salaryYear DESC, s.salaryMonth ASC")
     List<Salary> findAllSalariesByUser(@Param("user") ClientUser user);
     boolean existsByCompanyId(Long companyId);
+    List<Salary> findByUserIdAndSalaryYear(Long userId, int salaryYear);
+    List<Salary> findByUserId(Long userId);
 }

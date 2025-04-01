@@ -32,6 +32,7 @@ import java.io.OutputStream;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Year;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -330,6 +331,26 @@ public class WorkService {
         return null;
     }
 
+    public Map<String, Integer> getMonthlySalaryData(int currentYear) {
+        List<Salary> salaries = salaryRepository.findByUserIdAndSalaryYear(userService.getUserId(),currentYear);
+        Map<String, Integer> monthlySalaryMap = new LinkedHashMap<>();
+        for (Salary salary : salaries) {
+            String month = formatterUtils.getMonthName(salary.getSalaryMonth());
+            Integer amount = salary.getSalaryAmount().intValue();
+            monthlySalaryMap.put(month, amount);
+        }
+        return monthlySalaryMap;
+    }
+    public Map<String, Integer> getYearlySalaryData() {
+        List<Salary> salaries = salaryRepository.findByUserId(userService.getUserId());
+        Map<String, Integer> yearlySalaryMap = new LinkedHashMap<>();
+        yearlySalaryMap = salaries.stream()
+                .collect(Collectors.groupingBy(
+                        salary -> String.valueOf(salary.getSalaryYear()),
+                        Collectors.summingInt(salary -> salary.getSalaryAmount().intValue())
+                ));
+        return yearlySalaryMap;
+    }
     @PostMapping("/calculate")
     public String calculate(
             @RequestParam("axis") double axis,
@@ -356,4 +377,6 @@ public class WorkService {
 
         return "index";
     }
+
+
 }

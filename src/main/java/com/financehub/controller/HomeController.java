@@ -31,15 +31,6 @@ public class HomeController {
     public String showSignupPage() {
         return "inputs/signup";
     }
-    @GetMapping("/home")
-    public String loadHomePage(Model model, HttpSession session) {
-        String username = (String) session.getAttribute("username");
-        if (username == null) {
-            return "redirect:/login";
-        }
-        model.addAttribute("username", username);
-        return "login/dashboard";
-    }
 
     @GetMapping("/professional")
     public String loadProfessionalPage(Model model) {

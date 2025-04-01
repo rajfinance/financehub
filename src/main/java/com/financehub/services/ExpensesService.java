@@ -471,5 +471,40 @@ public void generateYearlyExpensePdf(OutputStream outputStream, Map<String, Obje
         e.printStackTrace();
     }
 }
+public Map<String, Integer> getMonthlyExpenseData(int currentYear) {
+    List<Expenses> expenses = expensesRepository.findByUserIdAndExpenseYear(userService.getUserId(), currentYear);
+    Map<String, Integer> expenseMap = new LinkedHashMap<>();
 
+    for (Expenses expense : expenses) {
+        String monthName = formatterUtils.getMonthName(expense.getExpenseMonth());
+        int totalAmount = expense.getActualExpenses().values().stream()
+                .mapToInt(amount -> (int) Math.round(amount))
+                .sum();
+        expenseMap.put(monthName, expenseMap.getOrDefault(monthName, 0) + totalAmount);
+    }
+
+    return expenseMap;
+    }
+
+    public Map<String, Integer> getCurrentMonthCategoryData(int currentYear, int currentMonth) {
+        Optional<Expenses> expensesOpt = expensesRepository.findByUserIdAndExpenseYearAndExpenseMonth(userService.getUserId(), currentYear,currentMonth);
+        Map<String, Integer> actualExpensesMap = new HashMap<>();
+
+        if (expensesOpt.isPresent()) {
+            Expenses expenses = expensesOpt.get();
+            actualExpensesMap = expenses.getActualExpenses()
+                    .entrySet()
+                    .stream()
+                    .collect(Collectors.toMap(
+                            entry -> {
+                                Optional<ExpenseCategories> categoryOpt = expensesCategoriesRepository.findById(entry.getKey());
+                                return categoryOpt.map(ExpenseCategories::getName).orElse("Unknown");
+                            },
+                            entry -> {
+                               return (int) Math.round(entry.getValue());
+                            }
+                    ));
+        }
+        return actualExpensesMap;
+    }
 }

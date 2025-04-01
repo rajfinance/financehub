@@ -2,19 +2,21 @@ package com.financehub.controller;
 
 import com.financehub.dtos.ClientUserDTO;
 import com.financehub.dtos.LoginDTO;
+import com.financehub.services.ExpensesService;
+import com.financehub.services.RentalService;
 import com.financehub.services.UserService;
-import jakarta.servlet.http.HttpServletResponse;
+import com.financehub.services.WorkService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.Year;
 import java.util.Map;
 
 @Controller
@@ -22,7 +24,12 @@ import java.util.Map;
 public class ActionController {
     @Autowired
     private UserService userService;
-
+    @Autowired
+    private WorkService workService;
+    @Autowired
+    private RentalService rentalService;
+    @Autowired
+    private ExpensesService expensesService;
     @PostMapping(value = "/perform_signup", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public String performSignupForm(@ModelAttribute ClientUserDTO userDTO, RedirectAttributes redirectAttributes) {
         Map<String, String> response = userService.handleSignup(userDTO);
@@ -57,7 +64,35 @@ public class ActionController {
             return "redirect:/login";
         }
         model.addAttribute("username", username);
-        return "login/home";
+
+        int currentYear = Year.now().getValue();
+        int currentMonth = LocalDate.now().getMonthValue();
+        if (currentMonth == 1) {
+            currentMonth = 12;
+            currentYear -= 1;
+        } else {
+            currentMonth -= 1;
+        }
+
+        Map<String,Integer> monthlySal = workService.getMonthlySalaryData(currentYear);
+        model.addAttribute("monthlySalaryData", monthlySal);
+
+        Map<String,Integer> yearlySal = workService.getYearlySalaryData();
+        model.addAttribute("yearlySalaryData", yearlySal);
+
+        Map<String,Integer> yearlyRent = rentalService.getYearlyRentData();
+        model.addAttribute("yearlyRentData", yearlyRent);
+
+        Map<String, Integer> monthlySalaryData = workService.getMonthlySalaryData(currentYear);
+        Map<String, Integer> monthlyExpenseData = expensesService.getMonthlyExpenseData(currentYear);
+
+        model.addAttribute("salaryData", monthlySalaryData);
+        model.addAttribute("expenseData", monthlyExpenseData);
+
+        Map<String,Integer> categoryData = expensesService.getCurrentMonthCategoryData(currentYear,currentMonth);
+        model.addAttribute("categoryData", categoryData);
+
+        return "login/dashboard";
     }
 
     @RequestMapping("/logout")

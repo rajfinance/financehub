@@ -441,6 +441,12 @@ public class RentalService {
         document.close();
     }
 
-
-
+    public Map<String, Integer> getYearlyRentData() {
+        List<RentPayment> rentList = rentPaymentRepository.findByUserId(userService.getUserId());
+        return rentList.stream()
+                .collect(Collectors.groupingBy(
+                        rent -> String.valueOf(rent.getPaidOn().getYear()),
+                        Collectors.summingInt(rent -> rent.getAmount().intValue())
+                ));
+    }
 }

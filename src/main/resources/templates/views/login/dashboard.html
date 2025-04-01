@@ -2,10 +2,41 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
 <th:block th:if="${session.username != null}">
-    <div class="container">
+<div th:replace="~{common/header :: header}"></div>
+    <script th:inline="javascript">
+        var monthlySalaryData = /*[[${monthlySalaryData}]]*/ {};
+        var yearlySalaryData = /*[[${yearlySalaryData}]]*/ {};
+        var yearlyRentData = /*[[${yearlyRentData}]]*/ {};
+        var salaryData = /*[[${salaryData}]]*/ {};
+        var expenseData = /*[[${expenseData}]]*/ {};
+        var categoryData = /*[[${categoryData}]]*/ {};
+    </script>
+    <script th:src="@{/js/homeCharts.js}" src="/js/homeCharts.js"></script>
+    <div class="container" data-page="dashboard" id="dashboardContent">
         <div class="content-box">
             <h1 th:text="'Dashboard For User ' + ${username}">Dashboard For User</h1>
             <p>Welcome to your dashboard! Here you can monitor your professional milestones, manage your investments, track rental incomes, stay updated on loan applications, and keep an eye on expenses. Navigate through the menu to explore each section and stay organized.</p>
+            <div class="dashboard">
+                <div class="chart-row">
+                    <div class="chart-container">
+                        <canvas id="monthlySalaryChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="yearlySalaryChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="rentChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-row">
+                    <div class="chart-container">
+                        <canvas id="salaryExpenseChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="expenseCategoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </th:block>

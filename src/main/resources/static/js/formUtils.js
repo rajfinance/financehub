@@ -1,5 +1,13 @@
 function loadContent(apiUrl) {
     const pageContent = document.getElementById('page-content');
+    const dashboardContent = document.getElementById('dashboardContent');
+    const mainContent = document.getElementById('mainContent');
+    if (dashboardContent) {
+        dashboardContent.style.display = 'none';
+    }
+    if (mainContent) {
+        mainContent.style.display = 'block';
+    }
     fetch(apiUrl)
         .then(response => response.text())
         .then(html => {

@@ -914,3 +914,24 @@ button[type="submit"]:hover {
     padding: 5px;
     text-align: right;
 }
+
+/* Charts related styles */
+.dashboard {
+    padding: 20px;
+}
+
+.chart-row {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+.chart-container {
+    flex: 1;
+    margin: 0 10px;
+    max-width: 32%;
+}
+
+.chart-container canvas {
+    width: 100%;
+    height: auto;
+}
