@@ -17,7 +17,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.Year;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/api")
@@ -78,7 +80,17 @@ public class ActionController {
         model.addAttribute("monthlySalaryData", monthlySal);
 
         Map<String,Integer> yearlySal = workService.getYearlySalaryData();
+        Map<String,Integer> yearlyExp = expensesService.getYearlyExpenseData();
+        Set<String> allYears = new HashSet<>();
+        allYears.addAll(yearlySal.keySet());
+        allYears.addAll(yearlyExp.keySet());
+
+        for (String year : allYears) {
+            yearlySal.putIfAbsent(year, 0);
+            yearlyExp.putIfAbsent(year, 0);
+        }
         model.addAttribute("yearlySalaryData", yearlySal);
+        model.addAttribute("yearlyExpenseData", yearlyExp);
 
         Map<String,Integer> yearlyRent = rentalService.getYearlyRentData();
         model.addAttribute("yearlyRentData", yearlyRent);

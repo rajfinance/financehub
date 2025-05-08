@@ -92,7 +92,7 @@ public class PdfReportController {
     @GetMapping("/yearSummaryPdf")
     public void downloadYearSummaryReport(@RequestParam("year") int year,HttpServletResponse response) {
         try {
-            Map<String, Object> data = expensesService.getYearlyExpenseData(year);
+            Map<String, Object> data = expensesService.getYearWiseExpenseData(year);
 
             response.setContentType("application/pdf");
             response.setHeader("Content-Disposition", "attachment; filename=Yearly_Expense_Summary.pdf");

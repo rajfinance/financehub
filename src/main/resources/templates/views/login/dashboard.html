@@ -6,6 +6,7 @@
     <script th:inline="javascript">
         var monthlySalaryData = /*[[${monthlySalaryData}]]*/ {};
         var yearlySalaryData = /*[[${yearlySalaryData}]]*/ {};
+        var yearlyExpenseData = /*[[${yearlyExpenseData}]]*/ {};
         var yearlyRentData = /*[[${yearlyRentData}]]*/ {};
         var salaryData = /*[[${salaryData}]]*/ {};
         var expenseData = /*[[${expenseData}]]*/ {};
@@ -15,11 +16,10 @@
     <div class="container" data-page="dashboard" id="dashboardContent">
         <div class="content-box">
             <h1 th:text="'Dashboard For User ' + ${username}">Dashboard For User</h1>
-            <p>Welcome to your dashboard! Here you can monitor your professional milestones, manage your investments, track rental incomes, stay updated on loan applications, and keep an eye on expenses. Navigate through the menu to explore each section and stay organized.</p>
             <div class="dashboard">
                 <div class="chart-row">
                     <div class="chart-container">
-                        <canvas id="monthlySalaryChart"></canvas>
+                        <canvas id="salaryExpenseChart"></canvas>
                     </div>
                     <div class="chart-container">
                         <canvas id="yearlySalaryChart"></canvas>
@@ -28,14 +28,14 @@
                         <canvas id="rentChart"></canvas>
                     </div>
                 </div>
-                <div class="chart-row">
-                    <div class="chart-container">
-                        <canvas id="salaryExpenseChart"></canvas>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="expenseCategoryChart"></canvas>
-                    </div>
-                </div>
+<!--                <div class="chart-row">-->
+<!--                    <div class="chart-container">-->
+<!--                        <canvas id="monthlySalaryChart"></canvas>-->
+<!--                    </div>-->
+<!--                    <div class="chart-container">-->
+<!--                        <canvas id="expenseCategoryChart"></canvas>-->
+<!--                    </div>-->
+<!--                </div>-->
             </div>
         </div>
     </div>

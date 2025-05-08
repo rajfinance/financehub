@@ -16,7 +16,7 @@
             </thead>
             <tbody style="text-align: -webkit-center; text-transform: capitalize;">
             <tr th:each="report : ${reports}">
-                <td th:text="${report.monthStr}"></td>
+                <td th:text="${report.monthStr}" style="text-align: left;padding-left: 30px;"></td>
                 <td th:text="${report.planAmount}"></td>
                 <td>
                     <a href="javascript:void(0);"

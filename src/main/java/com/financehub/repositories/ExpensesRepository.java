@@ -27,5 +27,5 @@ public interface ExpensesRepository extends JpaRepository<Expenses, Integer> {
     @Modifying
     @Query("UPDATE Expenses e SET e.actualExpenses = NULL WHERE e.id = :expenseId")
     void clearActualById(@Param("expenseId") Long expenseId);
-    List<Expenses> findByUserIdAndExpenseYear(Long userId, int year);
+    List<Expenses> findByUserIdAndExpenseYearOrderByExpenseMonth(Long userId, int year);
 }

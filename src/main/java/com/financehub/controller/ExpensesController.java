@@ -137,7 +137,7 @@ public class ExpensesController {
     }
     @GetMapping("/yearSummaryReport")
     public String getYearSummaryReport(@RequestParam("year") int year, Model model) {
-        Map<String, Object> data = expensesService.getYearlyExpenseData(year);
+        Map<String, Object> data = expensesService.getYearWiseExpenseData(year);
         model.addAllAttributes(data);
         return "expenses/yearSummaryReport";
     }

@@ -5,6 +5,7 @@ import com.financehub.dtos.ExpenseRequest;
 import com.financehub.dtos.ExpensesCategoriesDTO;
 import com.financehub.entities.ExpenseCategories;
 import com.financehub.entities.Expenses;
+import com.financehub.entities.Salary;
 import com.financehub.repositories.ExpensesCategoriesRepository;
 import com.financehub.repositories.ExpensesRepository;
 import com.financehub.utils.FormatterUtils;
@@ -268,7 +269,7 @@ public class ExpensesService {
     }
 
     public List<ExpenseReportDTO> getYearlyCategoryWiseExpenses(int year, Map<String, Double> categorySums, Map<Integer, Double> monthlySums, Map<String, Double> categoryAverages) {
-        List<Expenses> expenses = expensesRepository.findByUserIdAndExpenseYear(userService.getUserId(),year);
+        List<Expenses> expenses = expensesRepository.findByUserIdAndExpenseYearOrderByExpenseMonth(userService.getUserId(),year);
 
         Set<Integer> categoryIds = expenses.stream()
                 .flatMap(expense -> expense.getActualExpenses().keySet().stream())
@@ -355,7 +356,7 @@ public class ExpensesService {
         return reportList;
     }
 
-    public Map<String, Object> getYearlyExpenseData(int year) {
+    public Map<String, Object> getYearWiseExpenseData(int year) {
 
         Map<String, Double> categorySums = new LinkedHashMap<>();
         Map<Integer, Double> monthlySums = new HashMap<>();
@@ -471,8 +472,26 @@ public void generateYearlyExpensePdf(OutputStream outputStream, Map<String, Obje
         e.printStackTrace();
     }
 }
+    public Map<String, Integer> getYearlyExpenseData() {
+        List<Expenses> expenses = expensesRepository.findByUserId(userService.getUserId());
+        Map<String, Integer> yearlyExpensesMap = new LinkedHashMap<>();
+        yearlyExpensesMap = expenses.stream()
+                .collect(Collectors.groupingBy(
+                        exp -> String.valueOf(exp.getExpenseYear()),
+                        Collectors.collectingAndThen(
+                                Collectors.summingDouble(exp -> {
+                                    Map<Integer, Double> actuals = exp.getActualExpenses();
+                                    return actuals != null
+                                            ? actuals.values().stream().mapToDouble(d -> d).sum()
+                                            : 0.0;
+                                }),
+                                sum -> (int) Math.round(sum)
+                        )
+                ));
+        return yearlyExpensesMap;
+    }
 public Map<String, Integer> getMonthlyExpenseData(int currentYear) {
-    List<Expenses> expenses = expensesRepository.findByUserIdAndExpenseYear(userService.getUserId(), currentYear);
+    List<Expenses> expenses = expensesRepository.findByUserIdAndExpenseYearOrderByExpenseMonth(userService.getUserId(), currentYear);
     Map<String, Integer> expenseMap = new LinkedHashMap<>();
 
     for (Expenses expense : expenses) {
@@ -507,4 +526,5 @@ public Map<String, Integer> getMonthlyExpenseData(int currentYear) {
         }
         return actualExpensesMap;
     }
+
 }
