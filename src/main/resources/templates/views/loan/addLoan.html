@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Loan</title>
+</head>
+<body>
+<div class="form-container" style="max-width: 950px;">
+    <th:block th:if="${session.username != null}">
+        <form id="addLoanForm" th:action="@{/addLoan}" th:object="${loan}" method="post">
+            <h2>Add Loan</h2>
+
+            <div class="input-group">
+                <label for="loanId">Loan ID:<span class="mandatory">*</span></label>
+                <input type="text" id="loanId" th:field="*{loanId}" />
+            </div>
+            <div class="form-row">
+                <div class="form-column">
+                    <div class="section-divider"><span>Loan Details</span></div>
+
+                    <div class="input-group">
+                        <label for="bankName">Bank Name:<span class="mandatory">*</span></label>
+                        <select id="bankName" th:field="*{bankName}" required>
+                            <option value="" selected>Select Bank</option>
+                            <option th:each="bank : ${bankNames}" th:value="${bank}" th:text="${bank}"></option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="loanType">Loan Type:<span class="mandatory">*</span></label>
+                        <select id="loanType" th:field="*{loanType}" required>
+                            <option value="" selected>Select Loan Type</option>
+                            <option value="Personal">Personal</option>
+                            <option value="Home">Home</option>
+                            <option value="Car">Car</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="loanAmount">Loan Amount:<span class="mandatory">*</span></label>
+                        <input type="number" id="loanAmount" th:field="*{loanAmount}" required />
+                    </div>
+
+                    <div class="input-group">
+                        <label for="startDate">Loan Start Date:<span class="mandatory">*</span></label>
+                        <input type="date" id="startDate" th:field="*{startDate}" required />
+                    </div>
+                </div>
+
+                <div class="form-column">
+                    <div class="section-divider"><span>EMI Details</span></div>
+
+                    <div class="input-group">
+                        <label for="interestRate">Interest Rate (%):</label>
+                        <input type="number" step="0.1" id="interestRate" th:field="*{interestRate}" />
+                    </div>
+
+                    <div class="input-group">
+                        <label for="emiAmount">EMI Amount:<span class="mandatory">*</span></label>
+                        <input type="number" id="emiAmount" th:field="*{emiAmount}" required />
+                    </div>
+
+                    <div class="input-group">
+                        <label for="tenure">Loan Tenure (Months):<span class="mandatory">*</span></label>
+                        <input type="number" id="tenure" th:field="*{tenure}" required />
+                    </div>
+
+                    <div class="input-group">
+                        <label for="nextEmiDate">Next EMI Date:<span class="mandatory">*</span></label>
+                        <input type="date" id="nextEmiDate" th:field="*{nextEmiDate}" required />
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="remainingPrincipal">Remaining Principal:</label>
+                <input type="number" id="remainingPrincipal" th:field="*{remainingPrincipal}" readonly />
+            </div>
+
+            <div class="input-group">
+                <label for="closingAmount">Closing Amount:</label>
+                <input type="number" id="closingAmount" th:field="*{closingAmount}" readonly />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Add Loan</button>
+        </form>
+    </th:block>
+
+    <th:block th:if="${session.username == null}">
+        <p>Please log in to access this page.</p>
+    </th:block>
+</div>
+</body>
+</html>

@@ -10,7 +10,7 @@
         <form id="addSalaryForm" th:action="@{/api/work/addSalary}" method="post" onsubmit="submitForm(event)">
             <input th:if="${action == 'edit'}" type="hidden" name="salaryId" th:value="${salary?.salaryId}" />
 
-            <div>
+            <div class="input-group">
                 <label for="companyId">Company Name<span class="mandatory">*</span>:</label>
                 <select id="companyId" name="companyId" required="required">
                     <option value="">Select Company</option>
@@ -23,7 +23,7 @@
                 </select>
             </div>
 
-            <div>
+            <div class="input-group">
                 <label for="month">Month<span class="mandatory">*</span>:</label>
                 <select id="month" name="month" required="required">
                     <option value="">Select Month</option>
@@ -33,17 +33,17 @@
                 </select>
             </div>
 
-            <div>
+            <div class="input-group">
                 <label for="year">Year<span class="mandatory">*</span>:</label>
                 <input type="number" id="year" name="year" min="2000" max="2100" th:value="${salary != null ? salary.year : ''}" required="required" />
             </div>
 
-            <div>
+            <div class="input-group">
                 <label for="dateCredited">Date Credited<span class="mandatory">*</span>:</label>
                 <input type="date" id="dateCredited" name="dateCredited" th:value="${salary != null ? salary.dateCredited : ''}" required="required" max="9999-12-31" />
             </div>
 
-            <div>
+            <div class="input-group">
                 <label for="salaryAmount">Salary Amount<span class="mandatory">*</span>:</label>
                 <input type="number" id="salaryAmount" name="salaryAmount" th:value="${salary != null and salary.salaryAmount != null ? salary.salaryAmount : ''}" step="0.01" required="required" />
             </div>

@@ -415,6 +415,11 @@ li.submenu ul.dropdown li a:hover {
     margin-bottom: 15px;
     align-items: center;
 }
+.button-group {
+    display: flex;
+    margin-bottom: 15px;
+    align-items: center;
+}
 
 .input-group label {
     display: block;
@@ -498,10 +503,13 @@ button[type="submit"]:hover {
 /* Error and Success message styles */
 .form-container div {
     margin-bottom: 0px;
-    display:flex;
+    /* display:flex; */
     align-items:center;
 }
-
+.form-container .form-row{
+    margin-bottom: 0px;
+    align-items:center;
+}
 .form-container .success-message,
 .form-container .error-message {
     font-weight: bold;
@@ -934,4 +942,38 @@ button[type="submit"]:hover {
 .chart-container canvas {
     width: 100%;
     height: auto;
+}
+.section-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 10px 0 20px;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.section-divider::before,
+.section-divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 2px solid #000;
+}
+
+.section-divider span {
+    padding: 0 15px;
+}
+.form-row {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.form-column {
+    flex: 1;
+}
+
+.form-column input, .form-column select {
+    width: 100%;
 }

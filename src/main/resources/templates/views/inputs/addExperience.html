@@ -14,31 +14,31 @@
         <form id="addExperience" th:action="@{/api/work/addExperience}" method="post" onsubmit="submitForm(event)">
             <input th:if="${action == 'edit'}" type="hidden" name="companyId" th:value="${company?.companyId}" />
 
-            <div>
+            <div class="input-group">
                 <label for="companyName">Company Name<span class="mandatory">*</span>:</label>
                 <input type="text" id="companyName" name="companyName" th:value="${company != null ? company.companyName : ''}" required="required" />
             </div>
 
-            <div>
+            <div class="input-group">
                 <label for="clientName">Client Name<span class="mandatory">*</span>:</label>
                 <input type="text" id="clientName" name="clientName" th:value="${company != null ? company.clientName : ''}" required="required" />
             </div>
 
-            <div>
+            <div class="input-group">
                 <label for="projectName">Project Name<span class="mandatory">*</span>:</label>
                 <input type="text" id="projectName" name="projectName" th:value="${company != null ? company.projectName : ''}" required="required" />
             </div>
 
-            <div>
+            <div class="input-group">
                 <label for="fromDate">Experience From (MM/DD/YYYY)<span class="mandatory">*</span>:</label>
                 <input type="date" id="fromDate" name="fromDate" th:value="${company != null ? company.fromDate : ''}" required="required" max="9999-12-31" class="styled-date" />
             </div>
 
-            <div>
+            <div class="input-group">
                 <label>Currently Employed <input type="checkbox" id="currentlyEmployed" name="currentlyEmployed" th:checked="${company != null and company.currentlyEmployed}" onclick="toggleToDate()" /></label>
             </div>
 
-            <div>
+            <div class="input-group">
                 <label for="toDate">Experience To (MM/DD/YYYY):</label>
                 <input type="date" id="toDate" name="toDate" th:value="${company != null and company.toDate != null ? company.toDate : ''}" th:disabled="${company != null and company.currentlyEmployed}" max="9999-12-31" />
             </div>

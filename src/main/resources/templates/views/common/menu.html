@@ -53,18 +53,18 @@
                 </li>
 
                 <li class="menu-item">
-                    <a href="#">Investments</a>
+                    <a href="#">Loans</a>
                     <ul class="dropdown">
-                        <li><a th:href="@{/api/investments/add}" href="/api/investments/add">Add Investment</a></li>
-                        <li><a th:href="@{/api/investments/report}" href="/api/investments/report">Investment Report</a></li>
+                        <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/loan/add\')'">Add Loan</a></li>
+                        <li><a th:href="@{/api/loans/track}" href="/api/loans/track">Track Loan</a></li>
                     </ul>
                 </li>
 
                 <li class="menu-item">
-                    <a href="#">Loans</a>
+                    <a href="#">Investments</a>
                     <ul class="dropdown">
-                        <li><a th:href="@{/api/loans/apply}" href="/api/loans/apply">Apply for Loan</a></li>
-                        <li><a th:href="@{/api/loans/track}" href="/api/loans/track">Track Loan</a></li>
+                        <li><a th:href="@{/api/investments/add}" href="/api/investments/add">Add Investment</a></li>
+                        <li><a th:href="@{/api/investments/report}" href="/api/investments/report">Investment Report</a></li>
                     </ul>
                 </li>
 
