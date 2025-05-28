@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDate;
 @Data
 public class LoanDTO {
-    private Long loanId;
+    private String loanId;
     private String bankName;
     private String loanType;
     private Double loanAmount;
@@ -14,9 +14,8 @@ public class LoanDTO {
 
     private Double emiAmount;
     private Integer tenure;
-    private LocalDate nextEmiDate;
+    private LocalDate emiDate;
 
     private Double remainingPrincipal;
     private Double closingAmount;
-
 }

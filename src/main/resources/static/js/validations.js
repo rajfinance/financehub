@@ -97,6 +97,9 @@ function validForm(formId){
     else if(formId=="expensesForm"){
         return true;
     }
+    else if(formId=="addLoanForm"){
+        return true;
+    }
 }
 function validateCategories(){
     const categoryName = document.getElementById("categoryName").value.trim();
