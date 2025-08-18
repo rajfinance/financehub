@@ -19,7 +19,7 @@ public class LoanService {
             loan.setBankName(loanDto.getBankName());
             loan.setLoanType(loanDto.getLoanType());
             loan.setLoanAmount(loanDto.getLoanAmount());
-            loan.setStartDate(loanDto.getStartDate());
+          //  loan.setStartDate(loanDto.getStartDate());
             loan.setInterestRate(loanDto.getInterestRate());
             loan.setEmiAmount(loanDto.getEmiAmount());
             loan.setTenure(loanDto.getTenure());

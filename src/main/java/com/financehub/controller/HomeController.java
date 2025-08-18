@@ -27,6 +27,11 @@ public class HomeController {
         return "inputs/login";
     }
 
+    @GetMapping("/forgotPassword")
+    public String showForgotPassword(Model model) {
+        return "inputs/forgotPassword";
+    }
+
     @GetMapping("/signup")
     public String showSignupPage() {
         return "inputs/signup";

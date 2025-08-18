@@ -29,6 +29,20 @@ function isValidDate(dateString) {
 function isLeapYear(year) {
         return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
 }
+function validatePasswordResetForm(){
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        if (password !== confirmPassword) {
+            alert('Passwords do not match.');
+            event.preventDefault();
+            return false;
+        }
+        if(!validPassword()){
+            return false;
+        }
+        return true;
+    }
+
 function validUsername(){
         const username = document.getElementById('username').value;
         const usernameRegex = /^[a-zA-Z0-9_]+$/;
@@ -65,6 +79,7 @@ function validEmailId(){
             return false;
         }
         document.getElementById('password').style.borderColor = '';
+        return true;
     }
     function validateForm(event) {
         const password = document.getElementById('password').value;

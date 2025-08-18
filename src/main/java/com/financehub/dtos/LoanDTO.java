@@ -9,13 +9,8 @@ public class LoanDTO {
     private String bankName;
     private String loanType;
     private Double loanAmount;
-    private LocalDate startDate;
-    private Double interestRate;
-
-    private Double emiAmount;
     private Integer tenure;
+    private Double interestRate;
+    private Double emiAmount;
     private LocalDate emiDate;
-
-    private Double remainingPrincipal;
-    private Double closingAmount;
 }

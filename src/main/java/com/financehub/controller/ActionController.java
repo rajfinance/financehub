@@ -44,11 +44,22 @@ public class ActionController {
             return "redirect:/signup";
         }
     }
+    @PostMapping(value = "/resetPassword", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public String forgotPassword(@RequestParam("username") String username,@RequestParam("password") String password,RedirectAttributes redirectAttributes) {
+        Map<String, String> response = userService.updatePassword(username,password);
 
+        if (response.containsKey("error")) {
+            redirectAttributes.addFlashAttribute("error", response.get("error"));
+            return "redirect:/forgotPassword";
+        } else {
+            redirectAttributes.addFlashAttribute("success", response.get("success"));
+            return "redirect:/forgotPassword";
+        }
+    }
     @PostMapping("/perform_login")
     public String handleLogin(LoginDTO loginDTO, Model model,HttpSession session) {
         boolean isAuthenticated = userService.authenticate(loginDTO.getUsername(), loginDTO.getPassword());
-        if (true){//isAuthenticated) {
+        if(isAuthenticated) {
             session.setAttribute("username", loginDTO.getUsername());
             session.setAttribute("loggedIn", true);
             return "redirect:/api/home";

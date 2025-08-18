@@ -51,11 +51,27 @@ public class UserService {
         response.put("success", "Signup successful!");
         return response;
     }
+    public  Map<String, String> updatePassword(String username, String newPassword) {
+        Optional<ClientUser> optionalUser = clientUserRepository.findByUsername(username);
+        Map<String, String> response = new HashMap<>();
+        if (optionalUser.isPresent()) {
+            ClientUser user = optionalUser.get();
 
+            String encodedPassword = passwordEncoder.encode(newPassword);
+            user.setUsrPassword(encodedPassword);
+            clientUserRepository.save(user);
+            response.put("success", "Password Updated successfully!");
+            return response;
+        } else {
+            response.put("error", "Given Username Not Found");
+            return response;
+        }
+    }
     public boolean authenticate(String username, String password) {
+        System.out.println("password:::"+password);
         Optional<ClientUser> optionalUser = clientUserRepository.findByUsername(username);
         return optionalUser
-                .map(user -> passwordEncoder.matches(password, user.getUsrPassword()))
+                .map(user ->passwordEncoder.matches(password, user.getUsrPassword()))
                 .orElse(false);
     }
 }
