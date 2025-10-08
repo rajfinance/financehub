@@ -150,9 +150,31 @@ public String getSalaryReport(Model model) {
         totalSum += yearTotal;
     }
 
-    model.addAttribute("salaries", salaries);
+    int chunkSize = 10;
+    List<Map.Entry<Integer, String>> yearEntries = new ArrayList<>(yearWiseTotals.entrySet());
+    List<List<Map.Entry<Integer, String>>> chunks = new ArrayList<>();
+
+    for (int i = 0; i < yearEntries.size(); i += chunkSize) {
+        int end = Math.min(i + chunkSize, yearEntries.size());
+        chunks.add(yearEntries.subList(i, end));
+    }
+
+    List<String> subtotals = new ArrayList<>();
+    for (List<Map.Entry<Integer, String>> chunk : chunks) {
+        double subtotal = chunk.stream()
+                .mapToDouble(e -> Double.parseDouble(e.getValue().replace(",", "")))
+                .sum();
+        subtotals.add(formatterUtils.formatInIndianStyle(subtotal));
+    }
+
+    int maxRows = chunks.stream().mapToInt(List::size).max().orElse(0);
+    String formattedGrandTotal = formatterUtils.formatInIndianStyle(totalSum);
     model.addAttribute("yearWiseTotals", yearWiseTotals);
-    model.addAttribute("totalSum", formatterUtils.formatInIndianStyle(totalSum));
+    model.addAttribute("salaries", salaries);
+    model.addAttribute("chunks", chunks);
+    model.addAttribute("subtotals", subtotals);
+    model.addAttribute("totalSum", formattedGrandTotal);
+    model.addAttribute("maxRows", maxRows);
     return "reports/salaryReport";
 }
 @DeleteMapping("/deleteExperience")

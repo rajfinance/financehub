@@ -59,28 +59,46 @@
 
             <br>
             <div class="summary">
-                <h2 class="year-header" style="width: 50%; margin: auto;">Year-Wise Totals</h2>
-                <table style="width: 50%; border-collapse: collapse; font-family: Arial, sans-serif; margin: auto;">
-                    <thead style="background-color: #E3F2FD; color: black; text-align: center; font-size: 16px;">
-                    <tr style="height: 30px;">
-                        <th class="second">Year</th>
-                        <th class="second">Total Salary</th>
+                <h2 class="year-header" style="width: 90%; margin: auto; text-align: center;">
+                    Year-Wise Totals
+                </h2>
+                <table style="width: 90%; border-collapse: collapse; font-family: Arial, sans-serif; margin: auto;">
+                    <thead style="background-color: #E3F2FD; color: black; text-align: center;">
+                    <tr>
+                        <th:block th:each="col, colStat : ${chunks}">
+                            <th>Year</th>
+                            <th>Total Salary</th>
+                        </th:block>
                     </tr>
                     </thead>
                     <tbody style="text-align: center;">
-                    <th:block th:each="yearEntry : ${yearWiseTotals}">
-                        <tr style="height: 30px;">
-                            <td th:text="${yearEntry.key}"></td>
-                            <td style="text-align: right; padding-right: 15px;" th:text="${yearEntry.value}"></td>
-                        </tr>
+                    <th:block th:if="${maxRows > 0}">
+                        <th:block th:each="rowIdx : ${#numbers.sequence(0, maxRows - 1)}">
+                            <tr>
+                                <th:block th:each="col : ${chunks}">
+                                    <td th:text="${rowIdx < #lists.size(col) ? col[rowIdx].key : ''}"></td>
+                                    <td th:text="${rowIdx < #lists.size(col) ? col[rowIdx].value : ''}"
+                                        style="text-align: right; padding-right: 15px;"></td>
+                                </th:block>
+                            </tr>
+                        </th:block>
                     </th:block>
-                    <tr style="font-weight: bold; background-color: #F1F8E9; height: 30px;">
-                        <td>Grand Total:</td>
-                        <td style="text-align: right; padding-right: 15px;" th:text="${totalSum}"></td>
+                    <tr style="font-weight: bold; background-color: #F1F8E9;">
+                        <th:block th:each="sub : ${subtotals}">
+                            <td>Subtotal:</td>
+                            <td th:text="${sub}" style="text-align: right; padding-right: 15px;"></td>
+                        </th:block>
+                    </tr>
+                    <tr style="font-weight: bold; background-color: #DFF0D8;">
+                        <td th:colspan="${chunks.size() * 2}" style="text-align: right; padding-right: 15px;">
+                            Grand Total:
+                            <span th:text="${totalSum}"></span>
+                        </td>
                     </tr>
                     </tbody>
                 </table>
             </div>
+
         </div>
     </th:block>
     <th:block th:if="${salaries == null or salaries.isEmpty()}">

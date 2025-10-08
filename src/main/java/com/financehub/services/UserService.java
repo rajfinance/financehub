@@ -68,7 +68,6 @@ public class UserService {
         }
     }
     public boolean authenticate(String username, String password) {
-        System.out.println("password:::"+password);
         Optional<ClientUser> optionalUser = clientUserRepository.findByUsername(username);
         return optionalUser
                 .map(user ->passwordEncoder.matches(password, user.getUsrPassword()))

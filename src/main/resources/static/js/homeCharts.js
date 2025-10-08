@@ -10,33 +10,22 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function loadDashboardCharts() {
-
-//        var ctx1 = document.getElementById("monthlySalaryChart").getContext("2d");
-//        var salaryChart = new Chart(ctx1, {
-//            type: 'bar',
-//            data: {
-//                labels: Object.keys(monthlySalaryData),
-//                datasets: [{
-//                    label: "Monthly Salary",
-//                    data: Object.values(monthlySalaryData),
-//                    backgroundColor: "#4285F4"
-//                }]
-//            }
-//        });
-
+    const years = Object.keys(yearlySalaryData).slice(-10);
+    const salaryValues = Object.values(yearlySalaryData).slice(-10);
+    const expenseValues = Object.values(yearlyExpenseData).slice(-10);
         var ctx2 = document.getElementById("yearlySalaryChart").getContext("2d");
         var salaryChart = new Chart(ctx2, {
             type: 'bar',
             data: {
-                labels: Object.keys(yearlySalaryData),
+                labels: years,
                 datasets: [{
                     label: "Yearly Salary",
-                    data: Object.values(yearlySalaryData),
+                    data: salaryValues,
                     backgroundColor: "#34A853"
                 },
                 {
                     label: "Yearly Expenses",
-                    data: Object.values(yearlyExpenseData),
+                    data: expenseValues,
                     backgroundColor: "#EA4335"
                 }]
             }
@@ -80,16 +69,4 @@ function loadDashboardCharts() {
         var backgroundColors = Object.keys(categoryData).map((_, index) =>
             `hsl(${(index * 45) % 360}, 70%, 50%)`
         );
-//        var ctx5 = document.getElementById("expenseCategoryChart").getContext("2d");
-//        var salaryChart = new Chart(ctx5, {
-//            type: 'bar',
-//            data: {
-//                    labels: Object.keys(categoryData),
-//                    datasets: [{
-//                        label: "Category-wise Expenses",
-//                        data: Object.values(categoryData),
-//                        backgroundColor: backgroundColors
-//                    }]
-//            }
-//        });
 }
