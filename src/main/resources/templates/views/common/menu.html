@@ -33,13 +33,14 @@
                     <ul class="dropdown">
                         <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/expenses/categories\')'">Categories</a></li>
                         <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/expenses/add\')'">Add Expenses</a></li>
-                        <li class="submenu">
-                            <a href="javascript:void(0);">Reports</a>
-                            <ul class="dropdown">
-                                <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/expenses/yearWiseActualPlan\')'">Year Wise</a></li>
-                                <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/expenses/reports?filter=user\')'">By User</a></li>
-                            </ul>
-                        </li>
+                        <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/expenses/yearWiseActualPlan\')'">Year Wise</a></li>
+<!--                        <li class="submenu">-->
+<!--                            <a href="javascript:void(0);">Reports</a>-->
+<!--                            <ul class="dropdown">-->
+<!--                                <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/expenses/yearWiseActualPlan\')'">Year Wise</a></li>-->
+<!--                                <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/expenses/reports?filter=user\')'">By User</a></li>-->
+<!--                            </ul>-->
+<!--                        </li>-->
                     </ul>
                 </li>
 
@@ -49,22 +50,6 @@
                         <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/rent/owners/add\')'">Add Owner</a></li>
                         <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/rent/payments/add\')'">Add Rent</a></li>
                         <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/rent/reports\')'">Reports</a></li>
-                    </ul>
-                </li>
-
-                <li class="menu-item">
-                    <a href="#">Loans</a>
-                    <ul class="dropdown">
-                        <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/loan/add\')'">Add Loan</a></li>
-                        <li><a th:href="@{/api/loans/track}" href="/api/loans/track">Track Loan</a></li>
-                    </ul>
-                </li>
-
-                <li class="menu-item">
-                    <a href="#">Investments</a>
-                    <ul class="dropdown">
-                        <li><a th:href="@{/api/investments/add}" href="/api/investments/add">Add Investment</a></li>
-                        <li><a th:href="@{/api/investments/report}" href="/api/investments/report">Investment Report</a></li>
                     </ul>
                 </li>
 

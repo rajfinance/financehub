@@ -51,7 +51,8 @@ public class WorkController {
                     (companyDTO.getToDate() != null ? !companyDTO.getToDate().equals(existingCompany.getToDate()) : existingCompany.getToDate() != null)) {
                 isDateChanged = true;
             }
-            if (isDateChanged) {
+            if (isDateChanged)
+            {
                 String datesCheck = workService.checkExpDates(companyDTO, redirectAttributes);
                 if (datesCheck != null) return datesCheck;
             }

@@ -10,9 +10,9 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function loadDashboardCharts() {
-    const years = Object.keys(yearlySalaryData).slice(-10);
-    const salaryValues = Object.values(yearlySalaryData).slice(-10);
-    const expenseValues = Object.values(yearlyExpenseData).slice(-10);
+    const years = Object.keys(yearlySalaryData).slice(-5);
+    const salaryValues = Object.values(yearlySalaryData).slice(-5);
+    const expenseValues = Object.values(yearlyExpenseData).slice(-5);
         var ctx2 = document.getElementById("yearlySalaryChart").getContext("2d");
         var salaryChart = new Chart(ctx2, {
             type: 'bar',
@@ -32,13 +32,15 @@ function loadDashboardCharts() {
         });
 
         var ctx3 = document.getElementById("rentChart").getContext("2d");
-        var salaryChart = new Chart(ctx3, {
+        const rentYears = Object.keys(yearlyRentData).slice(-5);
+        const rentValues = Object.values(yearlyRentData).slice(-5);
+        var rentChart = new Chart(ctx3, {
             type: 'bar',
             data: {
-                labels: Object.keys(yearlyRentData),
+                labels: rentYears,
                 datasets: [{
                     label: "Yearly Rent Paid",
-                    data: Object.values(yearlyRentData),
+                    data: rentValues,
                     backgroundColor: "#D32F2F"
                 }]
             }
