@@ -20,16 +20,11 @@ import com.itextpdf.layout.properties.HorizontalAlignment;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.OutputStream;
-import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
@@ -38,8 +33,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class WorkService {
-    @Autowired
-    private HttpSession session;
     @Autowired
     private CompanyRepository companyRepository;
     @Autowired
@@ -80,38 +73,44 @@ public class WorkService {
         return companyDTOs;
     }
     public CompanyDTO getExperienceById(Long id) {
-        Optional<Company> optionalCompany = companyRepository.findById(id);
-        if (optionalCompany.isEmpty()) {
-            throw new EntityNotFoundException("Company with ID " + id + " not found");
-        }
-        return new CompanyDTO(optionalCompany.get());
+        int uid = Math.toIntExact(userService.getUserId());
+        return companyRepository.findByIdAndUserId(id, uid)
+                .map(CompanyDTO::new)
+                .orElseThrow(() -> new EntityNotFoundException("Company with ID " + id + " not found"));
     }
+
     public SalaryDTO getSalaryById(Long id) {
-        Optional<Salary> optionalSalary = salaryRepository.findById(id);
-        if (optionalSalary.isEmpty()) {
-            throw new EntityNotFoundException("Salry with ID " + id + " not found");
-        }
-        return new SalaryDTO(optionalSalary.get());
+        int uid = Math.toIntExact(userService.getUserId());
+        return salaryRepository.findByIdAndUser_Id(id, uid)
+                .map(SalaryDTO::new)
+                .orElseThrow(() -> new EntityNotFoundException("Salary with ID " + id + " not found"));
     }
+
     public boolean hasSalariesForCompany(Long companyId) {
-        return salaryRepository.existsByCompanyId(companyId);
+        int uid = Math.toIntExact(userService.getUserId());
+        return companyRepository.findByIdAndUserId(companyId, uid)
+                .map(c -> salaryRepository.existsByCompanyId(companyId))
+                .orElse(false);
     }
+
     public void deleteCompany(Long id) {
-        Optional<Company> companyOpt = companyRepository.findById(id);
-        companyOpt.ifPresent(company -> companyRepository.delete(company));
+        int uid = Math.toIntExact(userService.getUserId());
+        companyRepository.findByIdAndUserId(id, uid).ifPresent(companyRepository::delete);
     }
+
     public void deleteSalary(Long id) {
-        Optional<Salary> salaryOpt = salaryRepository.findById(id);
-        salaryOpt.ifPresent(salary -> salaryRepository.delete(salary));
+        int uid = Math.toIntExact(userService.getUserId());
+        salaryRepository.findByIdAndUser_Id(id, uid).ifPresent(salaryRepository::delete);
     }
 
     public void addCompany(CompanyDTO companyDTO) {
+        int uid = Math.toIntExact(userService.getUserId());
         Company company = new Company();
         if (companyDTO.getCompanyId() != null) {
-            company = companyRepository.findById(companyDTO.getCompanyId())
+            company = companyRepository.findByIdAndUserId(companyDTO.getCompanyId(), uid)
                     .orElseThrow(() -> new RuntimeException("Company not found with ID: " + companyDTO.getCompanyId()));
         }
-        company.setUserId(Math.toIntExact(userService.getUserId()));
+        company.setUserId(uid);
         company.setCompanyName(companyDTO.getCompanyName());
         company.setClient(companyDTO.getClientName());
         company.setProject(companyDTO.getProjectName());
@@ -123,18 +122,18 @@ public class WorkService {
         companyRepository.save(company);
     }
     public void addSalary(SalaryDTO salaryDTO) {
-        String username = (String) session.getAttribute("username");
-        Company company = companyRepository.findById(salaryDTO.getCompanyId())
+        int uid = Math.toIntExact(userService.getUserId());
+        Company company = companyRepository.findByIdAndUserId(salaryDTO.getCompanyId(), uid)
                 .orElseThrow(() -> new RuntimeException("Company not found with ID: " + salaryDTO.getCompanyId()));
 
-        ClientUser user = clientUserRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+        ClientUser user = clientUserRepository.findById((long) uid)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Salary salary;
         if (salaryDTO.getSalaryId() != null) {
-            salary = salaryRepository.findById(salaryDTO.getSalaryId())
+            salary = salaryRepository.findByIdAndUser_Id(salaryDTO.getSalaryId(), uid)
                     .orElseThrow(() -> new RuntimeException("Salary not found with ID: " + salaryDTO.getSalaryId()));
-        }else {
+        } else {
             salary = new Salary();
             salary.setUser(user);
             salary.setCreatedAt(LocalDateTime.now());
@@ -148,10 +147,9 @@ public class WorkService {
         salaryRepository.save(salary);
     }
 
-    public Map<Integer, List<SalaryDTO>> getAllSalaries()  {
-        String username = (String) session.getAttribute("username");
-        ClientUser user = clientUserRepository.findByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User not found : " + username));
+    public Map<Integer, List<SalaryDTO>> getAllSalaries() {
+        ClientUser user = clientUserRepository.findById(userService.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         List<Salary> salaries = salaryRepository.findAllSalariesByUser(user);
 
@@ -351,32 +349,4 @@ public class WorkService {
                 ));
         return yearlySalaryMap;
     }
-    @PostMapping("/calculate")
-    public String calculate(
-            @RequestParam("axis") double axis,
-            @RequestParam("icici") double icici,
-            @RequestParam("hdfc") double hdfc,
-            @RequestParam("cc") double cc,
-            @RequestParam("givnamnt") double givnamnt,
-            Model model) {
-        DecimalFormat indianFormat = new DecimalFormat("##,##,##,##0");
-        axis = Math.ceil((axis*0.05)+(axis*0.05)*0.12+axis);
-        hdfc = Math.ceil((hdfc*0.04)+(hdfc*0.04)*0.12+hdfc);
-        StringBuilder resultMessage = new StringBuilder();
-        resultMessage.append("<table><tr><td style=\"text-align: left;\">Total Loan: ").append("</td><td style=\"text-align: right;\">"+indianFormat.format(Math.ceil(axis+hdfc+icici))).append("\n");
-        resultMessage.append("</td></tr><tr><td style=\"text-align: left;\">Credit Card: ").append("</td><td style=\"text-align: right;\">"+indianFormat.format(cc)).append("\n");
-        resultMessage.append("</td></tr><tr><td style=\"text-align: left;\">Given Amount: ").append("</td><td style=\"text-align: right;\">"+indianFormat.format(givnamnt)).append("\n");
-
-        double result = Math.ceil(axis+hdfc+icici+cc+givnamnt);
-        resultMessage.append("</td></tr><tr><td style=\"text-align: left;\">Total Amount: ").append("</td><td style=\"text-align: right;\">"+indianFormat.format(result)).append("\n");
-        double peracre = Math.ceil(result/1.85);
-        resultMessage.append("</td></tr><tr><td style=\"text-align: left;\">Per Acre : ").append("</td><td style=\"text-align: right;\">"+indianFormat.format(peracre)+"</td></tr></table>");
-
-        String formattedResult = resultMessage.toString().replaceAll("\n", "<br/>");
-        model.addAttribute("result", formattedResult);
-
-        return "index";
-    }
-
-
 }

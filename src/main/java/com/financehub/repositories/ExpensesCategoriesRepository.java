@@ -9,10 +9,13 @@ import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ExpensesCategoriesRepository extends JpaRepository<ExpenseCategories, Integer> {
     List<ExpenseCategories> findByUserIdOrderBySortOrder(Long userId);
+
+    Optional<ExpenseCategories> findByIdAndUserId(Integer id, Long userId);
     @Query("SELECT c.id, c.name,c.sortOrder FROM ExpenseCategories c WHERE c.id IN :ids")
     Collection<Object[]> findCategoryNamesByIds(@Param("ids")ArrayList<Integer> integers);
 }

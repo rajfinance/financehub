@@ -1,8 +1,18 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
 <div th:fragment="header">
-    <!-- CSS and JS within the fragment -->
+    <th:block th:if="${_csrf != null}">
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+            window.__csrfParameterName = /*[[${_csrf.parameterName}]]*/ '_csrf';
+            window.__csrfHeaderName = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
+            window.__csrfToken = /*[[${_csrf.token}]]*/ '';
+            /*]]>*/
+        </script>
+    </th:block>
+
     <link rel="stylesheet" th:href="@{/css/finStyles.css}" href="/css/finStyles.css">
     <script th:src="@{/js/chart.js}" src="/js/chart.js"></script>
     <script th:src="@{/js/validations.js}" src="/js/validations.js"></script>
@@ -20,11 +30,12 @@
             </div>
             <div class="right-section">
                 <div class="userinfo">
-                    <th:block th:if="${session.username != null}">
-                        <span th:text="${session.username}"></span>
+                    <th:block sec:authorize="isAuthenticated()">
+                        <span sec:authentication="name">user</span>
+                        <a th:href="@{/account/change-password}" style="margin-left:12px;font-size:0.85em;">Change password</a>
                         <img th:src="@{/images/signin.png}" src="/images/signin.png" alt="User Image" class="user-image">
                     </th:block>
-                    <th:block th:if="${session.username == null}">
+                    <th:block sec:authorize="!isAuthenticated()">
                         <div class="signin">
                             <a th:href="@{/login}" href="/login" class="signin-link">
                                 <span>SignIn</span>
@@ -37,7 +48,7 @@
         </div>
     </header>
 
-    <th:block th:replace="~{common/menu :: menu}"></th:block>
+    <th:block th:replace="~{views/common/menu :: menu}"></th:block>
 </div>
 </body>
 </html>

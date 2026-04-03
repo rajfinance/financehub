@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
-<th:block th:if="${session.username != null}">
-<div th:replace="~{common/header :: header}"></div>
+<th:block sec:authorize="isAuthenticated()">
+<div th:replace="~{views/common/header :: header}"></div>
     <script th:inline="javascript">
         var monthlySalaryData = /*[[${monthlySalaryData}]]*/ {};
         var yearlySalaryData = /*[[${yearlySalaryData}]]*/ {};
@@ -32,7 +33,7 @@
         </div>
     </div>
 </th:block>
-<th:block th:if="${session.username == null}">
+<th:block sec:authorize="!isAuthenticated()">
     <p>Please log in to access your dashboard.</p>
 </th:block>
 </body>

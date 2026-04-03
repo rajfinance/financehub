@@ -4,8 +4,6 @@ import com.financehub.dtos.CompanyDTO;
 import com.financehub.dtos.SalaryDTO;
 import com.financehub.services.WorkService;
 import com.financehub.utils.FormatterUtils;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +12,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.io.OutputStream;
 import java.text.DateFormatSymbols;
 import java.time.LocalDate;
 import java.util.*;
@@ -35,7 +32,7 @@ public class WorkController {
             model.addAttribute("company", company);
         }
         model.addAttribute("action", action);
-        return "inputs/addExperience";
+        return "views/inputs/addExperience";
     }
 
     @PostMapping("/addExperience")
@@ -87,7 +84,7 @@ public class WorkController {
         model.addAttribute("companies", companies);
         model.addAttribute("monthAbbreviations", monthAbbreviations);
         model.addAttribute("action", action);
-        return "inputs/addSalary";
+        return "views/inputs/addSalary";
     }
     @PostMapping("/addSalary")
     public String salaryFormAction(@ModelAttribute SalaryDTO salaryDTO,RedirectAttributes redirectAttributes) {
@@ -105,7 +102,7 @@ public class WorkController {
     public String getWorkReport(Model model) {
         List<CompanyDTO> companies = workService.getCompaniesByUserName();
         model.addAttribute("companies", companies);
-        return "reports/professionalReport";
+        return "views/reports/professionalReport";
     }
 
     @GetMapping("/expReport")
@@ -123,7 +120,7 @@ public class WorkController {
         String totExperience = formatterUtils.getTotalExp(companies);
         model.addAttribute("companies", companies);
         model.addAttribute("totalExp",totExperience);
-        return "reports/experienceReport";
+        return "views/reports/experienceReport";
     }
 @GetMapping("/salaryReport")
 public String getSalaryReport(Model model) {
@@ -176,7 +173,7 @@ public String getSalaryReport(Model model) {
     model.addAttribute("subtotals", subtotals);
     model.addAttribute("totalSum", formattedGrandTotal);
     model.addAttribute("maxRows", maxRows);
-    return "reports/salaryReport";
+    return "views/reports/salaryReport";
 }
 @DeleteMapping("/deleteExperience")
 public ResponseEntity<String> deleteCompany(@RequestParam("id") Long id) {

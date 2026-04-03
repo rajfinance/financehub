@@ -3,7 +3,6 @@ package com.financehub.services;
 import com.financehub.dtos.*;
 import com.financehub.entities.Owner;
 import com.financehub.entities.RentPayment;
-import com.financehub.repositories.ClientUserRepository;
 import com.financehub.repositories.OwnerRepository;
 import com.financehub.repositories.RentPaymentRepository;
 import com.financehub.utils.FormatterUtils;
@@ -20,7 +19,6 @@ import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.properties.VerticalAlignment;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,37 +32,31 @@ import java.util.stream.Collectors;
 @Service
 public class RentalService {
     @Autowired
-    private HttpSession session;
-    @Autowired
     private OwnerRepository ownerRepository;
     @Autowired
     private RentPaymentRepository rentPaymentRepository;
-    @Autowired
-    private ClientUserRepository clientUserRepository;
     @Autowired
     private UserService userService;
     @Autowired
     private FormatterUtils formatterUtils;
     public OwnerDTO getOwnerDTOById(Long id) {
-        return ownerRepository.findById(id)
+        return ownerRepository.findByIdAndUserId(id, userService.getUserId())
                 .map(OwnerDTO::new)
                 .orElseThrow(() -> new EntityNotFoundException("Owner not found with id " + id));
     }
-    public Optional<Owner> getOwnerById(Long id) {
-        return ownerRepository.findById(id);
-    }
+
     public RentPaymentDTO getPaymentById(Long paymentId) {
-        return rentPaymentRepository.findById(paymentId)
+        return rentPaymentRepository.findByIdAndOwnerUserId(paymentId, userService.getUserId())
                 .map(RentPaymentDTO::new)
                 .orElseThrow(() -> new EntityNotFoundException("Payment not found with id " + paymentId));
     }
+
     public void deleteOwner(Long id) {
-        Optional<Owner> ownerOpt = ownerRepository.findById(id);
-        ownerOpt.ifPresent(owner -> ownerRepository.delete(owner));
+        ownerRepository.findByIdAndUserId(id, userService.getUserId()).ifPresent(ownerRepository::delete);
     }
+
     public void deleteRentPayment(Long id) {
-        Optional<RentPayment> paymentOpt = rentPaymentRepository.findById(id);
-        paymentOpt.ifPresent(payment -> rentPaymentRepository.delete(payment));
+        rentPaymentRepository.findByIdAndOwnerUserId(id, userService.getUserId()).ifPresent(rentPaymentRepository::delete);
     }
     public List<OwnerDTO> getOwnersByUserId() {
         List<Owner> owners =  ownerRepository.findByUserId(userService.getUserId());
@@ -82,7 +74,13 @@ public class RentalService {
                 .collect(Collectors.toList());
     }
     public void saveOwner(OwnerDTO ownerDTO) {
-        Owner owner = (ownerDTO.getOwnerId() != null) ? ownerRepository.findById(ownerDTO.getOwnerId()).orElse(new Owner()) : new Owner();
+        Owner owner;
+        if (ownerDTO.getOwnerId() != null) {
+            owner = ownerRepository.findByIdAndUserId(ownerDTO.getOwnerId(), userService.getUserId())
+                    .orElseThrow(() -> new IllegalArgumentException("Owner not found."));
+        } else {
+            owner = new Owner();
+        }
 
         boolean isDuplicateDate;
 
@@ -111,18 +109,15 @@ public class RentalService {
     public void validateAndSavePayment(RentPaymentDTO rentPaymentDTO) {
         RentPayment rentPayment;
         if (rentPaymentDTO.getPaymentId() != null) {
-            rentPayment = rentPaymentRepository.findById(rentPaymentDTO.getPaymentId())
+            rentPayment = rentPaymentRepository.findByIdAndOwnerUserId(rentPaymentDTO.getPaymentId(), userService.getUserId())
                     .orElseThrow(() -> new IllegalArgumentException("Payment not found."));
         } else {
             rentPayment = new RentPayment();
             rentPayment.setCreatedAt(LocalDateTime.now());
         }
 
-        Optional<Owner> optionalOwner = getOwnerById(rentPaymentDTO.getOwnerId());
-        if (!ownerRepository.existsById(rentPaymentDTO.getOwnerId())) {
-            throw new IllegalArgumentException("Owner not found.");
-        }
-        Owner owner = optionalOwner.get();
+        Owner owner = ownerRepository.findByIdAndUserId(rentPaymentDTO.getOwnerId(), userService.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("Owner not found."));
         List<RentPayment> existingPayments = rentPaymentRepository.findByOwnerId(rentPaymentDTO.getOwnerId());
         for (RentPayment payment : existingPayments) {
             if (rentPaymentDTO.getPaymentId() != null && rentPaymentDTO.getPaymentId().equals(payment.getId())) {
@@ -307,10 +302,13 @@ public class RentalService {
     }
 
     public boolean hasRentPaymentsForOwner(Long ownerId) {
-            if (ownerId == null) {
-                throw new IllegalArgumentException("Owner ID cannot be null");
-            }
-            return rentPaymentRepository.existsByOwner_Id(ownerId);
+        if (ownerId == null) {
+            throw new IllegalArgumentException("Owner ID cannot be null");
+        }
+        if (ownerRepository.findByIdAndUserId(ownerId, userService.getUserId()).isEmpty()) {
+            return false;
+        }
+        return rentPaymentRepository.existsByOwner_Id(ownerId);
     }
 
     public void generateRentPaymentPdf(OutputStream outputStream, Map<Owner, RentSummaryDTO> paymentsByOwner) {

@@ -3,9 +3,10 @@ package com.financehub.services;
 import com.financehub.dtos.ClientUserDTO;
 import com.financehub.entities.ClientUser;
 import com.financehub.repositories.ClientUserRepository;
-import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import com.financehub.security.ClientUserPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -16,61 +17,70 @@ import java.util.Optional;
 @Service
 public class UserService {
 
-    @Autowired
-    private ClientUserRepository clientUserRepository;
-    @Autowired
-    private HttpSession session;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-    public Long getUserId(){
-        String username = (String) session.getAttribute("username");
-        Optional<ClientUser> userOptional = clientUserRepository.findByUsername(username);
-        return Long.valueOf(userOptional.map(ClientUser::getId).orElse(0));
-    }
-    public Map<String, String> handleSignup(ClientUserDTO clientUserDTO) {
-        Map<String, String> response = new HashMap<>();
-        if (clientUserRepository.existsByUsername(clientUserDTO.getUsername())) {
-            response.put("error", "Username already exists.");
-            return response;
-        }
-        if (clientUserRepository.existsByEmail(clientUserDTO.getEmail())) {
-            response.put("error", "Email already exists.");
-            return response;
-        }
+	private final ClientUserRepository clientUserRepository;
+	private final PasswordEncoder passwordEncoder;
 
+	public UserService(ClientUserRepository clientUserRepository, PasswordEncoder passwordEncoder) {
+		this.clientUserRepository = clientUserRepository;
+		this.passwordEncoder = passwordEncoder;
+	}
 
-        String hashedPassword = passwordEncoder.encode(clientUserDTO.getPassword());
-        ClientUser newUser = new ClientUser();
-        newUser.setUsername(clientUserDTO.getUsername());
-        newUser.setEmail(clientUserDTO.getEmail());
-        newUser.setUsrPassword(hashedPassword);
-        newUser.setCreatedAt(LocalDateTime.now());
-        newUser.setUpdatedAt(LocalDateTime.now());
+	public long getUserId() {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth != null && auth.getPrincipal() instanceof ClientUserPrincipal p) {
+			return p.getUserId();
+		}
+		return 0L;
+	}
 
-        clientUserRepository.save(newUser);
+	public void updatePasswordByUserId(int userId, String rawPassword) {
+		ClientUser user = clientUserRepository.findById((long) userId)
+				.orElseThrow(() -> new IllegalArgumentException("User not found"));
+		user.setUsrPassword(passwordEncoder.encode(rawPassword));
+		user.setUpdatedAt(LocalDateTime.now());
+		clientUserRepository.save(user);
+	}
 
-        response.put("success", "Signup successful!");
-        return response;
-    }
-    public  Map<String, String> updatePassword(String username, String newPassword) {
-        Optional<ClientUser> optionalUser = clientUserRepository.findByUsername(username);
-        Map<String, String> response = new HashMap<>();
-        if (optionalUser.isPresent()) {
-            ClientUser user = optionalUser.get();
+	public boolean changePasswordForCurrentUser(String currentPassword, String newPassword) {
+		long uid = getUserId();
+		if (uid <= 0) {
+			return false;
+		}
+		ClientUser user = clientUserRepository.findById(uid).orElseThrow();
+		if (!passwordEncoder.matches(currentPassword, user.getUsrPassword())) {
+			return false;
+		}
+		user.setUsrPassword(passwordEncoder.encode(newPassword));
+		user.setUpdatedAt(LocalDateTime.now());
+		clientUserRepository.save(user);
+		return true;
+	}
 
-            String encodedPassword = passwordEncoder.encode(newPassword);
-            user.setUsrPassword(encodedPassword);
-            clientUserRepository.save(user);
-            response.put("success", "Password Updated successfully!");
-            return response;
-        } else {
-            response.put("error", "Given Username Not Found");
-            return response;
-        }
-    }
-    public boolean authenticate(String username, String password) {
-        Optional<ClientUser> optionalUser = clientUserRepository.findByUsername(username);
-        return optionalUser
-                .map(user ->passwordEncoder.matches(password, user.getUsrPassword()))
-                .orElse(false);
-    }
+	public Map<String, String> handleSignup(ClientUserDTO clientUserDTO) {
+		Map<String, String> response = new HashMap<>();
+		if (clientUserRepository.existsByUsername(clientUserDTO.getUsername())) {
+			response.put("error", "Username already exists.");
+			return response;
+		}
+		if (clientUserRepository.existsByEmail(clientUserDTO.getEmail())) {
+			response.put("error", "Email already exists.");
+			return response;
+		}
+
+		ClientUser newUser = new ClientUser();
+		newUser.setUsername(clientUserDTO.getUsername());
+		newUser.setEmail(clientUserDTO.getEmail());
+		newUser.setUsrPassword(passwordEncoder.encode(clientUserDTO.getPassword()));
+		newUser.setCreatedAt(LocalDateTime.now());
+		newUser.setUpdatedAt(LocalDateTime.now());
+
+		clientUserRepository.save(newUser);
+
+		response.put("success", "Signup successful!");
+		return response;
+	}
+
+	public Optional<ClientUser> findByUsernameAndEmail(String username, String email) {
+		return clientUserRepository.findByUsernameAndEmail(username, email);
+	}
 }

@@ -1,14 +1,13 @@
 package com.financehub.controller;
 
-import com.financehub.dtos.CompanyDTO;
 import com.financehub.dtos.OwnerDTO;
 import com.financehub.dtos.RentPaymentDTO;
 import com.financehub.dtos.RentSummaryDTO;
 import com.financehub.entities.Owner;
 import com.financehub.entities.RentPayment;
 import com.financehub.services.RentalService;
-import com.financehub.services.UserService;
 import com.financehub.utils.FormatterUtils;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -46,7 +45,7 @@ public class RentController {
         }else {
             model.addAttribute("owner", new OwnerDTO(new Owner()));
         }
-        return "rent/addOwner";
+        return "views/rent/addOwner";
     }
     @GetMapping("/payments/add")
     public String showAddPaymentPage(@RequestParam(value = "id", required = false) Long paymentId, Model model) {
@@ -63,7 +62,7 @@ public class RentController {
     }
     @GetMapping("/reports")
     public String showReportsPage() {
-        return "rent/rentReports";
+        return "views/rent/rentReports";
     }
 
     @PostMapping("/addOwners")
@@ -89,7 +88,7 @@ public class RentController {
 
         if (bindingResult.hasErrors()) {
             redirectAttributes.addFlashAttribute("errorMessage", "There are errors in the form.");
-            return "redirect:payments/add";
+            return "redirect:/api/rent/payments/add";
         }
 
         try {
@@ -97,10 +96,10 @@ public class RentController {
             redirectAttributes.addFlashAttribute("successMessage", "Payment saved successfully!");
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", List.of(e.getMessage()));
-            return "redirect:payments/add";
+            return "redirect:/api/rent/payments/add";
         }
 
-        return "redirect:payments/add";
+        return "redirect:/api/rent/payments/add";
     }
 
     @GetMapping("/ownersReport")
@@ -111,7 +110,7 @@ public class RentController {
                 .sum();
         model.addAttribute("owners", owners);
         model.addAttribute("totalAdvance", formatterUtils.formatInIndianStyle(totalAdvanceAmount));
-        return "rent/OwnersReport";
+        return "views/rent/OwnersReport";
     }
 
     @GetMapping("/rentPaymentReport")
@@ -149,12 +148,13 @@ public class RentController {
         model.addAttribute("payments", paymentsByOwner);
         model.addAttribute("ownerTotalPayments", ownerTotalPayments);
         model.addAttribute("grandTotal",grandTotalPeriodstring+"&"+formatterUtils.formatInIndianStyle(grandTotal));
-        return "rent/PaymentsReport";
+        return "views/rent/PaymentsReport";
     }
     @DeleteMapping("/deleteOwner")
     public ResponseEntity<String> deleteOwner(@RequestParam("id") Long id) {
-        OwnerDTO owner = rentalService.getOwnerDTOById(id);
-        if (owner == null) {
+        try {
+            rentalService.getOwnerDTOById(id);
+        } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("error");
         }
         boolean hasPayments = rentalService.hasRentPaymentsForOwner(id);
@@ -166,8 +166,9 @@ public class RentController {
     }
     @DeleteMapping("/deleteRentPayment")
     public ResponseEntity<String> deleteRentPayment(@RequestParam("id") Long id) {
-        RentPaymentDTO payment = rentalService.getPaymentById(id);
-        if (payment == null) {
+        try {
+            rentalService.getPaymentById(id);
+        } catch (EntityNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("error");
         }
         rentalService.deleteRentPayment(id);

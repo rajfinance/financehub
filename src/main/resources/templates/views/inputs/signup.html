@@ -1,16 +1,18 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Signup - RajaFinanceHub</title>
 </head>
 <body>
-<div th:replace="~{common/header :: header}"></div>
+<div th:replace="~{views/common/header :: header}"></div>
 
 <div class="signup-body">
     <main class="signup">
         <form th:action="@{/api/perform_signup}" method="post" onsubmit="return validateForm(event)">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
             <h2>Signup</h2>
 
             <!-- Error Message -->

@@ -69,23 +69,22 @@ public class ExpensesService {
             entity.setCreatedAt(LocalDateTime.now());
             entity.setUpdatedAt(LocalDateTime.now());
         }
-        else{
-            Optional<ExpenseCategories> existingCategory = expensesCategoriesRepository.findById(Math.toIntExact(dto.getCategoryId()));
-
-            if (existingCategory.isPresent()) {
-               entity = existingCategory.get();
-                entity.setName(dto.getCategoryName());
-                entity.setIcon(dto.getIconPath());
-                entity.setSortOrder(dto.getSortOrder());
-                entity.setEnabled(dto.isEnabled());
-                entity.setUpdatedAt(LocalDateTime.now());
-            }
+        else {
+            entity = expensesCategoriesRepository
+                    .findByIdAndUserId(Math.toIntExact(dto.getCategoryId()), userService.getUserId())
+                    .orElseThrow(() -> new IllegalArgumentException("Category not found"));
+            entity.setName(dto.getCategoryName());
+            entity.setIcon(dto.getIconPath());
+            entity.setSortOrder(dto.getSortOrder());
+            entity.setEnabled(dto.isEnabled());
+            entity.setUpdatedAt(LocalDateTime.now());
         }
         return entity;
     }
 
     public void deleteCategoryByID(int id) {
-        expensesCategoriesRepository.deleteById(id);
+        expensesCategoriesRepository.findByIdAndUserId(id, userService.getUserId())
+                .ifPresent(expensesCategoriesRepository::delete);
     }
 
     public void saveExpense(ExpenseRequest expenseRequest) {
@@ -250,20 +249,26 @@ public class ExpensesService {
     }
     @Transactional
     public void deleteExpense(Long expenseId, String type) {
-        boolean hasPlan = expensesRepository.existsByIdAndPlannedExpensesNotNull(expenseId);
-        boolean hasActual = expensesRepository.existsByIdAndActualExpensesNotNull(expenseId);
+        Optional<Expenses> opt = expensesRepository.findByIdAndUserId(expenseId, userService.getUserId());
+        if (opt.isEmpty()) {
+            return;
+        }
+        Expenses expense = opt.get();
+        int id = expense.getId();
+        boolean hasPlan = expense.getPlannedExpenses() != null && !expense.getPlannedExpenses().isEmpty();
+        boolean hasActual = expense.getActualExpenses() != null && !expense.getActualExpenses().isEmpty();
 
         if ("plan".equalsIgnoreCase(type)) {
             if (hasActual) {
-                expensesRepository.clearPlanById(expenseId);
+                expensesRepository.clearPlanById((long) id);
             } else {
-                expensesRepository.deleteById(Math.toIntExact(expenseId));
+                expensesRepository.deleteById(id);
             }
         } else if ("actual".equalsIgnoreCase(type)) {
             if (hasPlan) {
-                expensesRepository.clearActualById(expenseId);
+                expensesRepository.clearActualById((long) id);
             } else {
-                expensesRepository.deleteById(Math.toIntExact(expenseId));
+                expensesRepository.deleteById(id);
             }
         }
     }

@@ -1,6 +1,6 @@
 package com.financehub.controller;
 
-import com.financehub.dtos.LoginDTO;
+import com.financehub.security.PasswordResetSession;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,7 +14,7 @@ import java.text.DecimalFormat;
 public class HomeController {
     @GetMapping("/")
     public String index() {
-        return "index";
+        return "views/index";
     }
     @GetMapping("/error")
     public String error() {
@@ -22,19 +22,51 @@ public class HomeController {
     }
 
     @GetMapping("/login")
-    public String showLoginPage(Model model) {
-        model.addAttribute("userDTO", new LoginDTO());
-        return "inputs/login";
+    public String showLoginPage() {
+        return "views/inputs/login";
     }
 
     @GetMapping("/forgotPassword")
-    public String showForgotPassword(Model model) {
-        return "inputs/forgotPassword";
+    public String showForgotPassword() {
+        return "views/inputs/forgotPassword";
+    }
+
+    @GetMapping("/password-reset/confirm")
+    public String passwordResetConfirm(HttpSession session) {
+        if (!PasswordResetSession.isValid(session)) {
+            return "redirect:/forgotPassword";
+        }
+        return "views/inputs/passwordResetConfirm";
+    }
+
+    @PostMapping("/api/calculate")
+    public String calculate(
+            @RequestParam("axis") double axis,
+            @RequestParam("icici") double icici,
+            @RequestParam("hdfc") double hdfc,
+            @RequestParam("cc") double cc,
+            @RequestParam("givnamnt") double givnamnt,
+            Model model) {
+        DecimalFormat indianFormat = new DecimalFormat("##,##,##,##0");
+        axis = Math.ceil((axis * 0.05) + (axis * 0.05) * 0.12 + axis);
+        hdfc = Math.ceil((hdfc * 0.04) + (hdfc * 0.04) * 0.12 + hdfc);
+        StringBuilder resultMessage = new StringBuilder();
+        resultMessage.append("<table><tr><td style=\"text-align: left;\">Total Loan: ").append("</td><td style=\"text-align: right;\">").append(indianFormat.format(Math.ceil(axis + hdfc + icici))).append("\n");
+        resultMessage.append("</td></tr><tr><td style=\"text-align: left;\">Credit Card: ").append("</td><td style=\"text-align: right;\">").append(indianFormat.format(cc)).append("\n");
+        resultMessage.append("</td></tr><tr><td style=\"text-align: left;\">Given Amount: ").append("</td><td style=\"text-align: right;\">").append(indianFormat.format(givnamnt)).append("\n");
+
+        double result = Math.ceil(axis + hdfc + icici + cc + givnamnt);
+        resultMessage.append("</td></tr><tr><td style=\"text-align: left;\">Total Amount: ").append("</td><td style=\"text-align: right;\">").append(indianFormat.format(result)).append("\n");
+        double peracre = Math.ceil(result / 1.85);
+        resultMessage.append("</td></tr><tr><td style=\"text-align: left;\">Per Acre : ").append("</td><td style=\"text-align: right;\">").append(indianFormat.format(peracre)).append("</td></tr></table>");
+
+        model.addAttribute("result", resultMessage.toString().replaceAll("\n", "<br/>"));
+        return "views/index";
     }
 
     @GetMapping("/signup")
     public String showSignupPage() {
-        return "inputs/signup";
+        return "views/inputs/signup";
     }
 
     @GetMapping("/professional")

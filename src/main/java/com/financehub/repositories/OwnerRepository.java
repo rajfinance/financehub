@@ -14,4 +14,6 @@ public interface OwnerRepository extends JpaRepository<Owner, Long> {
     List<Owner> findByUserId(Long userId);
     boolean existsByAdvanceDate(LocalDate advanceDate);
     boolean existsByAdvanceDateAndIdNot(LocalDate advanceDate, Long ownerId);
+
+    Optional<Owner> findByIdAndUserId(Long id, Long userId);
 }

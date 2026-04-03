@@ -10,7 +10,7 @@ import java.util.Map;
 
 @Entity
 @Data
-@Table(name = "expenses", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "expense_month", "expense_year", "expense_type"}))
+@Table(name = "expenses", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "expense_month", "expense_year"}))
 public class Expenses {
 
     @Id

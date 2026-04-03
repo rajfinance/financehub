@@ -1,3 +1,19 @@
+function getCsrfHeaders() {
+    const h = {};
+    if (typeof window.__csrfHeaderName !== 'undefined' && window.__csrfToken) {
+        h[window.__csrfHeaderName] = window.__csrfToken;
+    }
+    return h;
+}
+
+function appendCsrfToFormData(formData) {
+    if (typeof window.__csrfParameterName !== 'undefined' && window.__csrfToken) {
+        if (!formData.get(window.__csrfParameterName)) {
+            formData.append(window.__csrfParameterName, window.__csrfToken);
+        }
+    }
+}
+
 function loadContent(apiUrl) {
     const pageContent = document.getElementById('page-content');
     const dashboardContent = document.getElementById('dashboardContent');
@@ -27,9 +43,11 @@ function submitForm(event) {
             return;
         }
         const formData = new FormData(form);
+        appendCsrfToFormData(formData);
         fetch(form.action, {
             method: 'POST',
-            body: formData
+            body: formData,
+            headers: getCsrfHeaders()
         })
         .then(response => response.text())
         .then(html => {
@@ -67,7 +85,8 @@ function deleteEntity(anchor, entityType, apiEndpoint) {
             apiUrl += `&type=actual`;
        }
         fetch(apiUrl, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: getCsrfHeaders()
         })
         .then(response => {
             return response.text().then(data => {
@@ -113,8 +132,15 @@ function deleteCategoryEntity(element, entityName, apiUrl) {
     if (!confirm(`Are you sure you want to delete this ${entityName}?`)) {
         return;
     }
-    fetch(apiUrl + "categoryDelete?id=" + categoryId, {
-        method: "POST"
+    const params = new URLSearchParams();
+    params.append("id", categoryId);
+    if (typeof window.__csrfParameterName !== 'undefined' && window.__csrfToken) {
+        params.append(window.__csrfParameterName, window.__csrfToken);
+    }
+    fetch(apiUrl + "categoryDelete", {
+        method: "POST",
+        headers: Object.assign({ "Content-Type": "application/x-www-form-urlencoded" }, getCsrfHeaders()),
+        body: params.toString()
     })
     .then(response => response.text())
     .then(html => {

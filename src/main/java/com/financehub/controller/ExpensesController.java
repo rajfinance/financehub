@@ -3,12 +3,9 @@ package com.financehub.controller;
 import com.financehub.dtos.ExpenseReportDTO;
 import com.financehub.dtos.ExpenseRequest;
 import com.financehub.dtos.ExpensesCategoriesDTO;
-import com.financehub.dtos.OwnerDTO;
 import com.financehub.entities.ExpenseCategories;
-import com.financehub.entities.Owner;
 import com.financehub.services.ExpensesService;
 import com.financehub.services.UserService;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -33,20 +30,20 @@ public class ExpensesController {
     @GetMapping("/categories")
     public String showCategories(Model model) {
         addCategoryListToModel(model);
-        return "expenses/manageExpenseCategories";
+        return "views/expenses/manageExpenseCategories";
     }
     @PostMapping("/categorySave")
     public String addCategory(@ModelAttribute ExpensesCategoriesDTO expensesCategoriesDTO,Model model) {
         expensesService.saveCategory(expensesCategoriesDTO);
         addCategoryListToModel(model);
-        return "expenses/manageExpenseCategories";
+        return "views/expenses/manageExpenseCategories";
     }
 
     @PostMapping("/categoryDelete")
     public String deleteCategory(@RequestParam int id,Model model) {
         expensesService.deleteCategoryByID(id);
         addCategoryListToModel(model);
-        return "expenses/manageExpenseCategories";
+        return "views/expenses/manageExpenseCategories";
     }
     @GetMapping("/add")
     public String addExpenses(@RequestParam(value = "id", required = false) Long id,@RequestParam(value="type", required = false) String expenseType, Model model) {
@@ -65,7 +62,7 @@ public class ExpensesController {
             }
             model.addAttribute("totalExpense", totalExpense);
         }
-        return "expenses/addExpenses";
+        return "views/expenses/addExpenses";
     }
 
     @PostMapping("/save")
@@ -87,20 +84,20 @@ public class ExpensesController {
     public String manageExpenses(Model model){
         Set<Integer> years = expensesService.getDistinctExpenseYearsForUser(userService.getUserId());
         model.addAttribute("years", years);
-        return "expenses/manageExpenses";
+        return "views/expenses/manageExpenses";
     }
     @GetMapping("/manageReport")
     public String getManageExpenseReport(@RequestParam("year") int year, Model model) {
         List<ExpenseReportDTO> reports = expensesService.getExpenseReport(year);
         model.addAttribute("reports", reports);
         model.addAttribute("year",year);
-        return "expenses/manageExpenseReport";
+        return "views/expenses/manageExpenseReport";
     }
     @GetMapping("/yearWiseActualPlan")
     public String yearWise(Model model){
         Set<Integer> years = expensesService.getDistinctExpenseYearsForUser(userService.getUserId());
         model.addAttribute("years", years);
-        return "expenses/yearWiseActualPlan";
+        return "views/expenses/yearWiseActualPlan";
     }
     @GetMapping("/yearWiseActualPlanReport")
     public String getYearWiseActualPlan(@RequestParam("year") int year, Model model) {
@@ -133,13 +130,13 @@ public class ExpensesController {
         model.addAttribute("monthlyActualTotalMap", monthlyActualTotalMap);
         model.addAttribute("reportData", reportData);
         model.addAttribute("year", year);
-        return "expenses/yearWiseActualPlanReport";
+        return "views/expenses/yearWiseActualPlanReport";
     }
     @GetMapping("/yearSummaryReport")
     public String getYearSummaryReport(@RequestParam("year") int year, Model model) {
         Map<String, Object> data = expensesService.getYearWiseExpenseData(year);
         model.addAllAttributes(data);
-        return "expenses/yearSummaryReport";
+        return "views/expenses/yearSummaryReport";
     }
     @DeleteMapping("/deleteAmount")
     public ResponseEntity<String> deleteExpense(@RequestParam Long id, @RequestParam String type) {

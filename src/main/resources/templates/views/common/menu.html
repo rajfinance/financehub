@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <script th:src="@{/js/validations.js}" src="/js/validations.js"></script>
     <script th:src="@{/js/formUtils.js}" src="/js/formUtils.js"></script>
@@ -9,15 +10,13 @@
 <div th:fragment="menu">
     <div class="menu-bar">
         <ul class="menu-items">
-            <!-- Show public menu if the user is not logged in -->
-            <th:block th:if="${session.username == null}">
+            <th:block sec:authorize="!isAuthenticated()">
                 <li><a th:href="@{/}" href="/">Home</a></li>
                 <li><a th:href="@{/services}" href="/services">Services</a></li>
                 <li><a th:href="@{/contact}" href="/contact">Contact</a></li>
             </th:block>
 
-            <!-- Show user menu if the user is logged in -->
-            <th:block th:if="${session.username != null}">
+            <th:block sec:authorize="isAuthenticated()">
                 <li class="menu-item"><a th:href="@{/api/home}">Home</a></li>
                 <li class="menu-item">
                     <a href="#">Professional</a>
@@ -34,13 +33,6 @@
                         <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/expenses/categories\')'">Categories</a></li>
                         <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/expenses/add\')'">Add Expenses</a></li>
                         <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/expenses/yearWiseActualPlan\')'">Year Wise</a></li>
-<!--                        <li class="submenu">-->
-<!--                            <a href="javascript:void(0);">Reports</a>-->
-<!--                            <ul class="dropdown">-->
-<!--                                <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/expenses/yearWiseActualPlan\')'">Year Wise</a></li>-->
-<!--                                <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/expenses/reports?filter=user\')'">By User</a></li>-->
-<!--                            </ul>-->
-<!--                        </li>-->
                     </ul>
                 </li>
 
@@ -53,15 +45,26 @@
                     </ul>
                 </li>
 
-                <li class="menu-item"><a th:href="@{/api/logout}" href="/api/logout">Logout</a></li>
+                <li class="menu-item">
+                    <a href="#">Loans</a>
+                    <ul class="dropdown">
+                        <li><a href="javascript:void(0);" th:onclick="'loadContent(\'/api/loan/addLoan\')'">Add Loan</a></li>
+                    </ul>
+                </li>
+
+                <li class="menu-item">
+                    <form th:action="@{/api/logout}" method="post" class="logout-form" style="display:inline;">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="menu-logout-btn">Logout</button>
+                    </form>
+                </li>
             </th:block>
         </ul>
     </div>
 
-    <!-- Content Section -->
-    <th:block th:if="${session.username != null}">
+    <th:block sec:authorize="isAuthenticated()">
         <div class="main-content" id="mainContent">
-            <div id="username" style="display: none;" th:text="${session.username}"></div>
+            <div id="username" style="display: none;" sec:authentication="name"></div>
             <div id="page-content"></div>
         </div>
     </th:block>

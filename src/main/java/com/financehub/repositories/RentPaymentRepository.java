@@ -18,4 +18,7 @@ public interface RentPaymentRepository extends JpaRepository<RentPayment, Long> 
     @Query("SELECT r FROM RentPayment r WHERE r.owner.userId = :userId")
     List<RentPayment> findByUserId(@Param("userId") Long userId);
 
+    @Query("SELECT r FROM RentPayment r WHERE r.id = :id AND r.owner.userId = :userId")
+    Optional<RentPayment> findByIdAndOwnerUserId(@Param("id") Long id, @Param("userId") Long userId);
+
 }
