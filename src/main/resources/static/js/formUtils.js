@@ -24,7 +24,10 @@ function loadContent(apiUrl) {
     if (mainContent) {
         mainContent.style.display = 'block';
     }
-    fetch(apiUrl)
+    fetch(apiUrl, {
+        credentials: 'same-origin',
+        headers: getCsrfHeaders()
+    })
         .then(response => response.text())
         .then(html => {
             pageContent.innerHTML = html;
@@ -47,7 +50,8 @@ function submitForm(event) {
         fetch(form.action, {
             method: 'POST',
             body: formData,
-            headers: getCsrfHeaders()
+            headers: getCsrfHeaders(),
+            credentials: 'same-origin'
         })
         .then(response => response.text())
         .then(html => {
@@ -59,7 +63,10 @@ function submitForm(event) {
         });
 }
 function loadEditPageContent(url) {
-    fetch(url)
+    fetch(url, {
+        credentials: 'same-origin',
+        headers: getCsrfHeaders()
+    })
         .then(response => {
             if (!response.ok) {
                 throw new Error('Failed to fetch content');
@@ -86,7 +93,8 @@ function deleteEntity(anchor, entityType, apiEndpoint) {
        }
         fetch(apiUrl, {
             method: 'DELETE',
-            headers: getCsrfHeaders()
+            headers: getCsrfHeaders(),
+            credentials: 'same-origin'
         })
         .then(response => {
             return response.text().then(data => {
@@ -140,7 +148,8 @@ function deleteCategoryEntity(element, entityName, apiUrl) {
     fetch(apiUrl + "categoryDelete", {
         method: "POST",
         headers: Object.assign({ "Content-Type": "application/x-www-form-urlencoded" }, getCsrfHeaders()),
-        body: params.toString()
+        body: params.toString(),
+        credentials: 'same-origin'
     })
     .then(response => response.text())
     .then(html => {
@@ -170,7 +179,9 @@ const year = document.getElementById(yearId).value;
     const url = `${apiUrl}?year=${encodeURIComponent(year)}`;
     const container = document.getElementById(containerId);
     fetch(url, {
-        method: 'GET'
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: getCsrfHeaders()
     })
     .then(response => {
         if (!response.ok) {

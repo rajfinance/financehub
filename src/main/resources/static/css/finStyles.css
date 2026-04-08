@@ -124,11 +124,31 @@ h2 {
     display: flex;
     align-items:center;
 }
-.userinfo span {
-    color: black;
-    margin-right: 15px;
-    font-weight: bold;
-    font-size: 20px;
+.userinfo .userinfo-name {
+    color: #1a1a1a;
+    margin-right: 12px;
+    font-weight: 700;
+    font-size: 18px;
+}
+.header-account-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff !important;
+    text-decoration: none !important;
+    background-color: #006494;
+    border: 1px solid #005580;
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+.header-account-btn:hover {
+    background-color: #4682b4;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
 }
 .userinfo img {
     width: 40px;
@@ -255,6 +275,11 @@ h2 {
 }
 .menu-bar ul li a:hover {
     background-color: #4682B4; /* Steel Blue */
+}
+
+.menu-items > li.menu-item.menu-item-logout {
+    display: flex;
+    align-items: center;
 }
 
 .menu-items > li.menu-item {
@@ -391,7 +416,8 @@ li.submenu ul.dropdown li a:hover {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 350px;
+            min-height: 400px;
+            padding: 24px 12px;
             background-color: #f0f8ff; /* Light blue background */
         }
 .login-container {
@@ -465,19 +491,107 @@ button[type="submit"]:hover {
     color:white;
 }
 
+.login-extras {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid #e8e8e8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: #555;
+}
+
+.login-link-forgot {
+    color: #666;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.login-link-forgot:hover {
+    color: #006494;
+    text-decoration: underline;
+}
+
+.login-signup-prompt {
+    line-height: 1.5;
+}
+
+.login-signup-prompt span {
+    margin-right: 6px;
+    color: #555;
+}
+
+.login-link-signup {
+    color: #006494;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-link-signup:hover {
+    text-decoration: underline;
+}
+
+/* Shared link block on signup / forgot-password / change-password forms */
 .signup-link {
     margin-top: 15px;
     font-size: 14px;
 }
 
 .signup-link a {
-    color: #5f9ea0; /* Cadet blue link color */
+    color: #5f9ea0;
     text-decoration: none;
     font-weight: bold;
 }
 
 .signup-link a:hover {
     text-decoration: underline;
+}
+
+.static-page-list {
+    max-width: 640px;
+    line-height: 1.6;
+    color: #444;
+}
+
+.content .error-message {
+    margin: 12px 0;
+    color: #444;
+}
+
+/* Public static pages (services, contact) */
+main.content.static-page {
+    text-align: left;
+}
+.static-page-title {
+    text-align: center;
+    margin-bottom: 16px;
+}
+.static-page-list-bullets {
+    text-align: left;
+    margin: 16px auto 20px;
+    max-width: 520px;
+    padding-left: 1.5rem;
+    list-style-position: outside;
+}
+.static-page-actions {
+    text-align: center;
+    margin-top: 24px;
+}
+.btn-services-signin {
+    padding: 10px 28px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    background-color: #006494;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 100, 148, 0.35);
+}
+.btn-services-signin:hover {
+    background-color: #4682b4;
 }
 
 /* form style*/
@@ -978,21 +1092,30 @@ button[type="submit"]:hover {
     width: 100%;
 }
 
-.menu-bar .logout-form button.menu-logout-btn {
-    width: auto;
-    padding: 0;
+.menu-bar .logout-form {
+    display: inline-flex;
+    align-items: center;
     margin: 0;
-    background: none;
-    border: none;
-    color: inherit;
-    font: inherit;
+    padding: 0;
+}
+
+.menu-bar .logout-form button.menu-logout-btn {
+    padding: 8px 16px;
+    margin: 0 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    background-color: #c0392b;
+    border: 1px solid #a93226;
+    border-radius: 6px;
     cursor: pointer;
-    font-weight: normal;
     text-decoration: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.2s, box-shadow 0.2s;
 }
 
 .menu-bar .logout-form button.menu-logout-btn:hover {
-    background: none;
-    text-decoration: underline;
-    color: inherit;
+    background-color: #e74c3c;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
 }

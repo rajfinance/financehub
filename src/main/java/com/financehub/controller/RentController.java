@@ -58,7 +58,7 @@ public class RentController {
         List<OwnerDTO> owners = rentalService.getOwnersByUserId();
         model.addAttribute("owners", owners);
 
-        return "rent/addPayment";
+        return "views/rent/addPayment";
     }
     @GetMapping("/reports")
     public String showReportsPage() {

@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
-<th:block th:if="${session.username != null}">
+<th:block sec:authorize="isAuthenticated()">
     <div class="form-container">
         <h1 th:text="${action == 'edit'} ? 'Edit Salary' : 'Add Salary'">Add Salary</h1>
 
@@ -52,7 +53,7 @@
         </form>
     </div>
 </th:block>
-<th:block th:if="${session.username == null}">
+<th:block sec:authorize="!isAuthenticated()">
     <p>Please log in to access this page.</p>
 </th:block>
 </body>

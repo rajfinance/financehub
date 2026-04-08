@@ -30,9 +30,12 @@
                 </div>
                 <button type="submit">Login</button>
             </form>
-            <div class="signup-link">
-                <p>Don't have an account? <a th:href="@{/signup}" href="/signup">Sign Up</a>
-                    <a th:href="@{/forgotPassword}" href="/forgotPassword">Forgot password</a></p>
+            <div class="login-extras">
+                <a th:href="@{/forgotPassword}" href="/forgotPassword" class="login-link-forgot">Forgot password?</a>
+                <div class="login-signup-prompt">
+                    <span>New here?</span>
+                    <a th:href="@{/signup}" href="/signup" class="login-link-signup">Create an account</a>
+                </div>
             </div>
         </div>
     </main>

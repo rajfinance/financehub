@@ -52,8 +52,8 @@
                     </ul>
                 </li>
 
-                <li class="menu-item">
-                    <form th:action="@{/api/logout}" method="post" class="logout-form" style="display:inline;">
+                <li class="menu-item menu-item-logout">
+                    <form th:action="@{/api/logout}" method="post" class="logout-form">
                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                         <button type="submit" class="menu-logout-btn">Logout</button>
                     </form>

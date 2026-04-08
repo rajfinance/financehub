@@ -16,9 +16,15 @@ public class HomeController {
     public String index() {
         return "views/index";
     }
-    @GetMapping("/error")
-    public String error() {
-        return "error";
+
+    @GetMapping("/services")
+    public String services() {
+        return "views/services";
+    }
+
+    @GetMapping("/contact")
+    public String contact() {
+        return "views/contact";
     }
 
     @GetMapping("/login")

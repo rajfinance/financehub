@@ -31,8 +31,8 @@
             <div class="right-section">
                 <div class="userinfo">
                     <th:block sec:authorize="isAuthenticated()">
-                        <span sec:authentication="name">user</span>
-                        <a th:href="@{/account/change-password}" style="margin-left:12px;font-size:0.85em;">Change password</a>
+                        <span class="userinfo-name" sec:authentication="name">user</span>
+                        <a th:href="@{/account/change-password}" class="header-account-btn" href="/account/change-password">Change password</a>
                         <img th:src="@{/images/signin.png}" src="/images/signin.png" alt="User Image" class="user-image">
                     </th:block>
                     <th:block sec:authorize="!isAuthenticated()">

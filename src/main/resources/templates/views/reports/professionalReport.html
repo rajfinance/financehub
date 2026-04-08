@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
-<th:block th:if="${session.username != null}">
+<th:block sec:authorize="isAuthenticated()">
     <div class="content">
         <h1>Professional Reports</h1>
         <div class="tabs">
@@ -12,7 +13,7 @@
     <div class="tab-content" id="expReport" style="display:none;"></div>
     <div class="tab-content" id="salaryReport" style="display:none;"></div>
 </th:block>
-<th:block th:if="${session.username == null}">
+<th:block sec:authorize="!isAuthenticated()">
     <p>Please log in to access this page.</p>
 </th:block>
 </body>
