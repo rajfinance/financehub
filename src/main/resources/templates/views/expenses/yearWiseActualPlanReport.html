@@ -5,16 +5,16 @@
 </head>
 <body>
 <div class="container">
-    <div id="yearwise" style="background-color: #f9f9f9; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); font-family: Arial, sans-serif; margin-top:5px;">
+    <div id="yearwise">
         <h2 th:text="'Plan & Actual Expenses For Year - ' + ${year}"></h2>
         <table class="myTable">
             <thead>
-            <tr style="height: 35px; background-color: #006494; color: white;">
-                <th rowspan="2" style="font-size: 17px;">Category</th>
+            <tr>
+                <th rowspan="2">Category</th>
                 <th th:each="monthName : ${#arrays.toStringArray('JAN,FEB,MAR,APR,MAY,JUN,JUL,AUG,SEP,OCT,NOV,DEC'.split(','))}"
-                    th:text="${monthName}" colspan="2" style="font-size: 17px;"></th>
+                    th:text="${monthName}" colspan="2"></th>
             </tr>
-            <tr style="height: 25px; background-color: #006494; color: white;">
+            <tr>
                 <th:block th:each="monthIndex : ${#numbers.sequence(1, 12)}">
                     <th th:text="'Plan'"></th>
                     <th th:text="'Actual'"></th>
@@ -23,17 +23,15 @@
             </thead>
             <tbody>
             <tr th:each="category : ${#sets.toSet(reportData.![category])}">
-                <td style="text-align:left; font-weight:bold; padding-left: 10px;" th:text="${category}"></td>
+                <td th:text="${category}"></td>
 
                 <th:block th:each="monthIndex : ${#numbers.sequence(1, 12)}">
-                    <!-- Plan Amount -->
                     <td>
             <span th:text="${#numbers.formatInteger(
                 (reportData.?[category == '__${category}__' and month == __${monthIndex}__].![planAmount].size() > 0)
                 ? reportData.?[category == '__${category}__' and month == __${monthIndex}__].![planAmount].get(0)
                 : 0, 0)}" th:remove="tag"></span>
                     </td>
-                    <!-- Actual Amount -->
                     <td>
             <span th:text="${#numbers.formatInteger(
                 (reportData.?[category == '__${category}__' and month == __${monthIndex}__].![actualAmount].size() > 0)
@@ -42,13 +40,11 @@
                     </td>
                 </th:block>
             </tr>
-            <tr style="height: 30px; background-color: #006494; color: white;">
-                <td style="text-align:left; font-weight:bold; padding-left: 10px; font-size: 16px;">Total</td>
+            <tr class="fh-report-footer-row">
+                <td>Total</td>
                 <th:block th:each="monthIndex : ${#numbers.sequence(1, 12)}">
-                    <td style="text-align:right; font-weight:bold;"
-                        th:text="${monthlyPlanTotalMap[monthIndex.toString()] ?: '0'}"></td>
-                    <td style="text-align:right; font-weight:bold;"
-                        th:text="${monthlyActualTotalMap[monthIndex.toString()] ?: '0'}"></td>
+                    <td th:text="${monthlyPlanTotalMap[monthIndex.toString()] ?: '0'}"></td>
+                    <td th:text="${monthlyActualTotalMap[monthIndex.toString()] ?: '0'}"></td>
                 </th:block>
             </tr>
 

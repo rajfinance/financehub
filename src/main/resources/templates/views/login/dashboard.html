@@ -3,7 +3,8 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
 <th:block sec:authorize="isAuthenticated()">
-<div th:replace="~{views/common/header :: header}"></div>
+<div th:replace="~{views/common/header :: header(true)}"></div>
+<th:block th:replace="~{views/common/menu :: appMainShell}"></th:block>
     <script th:inline="javascript">
         var monthlySalaryData = /*[[${monthlySalaryData}]]*/ {};
         var yearlySalaryData = /*[[${yearlySalaryData}]]*/ {};
@@ -11,7 +12,6 @@
         var yearlyRentData = /*[[${yearlyRentData}]]*/ {};
         var salaryData = /*[[${salaryData}]]*/ {};
         var expenseData = /*[[${expenseData}]]*/ {};
-        var categoryData = /*[[${categoryData}]]*/ {};
     </script>
     <script th:src="@{/js/homeCharts.js}" src="/js/homeCharts.js"></script>
     <div class="container" data-page="dashboard" id="dashboardContent">

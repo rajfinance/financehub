@@ -19,14 +19,14 @@
             <th:block th:each="entry : ${salaries}">
                 <div class="year-header" th:text="'YEAR - ' + ${entry.key}"></div>
 
-                <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
-                    <thead style="background-color: #E3F2FD; color: black; text-align: center; height: 25px; font-size: 16px;">
+                <table>
+                    <thead>
                     <tr>
                         <th class="second">Company</th>
                         <th class="second">Month</th>
                         <th class="second">Date Credited</th>
-                        <th class="second" style="text-align:right;">Salary Amount</th>
-                        <th class="second" style="padding: 10px 15px;" rowspan="2">Action</th>
+                        <th class="second">Salary Amount</th>
+                        <th class="second" rowspan="2">Action</th>
                     </tr>
                     </thead>
                     <tbody style="text-align: -webkit-center; text-transform: capitalize;">
@@ -48,7 +48,7 @@
                             </td>
                         </tr>
                     </th:block>
-                    <tr style="font-weight: bold; background-color: #F1F8E9; height: 30px;">
+                    <tr class="fh-report-footer-row">
                         <td colspan="3" style="text-align: right;">Total for Year:</td>
                         <td style="text-align: right; padding-right: 5px;" th:text="${yearWiseTotals[entry.key]}"></td>
                         <td></td>
@@ -60,11 +60,11 @@
 
             <br>
             <div class="summary">
-                <h2 class="year-header" style="width: 90%; margin: auto; text-align: center;">
+                <h2 class="year-header" style="width: 90%; margin-left: auto; margin-right: auto; text-align: center;">
                     Year-Wise Totals
                 </h2>
-                <table style="width: 90%; border-collapse: collapse; font-family: Arial, sans-serif; margin: auto;">
-                    <thead style="background-color: #E3F2FD; color: black; text-align: center;">
+                <table style="width: 90%; margin-left: auto; margin-right: auto;">
+                    <thead>
                     <tr>
                         <th:block th:each="col, colStat : ${chunks}">
                             <th>Year</th>
@@ -84,13 +84,13 @@
                             </tr>
                         </th:block>
                     </th:block>
-                    <tr style="font-weight: bold; background-color: #F1F8E9;">
+                    <tr class="fh-report-footer-row">
                         <th:block th:each="sub : ${subtotals}">
                             <td>Subtotal:</td>
                             <td th:text="${sub}" style="text-align: right; padding-right: 15px;"></td>
                         </th:block>
                     </tr>
-                    <tr style="font-weight: bold; background-color: #DFF0D8;">
+                    <tr class="fh-report-grand-total-row">
                         <td th:colspan="${chunks.size() * 2}" style="text-align: right; padding-right: 15px;">
                             Grand Total:
                             <span th:text="${totalSum}"></span>
@@ -103,7 +103,7 @@
         </div>
     </th:block>
     <th:block th:if="${salaries == null or salaries.isEmpty()}">
-        <h2 style="text-align: center; color: #333; padding-bottom: 10px;">No Salary Data Available.</h2>
+        <h2 class="fh-report-empty">No Salary Data Available.</h2>
     </th:block>
 </th:block>
 <th:block sec:authorize="!isAuthenticated()">

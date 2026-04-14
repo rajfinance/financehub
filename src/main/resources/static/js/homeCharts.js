@@ -1,11 +1,57 @@
 document.addEventListener("DOMContentLoaded", function () {
     const dashboardElement = document.querySelector('[data-page="dashboard"]');
-    if (dashboardElement) {
-        const mainContent = document.getElementById('mainContent');
-        if (mainContent) {
-            mainContent.style.display = 'none';
+    if (!dashboardElement) {
+        return;
+    }
+    let pending = null;
+    try {
+        pending = sessionStorage.getItem('fhPendingLoad');
+    } catch (e) {
+        pending = null;
+    }
+    if (pending && typeof pending === 'string' && pending.startsWith('/') && typeof loadContent === 'function') {
+        try {
+            sessionStorage.removeItem('fhPendingLoad');
+        } catch (e) {
+            /* ignore */
         }
-        loadDashboardCharts();
+        loadContent(pending);
+        return;
+    }
+    const pageContent = document.getElementById('page-content');
+    if (pageContent) {
+        pageContent.innerHTML = '';
+    }
+    const dashboardContent = document.getElementById('dashboardContent');
+    if (dashboardContent) {
+        dashboardContent.style.display = '';
+    }
+    const mainContent = document.getElementById('mainContent');
+    if (mainContent) {
+        mainContent.style.display = 'none';
+    }
+    loadDashboardCharts();
+});
+
+window.addEventListener('pageshow', function (event) {
+    if (!event.persisted) {
+        return;
+    }
+    const dashboardElement = document.querySelector('[data-page="dashboard"]');
+    if (!dashboardElement) {
+        return;
+    }
+    const pageContent = document.getElementById('page-content');
+    if (pageContent) {
+        pageContent.innerHTML = '';
+    }
+    const dashboardContent = document.getElementById('dashboardContent');
+    if (dashboardContent) {
+        dashboardContent.style.display = '';
+    }
+    const mainContent = document.getElementById('mainContent');
+    if (mainContent) {
+        mainContent.style.display = 'none';
     }
 });
 
@@ -67,8 +113,4 @@ function loadDashboardCharts() {
                 ]
             }
         });
-
-        var backgroundColors = Object.keys(categoryData).map((_, index) =>
-            `hsl(${(index * 45) % 360}, 70%, 50%)`
-        );
 }

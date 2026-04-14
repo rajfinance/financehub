@@ -1,54 +1,150 @@
 <!DOCTYPE html>
+
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
+
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
 <body>
-<div th:fragment="header">
+
+<div th:fragment="header(showMainLayout=true)">
+
     <th:block th:if="${_csrf != null}">
+
         <script th:inline="javascript">
+
             /*<![CDATA[*/
+
             window.__csrfParameterName = /*[[${_csrf.parameterName}]]*/ '_csrf';
+
             window.__csrfHeaderName = /*[[${_csrf.headerName}]]*/ 'X-CSRF-TOKEN';
+
             window.__csrfToken = /*[[${_csrf.token}]]*/ '';
+
             /*]]>*/
+
         </script>
+
     </th:block>
 
+
+
     <link rel="stylesheet" th:href="@{/css/finStyles.css}" href="/css/finStyles.css">
+
     <script th:src="@{/js/chart.js}" src="/js/chart.js"></script>
+
     <script th:src="@{/js/validations.js}" src="/js/validations.js"></script>
+
     <script th:src="@{/js/formUtils.js}" src="/js/formUtils.js"></script>
+
     <script th:src="@{/js/printWorkPdf.js}" src="/js/printWorkPdf.js"></script>
 
-    <header>
-        <div class="header-container">
-            <div class="left-section"></div>
-            <div class="middle-section">
-                <div class="logo">
-                    <img th:src="@{/images/financehublogo.png}" src="/images/financehublogo.png" alt="Logo">
-                    <span>RajaFinanceHub</span>
-                </div>
+
+
+    <header class="app-header">
+
+        <div class="header-container app-header-unified">
+
+            <div class="app-header-brand">
+
+                <a th:href="${#authorization != null and #authorization.expression('isAuthenticated()')} ? @{/api/home} : @{/}"
+
+                   class="logo-link" href="/">
+
+                    <span class="logo">
+
+                        <img th:src="@{/images/financehublogo.png}" src="/images/financehublogo.png" alt="">
+
+                        <span class="logo-title">RajaFinanceHub</span>
+
+                    </span>
+
+                </a>
+
             </div>
-            <div class="right-section">
+
+
+
+            <nav class="header-inline-nav" sec:authorize="!isAuthenticated()" aria-label="Site pages">
+
+                <a th:href="@{/}" href="/">Home</a>
+
+                <a th:href="@{/services}" href="/services">Services</a>
+
+                <a th:href="@{/contact}" href="/contact">Contact</a>
+
+            </nav>
+
+
+
+            <th:block sec:authorize="isAuthenticated()" th:replace="~{views/common/menu :: menuAuthNavList}"></th:block>
+
+
+
+            <div class="app-header-actions">
+
                 <div class="userinfo">
+
                     <th:block sec:authorize="isAuthenticated()">
-                        <span class="userinfo-name" sec:authentication="name">user</span>
-                        <a th:href="@{/account/change-password}" class="header-account-btn" href="/account/change-password">Change password</a>
-                        <img th:src="@{/images/signin.png}" src="/images/signin.png" alt="User Image" class="user-image">
+
+                        <span class="userinfo-name" th:text="${#strings.capitalize(#authentication.name)}">User</span>
+
+                        <a th:href="@{/account/profile}" class="header-profile-link" title="Profile">
+
+                            <img th:with="pv=${profileAvatarVersion != null ? profileAvatarVersion : 0}"
+
+                                 th:src="@{/account/profile-photo(v=${pv})}"
+
+                                 alt=""
+
+                                 class="user-image"
+
+                                 width="40"
+
+                                 height="40"
+
+                                 loading="eager"
+
+                                 decoding="async"/>
+
+                        </a>
+
                     </th:block>
+
                     <th:block sec:authorize="!isAuthenticated()">
+
                         <div class="signin">
+
                             <a th:href="@{/login}" href="/login" class="signin-link">
+
                                 <span>SignIn</span>
+
                                 <img th:src="@{/images/signin.png}" src="/images/signin.png" alt="Login" class="login-image">
+
                             </a>
+
                         </div>
+
                     </th:block>
+
                 </div>
+
             </div>
+
         </div>
+
     </header>
 
-    <th:block th:replace="~{views/common/menu :: menu}"></th:block>
+
+
+    <th:block th:if="${showMainLayout}"
+
+              th:replace="${#authorization != null and #authorization.expression('isAuthenticated()')} ? ~{views/common/menu :: menuShellEmpty} : ~{views/common/menu :: menuGuestNoBar}"></th:block>
+
+    <th:block th:unless="${showMainLayout}" th:replace="~{views/common/menu :: menuBarOnly}"></th:block>
+
 </div>
+
 </body>
+
 </html>
+

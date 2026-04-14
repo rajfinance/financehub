@@ -510,26 +510,4 @@ public Map<String, Integer> getMonthlyExpenseData(int currentYear) {
     return expenseMap;
     }
 
-    public Map<String, Integer> getCurrentMonthCategoryData(int currentYear, int currentMonth) {
-        Optional<Expenses> expensesOpt = expensesRepository.findByUserIdAndExpenseYearAndExpenseMonth(userService.getUserId(), currentYear,currentMonth);
-        Map<String, Integer> actualExpensesMap = new HashMap<>();
-
-        if (expensesOpt.isPresent()) {
-            Expenses expenses = expensesOpt.get();
-            actualExpensesMap = expenses.getActualExpenses()
-                    .entrySet()
-                    .stream()
-                    .collect(Collectors.toMap(
-                            entry -> {
-                                Optional<ExpenseCategories> categoryOpt = expensesCategoriesRepository.findById(entry.getKey());
-                                return categoryOpt.map(ExpenseCategories::getName).orElse("Unknown");
-                            },
-                            entry -> {
-                               return (int) Math.round(entry.getValue());
-                            }
-                    ));
-        }
-        return actualExpensesMap;
-    }
-
 }

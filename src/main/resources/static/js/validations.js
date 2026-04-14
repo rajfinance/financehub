@@ -82,6 +82,21 @@ function validEmailId(){
         return true;
     }
     function validateForm(event) {
+        const phoneEl = document.getElementById('signupPhone');
+        if (phoneEl) {
+            const phone = phoneEl.value.trim();
+            if (phone.length === 0) {
+                alert('Phone is required.');
+                event.preventDefault();
+                return false;
+            }
+            const phoneRegex = /^[0-9+\-\s()]{6,32}$/;
+            if (!phoneRegex.test(phone)) {
+                alert('Phone must be 6–32 characters: digits and + - ( ) spaces only.');
+                event.preventDefault();
+                return false;
+            }
+        }
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
         // Check if passwords match

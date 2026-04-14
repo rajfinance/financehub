@@ -18,6 +18,19 @@ function loadContent(apiUrl) {
     const pageContent = document.getElementById('page-content');
     const dashboardContent = document.getElementById('dashboardContent');
     const mainContent = document.getElementById('mainContent');
+    if (!pageContent) {
+        if (typeof apiUrl === 'string' && apiUrl.startsWith('/')) {
+            try {
+                sessionStorage.setItem('fhPendingLoad', apiUrl);
+            } catch (e) {
+                /* storage unavailable */
+            }
+            window.location.href = '/api/home';
+            return;
+        }
+        console.error('loadContent: #page-content missing and URL not usable for redirect:', apiUrl);
+        return;
+    }
     if (dashboardContent) {
         dashboardContent.style.display = 'none';
     }
@@ -38,21 +51,20 @@ function loadContent(apiUrl) {
         });
 }
 function submitForm(event) {
-        event.preventDefault();
-        const form = event.currentTarget;
-        const formId = form.id;
-        console.log(formId);
-        if(!validForm(formId)){
-            return;
-        }
-        const formData = new FormData(form);
-        appendCsrfToFormData(formData);
-        fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: getCsrfHeaders(),
-            credentials: 'same-origin'
-        })
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formId = form.id;
+    if (!validForm(formId)) {
+        return;
+    }
+    const formData = new FormData(form);
+    appendCsrfToFormData(formData);
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: getCsrfHeaders(),
+        credentials: 'same-origin'
+    })
         .then(response => response.text())
         .then(html => {
             document.getElementById('page-content').innerHTML = html;

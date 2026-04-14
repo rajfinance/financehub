@@ -4,7 +4,7 @@
 <div th:if="${reports != null and !reports.isEmpty()}">
     <div id="reportContent">
         <h2 th:text="'Manage Expenses For Year - ' + ${year}"></h2>
-        <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+        <table>
             <thead>
             <tr>
                 <th>Month</th>
@@ -52,7 +52,7 @@
 </div>
 
 <div th:if="${reports == null or reports.isEmpty()}">
-    <h2 style="text-align: center; color: #333; padding-bottom: 10px;">No Expenses Available.</h2>
+    <h2 class="fh-report-empty">No Expenses Available.</h2>
 </div>
 <br><br>
 </body>

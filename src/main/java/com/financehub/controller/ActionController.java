@@ -8,6 +8,7 @@ import com.financehub.services.RentalService;
 import com.financehub.services.UserService;
 import com.financehub.services.WorkService;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.financehub.security.ClientUserPrincipal;
@@ -46,7 +48,14 @@ public class ActionController {
 	}
 
 	@PostMapping(value = "/perform_signup", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-	public String performSignupForm(@ModelAttribute ClientUserDTO userDTO, RedirectAttributes redirectAttributes) {
+	public String performSignupForm(@Valid @ModelAttribute ClientUserDTO userDTO, BindingResult bindingResult,
+			RedirectAttributes redirectAttributes) {
+		if (bindingResult.hasErrors()) {
+			var fieldError = bindingResult.getFieldError();
+			redirectAttributes.addFlashAttribute("error",
+					fieldError != null ? fieldError.getDefaultMessage() : "Invalid signup data.");
+			return "redirect:/signup";
+		}
 		if (userDTO.getPassword() != null && !userDTO.getPassword().equals(userDTO.getConfirmPassword())) {
 			redirectAttributes.addFlashAttribute("error", "Passwords do not match.");
 			return "redirect:/signup";
@@ -136,9 +145,6 @@ public class ActionController {
 		Map<String, Integer> monthlyExpenseData = expensesService.getMonthlyExpenseData(currentYear);
 		model.addAttribute("salaryData", monthlySal);
 		model.addAttribute("expenseData", monthlyExpenseData);
-
-		Map<String, Integer> categoryData = expensesService.getCurrentMonthCategoryData(currentYear, currentMonth);
-		model.addAttribute("categoryData", categoryData);
 
 		return "views/login/dashboard";
 	}

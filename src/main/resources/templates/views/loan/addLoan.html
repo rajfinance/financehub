@@ -7,7 +7,7 @@
     <title>Add Loan</title>
 </head>
 <body>
-<div class="form-container" style="max-width: 950px;">
+<div class="form-container form-container--wide">
     <th:block sec:authorize="isAuthenticated()">
         <form id="addLoanForm" th:action="@{/api/loan/addLoan}" th:object="${loan}" method="post" th:onsubmit="submitForm(event)">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
@@ -68,8 +68,8 @@
 
             <button type="submit" class="btn btn-primary">Add Loan</button>
         </form>
-        <div th:if="${successMessage != null}" style="color:green;margin-top:10px;" th:text="${successMessage}"></div>
-        <div th:if="${errorMessage != null}" style="color:red;margin-top:10px;" th:text="${errorMessage}"></div>
+        <div th:if="${successMessage != null}" class="form-banner form-banner--success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage != null}" class="form-banner form-banner--error" th:text="${errorMessage}"></div>
     </th:block>
 
     <th:block sec:authorize="!isAuthenticated()">

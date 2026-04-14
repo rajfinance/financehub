@@ -15,25 +15,25 @@
                     </button>
                 </div>
             </h1>
-            <table style="width: 100%; margin: 10px auto; border-collapse: collapse; font-family: Arial, sans-serif;">
-                <thead style="background-color: #006494; color: white; text-align: left; font-size: 16px;">
+            <table>
+                <thead>
                 <tr>
-                    <th style="padding: 10px 15px;">Company Name</th>
-                    <th style="padding: 10px 15px;">Client Name</th>
-                    <th style="padding: 10px 15px;">Project Name</th>
-                    <th style="padding: 10px 15px;">From Date</th>
-                    <th style="padding: 10px 15px;">To Date</th>
-                    <th style="padding: 10px 15px;" rowspan="2">Action</th>
+                    <th>Company Name</th>
+                    <th>Client Name</th>
+                    <th>Project Name</th>
+                    <th>From Date</th>
+                    <th>To Date</th>
+                    <th rowspan="2">Action</th>
                 </tr>
                 </thead>
-                <tbody style="font-size: 14px; color: #555; text-transform: capitalize;">
+                <tbody style="text-transform: capitalize;">
                 <th:block th:each="company : ${companies}">
-                    <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 8px 15px;" th:text="${company.companyName}"></td>
-                        <td style="padding: 8px 15px;" th:text="${company.clientName}"></td>
-                        <td style="padding: 8px 15px;" th:text="${company.projectName}"></td>
-                        <td style="padding: 8px 15px;" th:text="${company.formattedFromDate}"></td>
-                        <td style="padding: 8px 15px;" th:text="${company.formattedToDate != null ? company.formattedToDate : 'Currently Employed'}"></td>
+                    <tr>
+                        <td style="text-align: left;" th:text="${company.companyName}"></td>
+                        <td style="text-align: left;" th:text="${company.clientName}"></td>
+                        <td style="text-align: left;" th:text="${company.projectName}"></td>
+                        <td style="text-align: left;" th:text="${company.formattedFromDate}"></td>
+                        <td style="text-align: left;" th:text="${company.formattedToDate != null ? company.formattedToDate : 'Currently Employed'}"></td>
                         <td>
                             <a href="javascript:void(0);"
                                th:onclick="'loadEditPageContent(\'/api/work/addExperience?action=edit&id=' + ${company.companyId} + '\')'"
@@ -48,18 +48,18 @@
                 </th:block>
                 <th:block th:if="${companies == null or companies.isEmpty()}">
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 15px; font-style: italic; color: #777;">
+                        <td colspan="6" style="text-align: center; padding: 15px; font-style: italic; color: var(--fh-text-muted);">
                             No companies found.
                         </td>
                     </tr>
                 </th:block>
                 </tbody>
             </table>
-            <h2 style="text-align: center; color: #333;" th:text="${totalExp}"></h2>
+            <h2 class="fh-report-summary-line" th:text="${totalExp}"></h2>
         </div>
     </th:block>
     <th:block th:if="${companies == null or companies.isEmpty()}">
-        <h2 style="text-align: center; color: #333; padding-bottom: 10px;">No Companies Data Available.</h2>
+        <h2 class="fh-report-empty">No Companies Data Available.</h2>
     </th:block>
 </th:block>
 <th:block sec:authorize="!isAuthenticated()">

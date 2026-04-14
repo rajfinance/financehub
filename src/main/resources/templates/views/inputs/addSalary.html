@@ -6,7 +6,7 @@
     <div class="form-container">
         <h1 th:text="${action == 'edit'} ? 'Edit Salary' : 'Add Salary'">Add Salary</h1>
 
-        <div th:if="${successMessage != null}" style="color: green; text-align: center; font-weight: bold; margin-left: 280px;" th:text="${successMessage}"></div>
+        <div th:if="${successMessage != null}" class="form-banner form-banner--success" th:text="${successMessage}"></div>
 
         <form id="addSalaryForm" th:action="@{/api/work/addSalary}" method="post" onsubmit="submitForm(event)">
             <input th:if="${action == 'edit'}" type="hidden" name="salaryId" th:value="${salary?.salaryId}" />

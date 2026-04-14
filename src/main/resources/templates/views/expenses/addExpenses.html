@@ -8,15 +8,8 @@
     <div class="expenses">
         <h2 th:text="${expenseDetails != null} ? 'Update Monthly Expenses' : 'Monthly Expenses'"></h2>
 
-        <!-- Success Message -->
-        <div th:if="${message != null}"
-             style="color: green; text-align: center; font-weight: bold;"
-             th:text="${message}"></div>
-
-        <!-- Error Message -->
-        <div th:if="${error != null}"
-             style="color: red; text-align: center; font-weight: bold;"
-             th:text="${error}"></div>
+        <div th:if="${message != null}" class="form-banner form-banner--success" th:text="${message}"></div>
+        <div th:if="${error != null}" class="form-banner form-banner--error" th:text="${error}"></div>
 
         <form id="expensesForm" th:action="@{/api/expenses/save}" method="post" th:onsubmit="submitForm(event)">
             <input type="hidden" name="expenseId"

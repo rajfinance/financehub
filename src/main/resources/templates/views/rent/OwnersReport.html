@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
 <div th:if="${owners != null and !owners.isEmpty()}">
-    <div id="reportContent" style="width:100%">
+    <div id="reportContent">
         <h1 class="h1report">Owners Report
             <div class="report-buttons">
                 <button id="downloadPdf" class="pdf-btn" data-report="sal">
@@ -13,7 +13,7 @@
                 </button>
             </div>
         </h1>
-        <table style="width: 100%; border-collapse: collapse; font-family: Arial, sans-serif;">
+        <table>
             <thead>
             <tr>
                 <th rowspan="2">Name</th>
@@ -52,12 +52,12 @@
             </tr>
             </tbody>
         </table>
-        <h2 style="text-align: center; color: #333;" th:text="'Total Advance Amount : ' + ${totalAdvance}"></h2>
+        <h2 class="fh-report-summary-line" th:text="'Total Advance Amount : ' + ${totalAdvance}"></h2>
     </div>
 </div>
 
 <div th:if="${owners == null or owners.isEmpty()}">
-    <h2 style="text-align: center; color: #333; padding-bottom: 10px;">No Owners Available.</h2>
+    <h2 class="fh-report-empty">No Owners Available.</h2>
 </div>
 </body>
 </html>

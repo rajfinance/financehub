@@ -9,7 +9,7 @@
 
     <form id="categoryForm" th:action="@{/api/expenses/categorySave}" method="post" th:onsubmit="submitForm(event)">
         <input type="hidden" name="categoryId" id="categoryId" />
-        <table style="width:100%;">
+        <table class="app-table" style="width:100%;">
             <tr>
                 <td><label for="categoryName">Name:</label></td>
                 <td><input type="text" name="categoryName" id="categoryName" placeholder="Enter category name" style="width: 200px;" required /></td>
@@ -24,7 +24,7 @@
             </tr>
         </table>
 
-        <div style="text-align: center; margin-top: 20px;">
+        <div class="form-actions-footer">
             <button type="submit">Save</button>
         </div>
     </form>
@@ -33,7 +33,7 @@
 
     <div id="reportContent">
         <div th:if="${categories != null and !categories.isEmpty()}" style="width:100%;">
-            <table width="100%">
+            <table class="app-table" width="100%">
                 <thead>
                 <tr>
                     <th>Name</th>

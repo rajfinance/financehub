@@ -6,10 +6,11 @@
     <div class="form-container">
         <h1 th:text="${action == 'edit'} ? 'Edit Experience' : 'Add Experience'">Add Experience</h1>
 
-        <div th:if="${successMessage != null}" style="color: green; text-align: center; font-weight: bold; margin-left: 200px;" th:text="${successMessage}"></div>
+        <div th:if="${successMessage != null}" class="form-banner form-banner--success" th:text="${successMessage}"></div>
 
-        <div th:if="${error != null}" style="color: red; text-align: center; font-weight: bold; margin-left: 100px;">
-            <span th:text="${error}"></span> <a th:href="@{/api/work/workReport}" href="/api/work/workReport" style="color: blue;">View Experience</a>
+        <div th:if="${error != null}" class="form-banner form-banner--error">
+            <span th:text="${error}"></span>
+            <a th:href="@{/api/work/workReport}" href="/api/work/workReport">View Experience</a>
         </div>
 
         <form id="addExperience" th:action="@{/api/work/addExperience}" method="post" onsubmit="submitForm(event)">
