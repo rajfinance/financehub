@@ -6,7 +6,7 @@
 <body>
 <div class="container">
     <div id="yearwise">
-        <h2 th:text="'Plan & Actual Expenses For Year - ' + ${year}"></h2>
+        <h2 th:text="'Budget & Actual Expenses For Year - ' + ${year}"></h2>
         <table class="myTable">
             <thead>
             <tr>
@@ -16,7 +16,7 @@
             </tr>
             <tr>
                 <th:block th:each="monthIndex : ${#numbers.sequence(1, 12)}">
-                    <th th:text="'Plan'"></th>
+                    <th th:text="'Budget'"></th>
                     <th th:text="'Actual'"></th>
                 </th:block>
             </tr>

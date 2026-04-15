@@ -17,6 +17,7 @@ public class ExpenseCategories {
     private String name;
     private String icon;
     private boolean enabled;
+    /** Display order; updated when categories are drag-reordered (0 = first). */
     @Column(name = "sort_order")
     private int sortOrder;
     @Column(name = "created_at", nullable = false)

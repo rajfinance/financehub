@@ -664,21 +664,6 @@ li.submenu ul.dropdown li a:hover {
     box-shadow: 0 0 0 3px rgba(0, 100, 148, 0.15);
 }
 
-.signup button[type="submit"] {
-    margin-top: 0.25rem;
-    padding: 0.75rem 1rem;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    border-radius: 8px;
-    background: linear-gradient(180deg, var(--fh-brand-hover) 0%, var(--fh-brand) 100%);
-    box-shadow: 0 2px 6px rgba(0, 100, 148, 0.25);
-}
-
-.signup button[type="submit"]:hover {
-    background: linear-gradient(180deg, #0c8ed4 0%, var(--fh-brand-hover) 100%);
-    color: #fff;
-}
-
 /* Login page — aligned with signup / menu accent */
 .login-page {
     display: flex;
@@ -834,18 +819,6 @@ body.account-spa-shell .main-content {
     box-shadow: 0 0 0 3px rgba(0, 100, 148, 0.15);
 }
 
-.login-page .login-form button[type="submit"] {
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    font-weight: 600;
-    background: linear-gradient(180deg, var(--fh-brand-hover) 0%, var(--fh-brand) 100%);
-    box-shadow: 0 2px 6px rgba(0, 100, 148, 0.25);
-}
-
-.login-page .login-form button[type="submit"]:hover {
-    background: linear-gradient(180deg, #0c8ed4 0%, var(--fh-brand-hover) 100%);
-}
-
 .profile-readonly-block {
     text-align: left;
     margin-bottom: 1.25rem;
@@ -958,22 +931,31 @@ body.account-spa-shell .main-content {
     box-shadow: 0 0 5px rgba(95, 158, 160, 0.5);
 }
 
-button[type="submit"] {
-    width: 100%;
-    padding: 10px;
-    font-size: 16px;
-    color: #fff;
-    background-color: #006494; /* Cadet blue background */
-    border: none;
-    border-radius: 4px;
+/* Submit buttons: same pill treatment as Professional Reports tabs (login/signup override with higher specificity) */
+button[type="submit"]:not(.menu-logout-btn):not(.btn-services-signin) {
+    width: auto;
+    min-width: 6.5rem;
+    padding: 0.5rem 1.1rem;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    font-family: var(--font-ui);
+    color: #0f172a;
+    background: var(--fh-header-bg);
+    border: 1px solid var(--fh-border);
+    border-radius: 10px;
     cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.3s;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.05s ease, color 0.2s ease;
 }
 
-button[type="submit"]:hover {
-    background-color: #4682b4; /* Steel blue on hover */
-    color:white;
+button[type="submit"]:not(.menu-logout-btn):not(.btn-services-signin):hover {
+    background: rgba(0, 100, 148, 0.1);
+    border-color: rgba(0, 100, 148, 0.28);
+    color: #0f172a;
+}
+
+button[type="submit"]:not(.menu-logout-btn):not(.btn-services-signin):active {
+    transform: translateY(1px);
 }
 
 .login-extras {
@@ -1385,43 +1367,59 @@ main.content.static-page,
 
 .form-container .button-group button {
     width: auto;
-    min-width: 8rem;
+    min-width: 6.5rem;
     flex: 1 1 auto;
-    max-width: 14rem;
+    max-width: 12rem;
 }
 
-.form-container button[type="submit"],
-.form-container button.btn,
-.form-container .button-group button {
+/* Report tabs + .fh-btn actions — same look as submit pills above */
+.tab-button,
+.tab-buttons button,
+button.fh-btn,
+.form-container .button-group button,
+.form-container button.btn {
     margin: 0;
-    padding: 0.75rem 1.25rem;
+    padding: 0.5rem 1.1rem;
     font-size: 0.9375rem;
-    font-weight: 600;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
+    font-weight: 700;
+    font-family: var(--font-ui);
+    color: #0f172a;
+    background: var(--fh-header-bg);
+    border: 1px solid var(--fh-border);
+    border-radius: 10px;
     cursor: pointer;
-    background: linear-gradient(180deg, var(--fh-brand-hover) 0%, var(--fh-brand) 100%);
-    box-shadow: 0 2px 6px rgba(0, 100, 148, 0.25);
-    transition: background 0.2s, box-shadow 0.2s, transform 0.05s;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.05s ease, color 0.2s ease;
+    text-align: center;
 }
 
-.form-container button[type="submit"]:hover,
-.form-container button.btn:hover,
-.form-container .button-group button:hover {
-    background: linear-gradient(180deg, #0c8ed4 0%, var(--fh-brand-hover) 100%);
-    color: #fff;
+.tab-button:hover,
+.tab-buttons button:hover,
+button.fh-btn:hover,
+.form-container .button-group button:hover,
+.form-container button.btn:hover {
+    background: rgba(0, 100, 148, 0.1);
+    border-color: rgba(0, 100, 148, 0.28);
+    color: #0f172a;
 }
 
-.form-container button[type="submit"]:active,
+.tab-button:active,
+.tab-buttons button:active,
+button.fh-btn:active,
+.form-container .button-group button:active,
 .form-container button.btn:active {
     transform: translateY(1px);
 }
 
-.form-container button.active {
-    background: linear-gradient(180deg, #0369a1 0%, #0c4a6e 100%);
-    color: #fff;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+.tab-button.active,
+.tab-buttons button.active,
+.form-container button.active,
+.form-container .button-group button.active {
+    background: rgba(0, 100, 148, 0.12);
+    color: #0f172a;
+    font-weight: 700;
+    border-color: var(--fh-brand);
+    box-shadow: 0 0 0 1px rgba(0, 100, 148, 0.12);
 }
 
 .form-container #reportContent table,
@@ -1457,6 +1455,81 @@ main.content.static-page,
     background: #f8fafc;
 }
 
+.category-form-row-top td,
+.category-form-row-icon td {
+    vertical-align: middle;
+}
+
+.category-preview-cell-label {
+    width: 5rem;
+}
+
+.category-preview-label {
+    font-weight: 600;
+    color: var(--fh-text);
+}
+
+.category-preview-cell-img {
+    vertical-align: middle;
+}
+
+.category-icon-file-label {
+    cursor: help;
+}
+
+.category-icon-file-input {
+    max-width: 100%;
+}
+
+.category-icon-preview {
+    border-radius: 8px;
+    border: 1px solid var(--fh-border);
+    object-fit: cover;
+    background: var(--fh-page-bg);
+}
+
+.category-table tbody tr.category-drag-row {
+    cursor: default;
+}
+
+.category-table tbody tr.fh-category-dragging {
+    opacity: 0.65;
+    cursor: grabbing;
+}
+
+.category-drag-handle {
+    width: 2rem;
+    text-align: center;
+    color: var(--fh-text-muted);
+    font-size: 1.1rem;
+    user-select: none;
+    vertical-align: middle;
+}
+
+.category-drag-grip {
+    display: inline-block;
+    padding: 0.25rem 0.35rem;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    line-height: 1;
+    border-radius: 6px;
+}
+
+.category-drag-grip:active {
+    cursor: grabbing;
+}
+
+.category-col-handle {
+    width: 2.25rem;
+}
+
+.category-table-icon {
+    border-radius: 6px;
+    object-fit: cover;
+    vertical-align: middle;
+}
+
 @media (max-width: 600px) {
     .form-container {
         padding: 1.25rem 1rem 1.25rem;
@@ -1471,9 +1544,9 @@ main.content.static-page,
 }
 
 .form-container form > button[type="submit"] {
-    width: 100%;
+    width: auto;
     display: block;
-    margin-top: 0.35rem;
+    margin: 0.35rem auto 0;
 }
 
 .form-container form table {
@@ -1526,6 +1599,34 @@ main.content.static-page,
 #page-content > .container {
     max-width: 1100px;
     margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.container.fh-year-wise-shell {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#page-content > .container.fh-year-wise-shell {
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#ReportContainer {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#ReportContainer > .container {
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
@@ -1583,9 +1684,10 @@ main.content.static-page,
     padding: 0;
 }
 #yearwise {
-    margin: 1rem auto 0;
-    max-width: 1200px;
-    padding: 1.25rem 1.5rem;
+    margin: 0.75rem 0 0;
+    max-width: none;
+    width: 100%;
+    padding: 0.65rem 0.15rem;
     background: var(--fh-surface);
     border: 1px solid var(--fh-border);
     border-radius: 12px;
@@ -1598,10 +1700,10 @@ main.content.static-page,
 #yearwise > h2 {
     width: 100%;
     max-width: none;
-    margin: 0 0 1rem 0;
-    padding: 0 0 0.75rem 0;
-    text-align: center;
-    font-size: 1.35rem;
+    margin: 0 0 0.65rem 0;
+    padding: 0 0 0.5rem 0;
+    text-align: left;
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--fh-text);
     border-bottom: 1px solid var(--fh-border);
@@ -1609,6 +1711,12 @@ main.content.static-page,
 
 #yearwise h1,
 #yearwise h1.h1report {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
     width: 100%;
     max-width: none;
     margin: 0 0 1.25rem 0;
@@ -1620,9 +1728,25 @@ main.content.static-page,
     border: none;
 }
 
+#yearwise h1.h1report .report-buttons {
+    justify-content: center;
+    margin-left: 0;
+}
+
 #yearwise .summaryTable tbody td:first-child {
     text-align: left;
-    font-weight: 600;
+    font-weight: 700;
+}
+
+#yearwise .summaryTable tr.fh-report-footer-row td,
+#yearwise .summaryTable tr.fh-report-footer-row th {
+    font-weight: 700;
+}
+
+#yearwise .summaryTable thead th:first-child,
+#yearwise .summaryTable tbody td:first-child {
+    width: 13%;
+    min-width: 5.25rem;
 }
 
 /* Styling for the report content (fragments loaded into dashboard / tabs) */
@@ -1775,35 +1899,6 @@ main.content.static-page,
     margin: 1rem 0 1.25rem;
 }
 
-.tab-button {
-    font-family: var(--font-ui);
-    background: var(--fh-surface);
-    color: var(--fh-text);
-    padding: 0.5rem 1.1rem;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    border: 1px solid var(--fh-border);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-    text-align: center;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.tab-button:hover {
-    background: rgba(0, 100, 148, 0.06);
-    border-color: rgba(0, 100, 148, 0.25);
-    color: var(--fh-text);
-}
-
-.tab-button.active {
-    background: rgba(0, 100, 148, 0.1);
-    color: var(--fh-text);
-    font-weight: 700;
-    border-color: var(--fh-brand);
-    box-shadow: 0 0 0 1px rgba(0, 100, 148, 0.12);
-}
-
 .tab-content {
     border-radius: 10px;
     display: none;
@@ -1839,28 +1934,6 @@ main.content.static-page,
 .tab-buttons button {
     flex: 1;
     min-width: 120px;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid var(--fh-border);
-    border-radius: 10px;
-    background: var(--fh-surface);
-    cursor: pointer;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: var(--fh-text);
-    font-family: var(--font-ui);
-    transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.tab-buttons button:hover {
-    background: rgba(0, 100, 148, 0.06);
-    border-color: rgba(0, 100, 148, 0.25);
-}
-
-.tab-buttons button.active {
-    background: rgba(0, 100, 148, 0.1);
-    color: var(--fh-text);
-    font-weight: 700;
-    border-color: var(--fh-brand);
 }
 
 /* Grid layout for monthly expenses */
@@ -1868,6 +1941,12 @@ main.content.static-page,
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 0.75rem;
+}
+
+.expenses .expenses-category-grid,
+.expenses-category-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.45rem;
 }
 
 .grid-item {
@@ -1878,10 +1957,32 @@ main.content.static-page,
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
+.expenses .expenses-category-grid .grid-item,
+.expenses-category-grid .grid-item {
+    padding: 0.45rem 0.4rem;
+    border-radius: 8px;
+}
+
 .grid-item label {
     font-size: 0.8125rem;
     font-weight: 600;
     color: var(--fh-text);
+}
+
+.expenses .expenses-category-grid .grid-item label,
+.expenses-category-grid .grid-item label {
+    font-size: 0.72rem;
+    line-height: 1.25;
+    font-weight: 600;
+}
+
+.expenses-category-icon,
+.expenses .expenses-category-grid .grid-item img {
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+    vertical-align: middle;
+    object-fit: contain;
 }
 
 .grid-item input {
@@ -1894,6 +1995,13 @@ main.content.static-page,
     font-size: 0.875rem;
     background: #fafbfc;
     box-sizing: border-box;
+}
+
+.expenses .expenses-category-grid .grid-item input {
+    padding: 0.32rem 0.25rem;
+    margin-top: 0.25rem;
+    font-size: 0.78rem;
+    border-radius: 6px;
 }
 
 .grid-item input:focus {
@@ -1946,24 +2054,58 @@ main.content.static-page,
     margin-bottom: 1rem;
 }
 
-.expenses button[type="submit"] {
-    width: 100%;
-    max-width: 20rem;
-    margin: 1rem auto 0;
-    display: block;
-    padding: 0.75rem 1.25rem;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    background: linear-gradient(180deg, var(--fh-brand-hover) 0%, var(--fh-brand) 100%);
-    box-shadow: 0 2px 6px rgba(0, 100, 148, 0.25);
+.expenses-form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+    align-items: center;
+    margin-bottom: 0.65rem;
 }
 
-.expenses button[type="submit"]:hover {
-    background: linear-gradient(180deg, #0c8ed4 0%, var(--fh-brand-hover) 100%);
+.expenses-form-row .form-group {
+    margin-bottom: 0;
+}
+
+.expenses-form-field {
+    flex: 1 1 200px;
+    min-width: 0;
+}
+
+.expenses .form-group.expenses-form-type {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+}
+
+.expenses-type-label {
+    display: inline;
+    flex: 0 0 auto;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--fh-text);
+    margin: 0;
+}
+
+.expenses-type-radios {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 1rem;
+}
+
+.expenses-type-radios label {
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.expenses form > button[type="submit"],
+.expenses form > .fh-btn {
+    width: 100%;
+    max-width: 15rem;
+    margin: 1rem auto 0;
+    display: block;
 }
 
 .form-group {
@@ -2066,22 +2208,71 @@ main.content.static-page,
     background-color: white;
 }
 
-#yearwise .myTable,
+/* Monthly expenses: softer Plan / Actual pills */
+.expenses .expenses-type-radios input[type="radio"] + label {
+    border: 1px solid var(--fh-border);
+    border-radius: 10px;
+    padding: 0.4rem 0.65rem;
+    background: var(--fh-surface);
+    font-size: 0.8125rem;
+    color: var(--fh-text);
+    box-shadow: none;
+    gap: 0.4rem;
+}
+
+.expenses .expenses-type-radios input[type="radio"] + label::before {
+    border: 2px solid var(--fh-brand-muted);
+    width: 12px;
+    height: 12px;
+}
+
+.expenses .expenses-type-radios input[type="radio"]:checked + label {
+    background: rgba(0, 100, 148, 0.1);
+    color: var(--fh-text);
+    border-color: var(--fh-brand);
+}
+
+.expenses .expenses-type-radios input[type="radio"]:checked + label::before {
+    background-color: var(--fh-brand);
+    border-color: var(--fh-brand);
+}
+
+#yearwise .myTable {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+    font-size: clamp(0.66rem, 0.88vw, 0.82rem);
+}
+
+#yearwise .myTable thead th[rowspan="2"],
+#yearwise .myTable tbody td:first-child,
+#yearwise .myTable tr.fh-report-footer-row td:first-child {
+    width: 10%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+#yearwise .myTable thead tr:nth-child(2) th {
+    padding-left: 0.08rem;
+    padding-right: 0.08rem;
+}
+
 #yearwise .myTable th,
 #yearwise .myTable td {
     border: 1px solid var(--fh-border);
-    border-collapse: collapse;
-    font-size: 0.8125rem;
-    width: 100%;
-    padding: 0.4rem 0.5rem;
+    padding: 0.18rem 0.1rem;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 #yearwise .myTable thead th {
     background: var(--fh-header-bg);
     color: var(--fh-text);
-    font-weight: 600;
+    font-weight: 700;
     text-align: center;
-    font-size: 0.8125rem;
+    font-size: inherit;
     border-bottom: 2px solid rgba(0, 100, 148, 0.2);
 }
 
@@ -2095,32 +2286,43 @@ main.content.static-page,
 
 #yearwise .myTable tbody td:first-child {
     text-align: left;
-    font-weight: 600;
+    font-weight: 700;
+}
+
+#yearwise .myTable tr.fh-report-footer-row td {
+    font-weight: 700;
 }
 
 #yearwise .summaryTable {
     border-collapse: collapse;
     width: 100%;
-    max-width: 900px;
+    max-width: 1200px;
     margin: 0 auto;
+    table-layout: fixed;
     font-family: var(--font-ui);
-    font-size: 0.9375rem;
+    font-size: clamp(0.9rem, 1.2vw, 1.05rem);
 }
 
 #yearwise .summaryTable th {
     border: 1px solid var(--fh-border);
-    padding: 0.5rem 0.65rem;
+    padding: 0.38rem 0.28rem;
     background: var(--fh-header-bg);
     color: var(--fh-text);
-    font-weight: 600;
+    font-weight: 700;
     border-bottom: 2px solid rgba(0, 100, 148, 0.2);
     text-align: center;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 #yearwise .summaryTable td {
     border: 1px solid var(--fh-border);
-    padding: 0.45rem 0.65rem;
+    padding: 0.34rem 0.24rem;
     text-align: right;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 #yearwise .summaryTable tbody tr:nth-child(even) {
@@ -2222,4 +2424,39 @@ main.content.static-page,
     height: 18px;
     object-fit: contain;
     pointer-events: none;
+}
+
+/* Auth: gradient submits (placed last so they override the global pill submit rule) */
+.signup-body .signup form button[type="submit"] {
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(180deg, var(--fh-brand-hover) 0%, var(--fh-brand) 100%);
+    box-shadow: 0 2px 6px rgba(0, 100, 148, 0.25);
+}
+
+.signup-body .signup form button[type="submit"]:hover {
+    background: linear-gradient(180deg, #0c8ed4 0%, var(--fh-brand-hover) 100%);
+    color: #fff;
+}
+
+.login-page .login-container .login-form button[type="submit"] {
+    width: 100%;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: #fff;
+    border: none;
+    background: linear-gradient(180deg, var(--fh-brand-hover) 0%, var(--fh-brand) 100%);
+    box-shadow: 0 2px 6px rgba(0, 100, 148, 0.25);
+}
+
+.login-page .login-container .login-form button[type="submit"]:hover {
+    background: linear-gradient(180deg, #0c8ed4 0%, var(--fh-brand-hover) 100%);
+    color: #fff;
 }

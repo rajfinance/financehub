@@ -1,6 +1,7 @@
 package com.financehub.dtos;
 
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class ExpensesCategoriesDTO {
@@ -9,4 +10,6 @@ public class ExpensesCategoriesDTO {
     String iconPath;
     int sortOrder;
     boolean enabled;
+    /** Optional upload; when empty, {@code iconPath} is kept (or default for new categories). */
+    MultipartFile iconImage;
 }

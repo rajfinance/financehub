@@ -133,14 +133,9 @@ function validForm(formId){
 }
 function validateCategories(){
     const categoryName = document.getElementById("categoryName").value.trim();
-    const sortOrder = document.getElementById("sortOrder").value.trim();
 
     if (categoryName === "") {
         alert("Category Name is required");
-        return false;
-    }
-    if (sortOrder === "" || isNaN(sortOrder)) {
-        alert("Sort Order must be a valid number");
         return false;
     }
     return true;

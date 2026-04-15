@@ -34,3 +34,6 @@ build/
 
 ### Local SQL / ops scripts (run manually in prod; not versioned) ###
 scripts/
+
+### Uploaded files (category icons, etc.) ###
+uploads/

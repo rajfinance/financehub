@@ -1,5 +1,6 @@
 package com.financehub.controller;
 
+import com.financehub.dtos.CategoryReorderRequest;
 import com.financehub.dtos.ExpenseReportDTO;
 import com.financehub.dtos.ExpenseRequest;
 import com.financehub.dtos.ExpensesCategoriesDTO;
@@ -26,6 +27,8 @@ public class ExpensesController {
     private void addCategoryListToModel(Model model) {
         List<ExpenseCategories> categories = expensesService.getAllCategories(userService.getUserId());
         model.addAttribute("categories", categories);
+        int nextSort = categories.stream().mapToInt(ExpenseCategories::getSortOrder).max().orElse(0) + 1;
+        model.addAttribute("nextSortOrder", nextSort);
     }
     @GetMapping("/categories")
     public String showCategories(Model model) {
@@ -33,8 +36,14 @@ public class ExpensesController {
         return "views/expenses/manageExpenseCategories";
     }
     @PostMapping("/categorySave")
-    public String addCategory(@ModelAttribute ExpensesCategoriesDTO expensesCategoriesDTO,Model model) {
-        expensesService.saveCategory(expensesCategoriesDTO);
+    public String addCategory(@ModelAttribute ExpensesCategoriesDTO expensesCategoriesDTO, Model model) {
+        try {
+            expensesService.saveCategory(expensesCategoriesDTO);
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            model.addAttribute("categoryError", ex.getMessage());
+            addCategoryListToModel(model);
+            return "views/expenses/manageExpenseCategories";
+        }
         addCategoryListToModel(model);
         return "views/expenses/manageExpenseCategories";
     }
@@ -44,6 +53,16 @@ public class ExpensesController {
         expensesService.deleteCategoryByID(id);
         addCategoryListToModel(model);
         return "views/expenses/manageExpenseCategories";
+    }
+
+    @PostMapping("/categoryReorder")
+    @ResponseBody
+    public ResponseEntity<Void> reorderCategories(@RequestBody CategoryReorderRequest body) {
+        if (body == null || body.getOrderedIds() == null || body.getOrderedIds().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        expensesService.reorderCategories(body.getOrderedIds());
+        return ResponseEntity.ok().build();
     }
     @GetMapping("/add")
     public String addExpenses(@RequestParam(value = "id", required = false) Long id,@RequestParam(value="type", required = false) String expenseType, Model model) {

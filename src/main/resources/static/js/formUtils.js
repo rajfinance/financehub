@@ -138,12 +138,44 @@ function callEditCategory(element) {
 
         editCategory(id, name, icon, sortOrder, enabled);
 }
+function previewCategoryIcon(fileInput) {
+    const preview = document.getElementById("categoryIconPreview");
+    if (!preview || !fileInput || !fileInput.files || !fileInput.files[0]) {
+        return;
+    }
+    const file = fileInput.files[0];
+    if (file.size > 250 * 1024) {
+        alert("Image must be 250 KB or smaller.");
+        fileInput.value = "";
+        return;
+    }
+    const url = URL.createObjectURL(file);
+    preview.onload = function () {
+        URL.revokeObjectURL(url);
+        preview.onload = null;
+    };
+    preview.src = url;
+}
+
 function editCategory(id, name, icon, sortOrder, enabled) {
     document.getElementById("categoryId").value = id;
     document.getElementById("categoryName").value = name;
-    document.getElementById("iconPath").value = icon;
+    const hiddenIcon = document.getElementById("iconPath");
+    if (hiddenIcon) {
+        hiddenIcon.value = icon || "";
+    }
     document.getElementById("sortOrder").value = sortOrder;
     document.getElementById("enabled").checked = enabled;
+
+    const fileInput = document.getElementById("iconImage");
+    if (fileInput) {
+        fileInput.value = "";
+    }
+    const preview = document.getElementById("categoryIconPreview");
+    if (preview) {
+        const src = icon && icon.trim() ? icon : "/images/category-placeholder.svg";
+        preview.src = src;
+    }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -218,3 +250,112 @@ function setActive(button) {
     button.closest('.form-container').querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
     button.classList.add('active');
 }
+
+function persistCategoryOrder(tbody) {
+    const ids = [...tbody.querySelectorAll("tr[data-category-id]")]
+        .map((r) => parseInt(r.getAttribute("data-category-id"), 10))
+        .filter((n) => !Number.isNaN(n));
+    if (!ids.length) {
+        return;
+    }
+    const headers = Object.assign(
+        { "Content-Type": "application/json" },
+        typeof getCsrfHeaders === "function" ? getCsrfHeaders() : {}
+    );
+    fetch("/api/expenses/categoryReorder", {
+        method: "POST",
+        headers: headers,
+        credentials: "same-origin",
+        body: JSON.stringify({ orderedIds: ids }),
+    })
+        .then((r) => {
+            if (!r.ok) {
+                throw new Error("Reorder failed");
+            }
+            if (typeof loadContent === "function") {
+                loadContent("/api/expenses/categories");
+            }
+        })
+        .catch((err) => console.error(err));
+}
+
+(function initExpenseCategoryDrag() {
+    let draggedRow = null;
+    let orderBeforeDrag = "";
+
+    document.addEventListener("dragstart", function (e) {
+        const grip = e.target.closest("#categoryTable .category-drag-grip");
+        if (!grip) {
+            return;
+        }
+        const row = grip.closest("tr[data-category-id]");
+        const categoryTbody = document.getElementById("categoryTable");
+        if (!row || !categoryTbody || !categoryTbody.contains(row)) {
+            return;
+        }
+        draggedRow = row;
+        row.classList.add("fh-category-dragging");
+        const tbody = row.closest("tbody");
+        orderBeforeDrag = [...tbody.querySelectorAll("tr[data-category-id]")]
+            .map((r) => r.getAttribute("data-category-id"))
+            .join(",");
+        if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = "move";
+            e.dataTransfer.setData("text/plain", row.getAttribute("data-category-id") || "");
+        }
+    });
+
+    function onDragOverCategory(e) {
+        if (!draggedRow) {
+            return;
+        }
+        const tbody = draggedRow.closest("tbody");
+        if (!tbody || !tbody.contains(e.target)) {
+            return;
+        }
+        e.preventDefault();
+        if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = "move";
+        }
+        const row = e.target.closest("tr[data-category-id]");
+        if (!row || row === draggedRow) {
+            return;
+        }
+        const rect = row.getBoundingClientRect();
+        const after = e.clientY > rect.top + rect.height / 2;
+        if (after) {
+            tbody.insertBefore(draggedRow, row.nextSibling);
+        } else {
+            tbody.insertBefore(draggedRow, row);
+        }
+    }
+
+    document.addEventListener("dragover", onDragOverCategory, true);
+
+    document.addEventListener("drop", function (e) {
+        if (draggedRow && e.target.closest("#categoryTable")) {
+            e.preventDefault();
+        }
+    });
+
+    document.addEventListener("dragend", function () {
+        if (!draggedRow) {
+            return;
+        }
+        draggedRow.classList.remove("fh-category-dragging");
+        const tbody = draggedRow.closest("tbody");
+        const snapshot = tbody;
+        draggedRow = null;
+        if (!snapshot || !orderBeforeDrag) {
+            orderBeforeDrag = "";
+            return;
+        }
+        const newOrder = [...snapshot.querySelectorAll("tr[data-category-id]")]
+            .map((r) => r.getAttribute("data-category-id"))
+            .join(",");
+        if (newOrder !== orderBeforeDrag) {
+            persistCategoryOrder(snapshot);
+        }
+        orderBeforeDrag = "";
+    });
+})();

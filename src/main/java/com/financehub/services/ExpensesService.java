@@ -23,7 +23,9 @@ import com.itextpdf.layout.properties.VerticalAlignment;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
@@ -42,6 +44,8 @@ public class ExpensesService {
     public ExpensesCategoriesRepository expensesCategoriesRepository;
     @Autowired
     public ExpensesRepository expensesRepository;
+    @Autowired
+    private ExpenseCategoryImageStorage expenseCategoryImageStorage;
     public List<ExpenseCategories> getAllCategories(Long userId) {
         return expensesCategoriesRepository.findByUserIdOrderBySortOrder(userId);
     }
@@ -52,9 +56,43 @@ public class ExpensesService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void saveCategory(ExpensesCategoriesDTO expensesCategoriesDTO) {
         ExpenseCategories entity = mapDtoToEntity(expensesCategoriesDTO);
+        MultipartFile iconFile = expensesCategoriesDTO.getIconImage();
+        Long userId = userService.getUserId();
+        if (iconFile != null && !iconFile.isEmpty()) {
+            if (expensesCategoriesDTO.getCategoryId() != null && expensesCategoriesDTO.getCategoryId() > 0) {
+                expensesCategoriesRepository
+                        .findByIdAndUserId(Math.toIntExact(expensesCategoriesDTO.getCategoryId()), userId)
+                        .ifPresent(old -> expenseCategoryImageStorage.deleteIfStored(old.getIcon(), userId));
+            }
+            try {
+                entity.setIcon(expenseCategoryImageStorage.store(iconFile, userId));
+            } catch (IOException e) {
+                throw new IllegalStateException("Could not save category image", e);
+            }
+        } else if (entity.getIcon() == null || entity.getIcon().isBlank()) {
+            entity.setIcon("/images/category-placeholder.svg");
+        }
         expensesCategoriesRepository.save(entity);
+    }
+
+    @Transactional
+    public void reorderCategories(List<Integer> orderedIds) {
+        if (orderedIds == null || orderedIds.isEmpty()) {
+            return;
+        }
+        Long userId = userService.getUserId();
+        for (int i = 0; i < orderedIds.size(); i++) {
+            final int sortOrder = i;
+            int id = orderedIds.get(i);
+            expensesCategoriesRepository.findByIdAndUserId(id, userId).ifPresent(c -> {
+                c.setSortOrder(sortOrder);
+                c.setUpdatedAt(LocalDateTime.now());
+                expensesCategoriesRepository.save(c);
+            });
+        }
     }
 
     private ExpenseCategories mapDtoToEntity(ExpensesCategoriesDTO dto) {
@@ -83,8 +121,11 @@ public class ExpensesService {
     }
 
     public void deleteCategoryByID(int id) {
-        expensesCategoriesRepository.findByIdAndUserId(id, userService.getUserId())
-                .ifPresent(expensesCategoriesRepository::delete);
+        Long userId = userService.getUserId();
+        expensesCategoriesRepository.findByIdAndUserId(id, userId).ifPresent(cat -> {
+            expenseCategoryImageStorage.deleteIfStored(cat.getIcon(), userId);
+            expensesCategoriesRepository.delete(cat);
+        });
     }
 
     public void saveExpense(ExpenseRequest expenseRequest) {
@@ -432,7 +473,6 @@ public void generateYearlyExpensePdf(OutputStream outputStream, Map<String, Obje
         Table table = new Table(columnWidths).useAllAvailableWidth();
         table.setAutoLayout();
         table.setHorizontalAlignment(HorizontalAlignment.CENTER);
-        //table.setMarginLeft(-15);
 
         String[] headers = {"CATEGORY", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", "TOTAL", "AVG"};
         for (String header : headers) {

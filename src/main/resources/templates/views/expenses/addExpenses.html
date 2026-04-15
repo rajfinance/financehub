@@ -15,26 +15,31 @@
             <input type="hidden" name="expenseId"
                    th:value="${expenseDetails != null} ? ${expenseDetails.id} : ''" />
 
-            <div class="form-group">
-                <label>Month:</label>
-                <input type="month" name="month" required
-                       th:value="${expenseDetails != null} ? (${expenseDetails.expenseYear} + '-' + (${expenseDetails.month lt 10} ? '0' : '') + ${expenseDetails.month}) : ''" />
+            <div class="expenses-form-row">
+                <div class="form-group expenses-form-field">
+                    <label for="expense-month">Month</label>
+                    <input type="month" id="expense-month" name="month" required
+                           th:value="${expenseDetails != null} ? (${expenseDetails.expenseYear} + '-' + (${expenseDetails.month lt 10} ? '0' : '') + ${expenseDetails.month}) : ''" />
+                </div>
+                <div class="form-group expenses-form-field expenses-form-type">
+                    <span class="expenses-type-label">Type</span>
+                    <div class="expenses-type-radios" role="group" aria-label="Expense type">
+                        <input type="radio" name="expenseType" value="plan" id="plan"
+                               th:checked="${expenseDetails != null and #strings.toLowerCase(expenseDetails.expenseType) == 'plan'}" />
+                        <label for="plan">Budget</label>
+                        <input type="radio" name="expenseType" value="actual" id="actual"
+                               th:checked="${expenseDetails != null and #strings.toLowerCase(expenseDetails.expenseType) == 'actual'}" />
+                        <label for="actual">Actual</label>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label>Type:</label>
-                <input type="radio" name="expenseType" value="plan" id="plan"
-                       th:checked="${expenseDetails != null and #strings.toLowerCase(expenseDetails.expenseType) == 'plan'}" />
-                <label for="plan">Plan</label>
-                <input type="radio" name="expenseType" value="actual" id="actual"
-                       th:checked="${expenseDetails != null and #strings.toLowerCase(expenseDetails.expenseType) == 'actual'}" />
-                <label for="actual">Actual</label>
-            </div>
-
-            <div class="grid-container">
+            <div class="grid-container expenses-category-grid">
                 <div class="grid-item" th:each="category : ${categories}">
                     <label>
-                        <img th:src="@{${category.icon}}" th:alt="${category.name}" width="20" height="20" style="vertical-align: middle; margin-right: 5px;" />
+                        <img class="expenses-category-icon" th:with="iu=${category.icon != null and category.icon != '' ? category.icon : '/images/category-placeholder.svg'}"
+                             th:src="@{${iu}}" th:alt="${category.name}"
+                             onerror="this.onerror=null;this.src='/images/category-placeholder.svg';"/>
                         <span th:text="${category.name}"></span>
                     </label>
                     <input type="number" class="expenses"
@@ -50,7 +55,7 @@
                        th:value="${totalExpense != null} ? ${totalExpense} : 0" />
             </div>
 
-            <button type="submit"
+            <button type="submit" class="fh-btn"
                     th:text="${expenseDetails != null} ? 'Update Expenses' : 'Save Expenses'"></button>
         </form>
     </div>

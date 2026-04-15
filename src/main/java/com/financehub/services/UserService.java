@@ -40,8 +40,8 @@ public class UserService {
 
 	public long getUserId() {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		if (auth != null && auth.getPrincipal() instanceof ClientUserPrincipal p) {
-			return p.getUserId();
+		if (auth != null && auth.getPrincipal() instanceof ClientUserPrincipal) {
+			return ((ClientUserPrincipal) auth.getPrincipal()).getUserId();
 		}
 		return 0L;
 	}
