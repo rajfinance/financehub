@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div id="reportContent">
+    <h1 class="h1report">EMI Schedule</h1>
+
+    <div class="form-row form-row--3" style="margin-bottom: 1rem;">
+        <div class="input-group">
+            <label for="emiScheduleLoan">Loan</label>
+            <select id="emiScheduleLoan" onchange="reloadLoanEmiReport()">
+                <option value="" th:selected="${selectedLoanId == null}">All loans</option>
+                <option th:each="loan : ${loans}"
+                        th:value="${loan.id}"
+                        th:text="|${loan.bankName} — ${loan.loanAccountNumber}|"
+                        th:selected="${selectedLoanId != null and selectedLoanId == loan.id}"></option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label for="emiScheduleYear">Year</label>
+            <select id="emiScheduleYear" onchange="reloadLoanEmiReport()">
+                <option th:each="y : ${years}" th:value="${y}" th:text="${y}"
+                        th:selected="${y == selectedYear}"></option>
+            </select>
+        </div>
+    </div>
+
+    <th:block th:if="${scheduleGroups != null and !scheduleGroups.isEmpty()}">
+        <th:block th:each="group : ${scheduleGroups}">
+            <h2 class="fh-report-section-title"
+                th:text="|${group.loan.bankName} — ${group.loan.loanAccountNumber} (${group.loan.loanType})|"></h2>
+            <table>
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Due Date</th>
+                    <th>Deduction Date</th>
+                    <th>EMI Amount</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${group.scheduleRows}">
+                    <td th:text="${row.emiNumber}"></td>
+                    <td th:text="${row.formattedDueDate}"></td>
+                    <td th:text="${row.formattedDeductionDate}"></td>
+                    <td style="text-align: right;" th:text="${row.formattedEmiAmount}"></td>
+                    <td th:text="${row.emiStatus}"></td>
+                    <td>
+                        <a th:if="${row.recorded}" href="javascript:void(0);"
+                           th:onclick="|loadEditPageContent('/api/loan/recordEmi?id=${row.overrideId}')|"
+                           style="text-decoration: none;">
+                            <img th:src="@{/images/edit-icon.png}" alt="Record EMI" style="width: 20px; height: 20px; margin-right: 12px;" />
+                        </a>
+                        <a th:unless="${row.recorded}" href="javascript:void(0);"
+                           th:onclick="|loadEditPageContent('/api/loan/recordEmi?loanId=${group.loan.id}&emiNumber=${row.emiNumber}')|"
+                           style="text-decoration: none;">
+                            <img th:src="@{/images/edit-icon.png}" alt="Record EMI" style="width: 20px; height: 20px; margin-right: 12px;" />
+                        </a>
+                        <a th:if="${row.recorded}" href="javascript:void(0);"
+                           th:onclick="'deleteEntity(this, \'EMI payment\', \'/api/loan/deleteEmiPayment\')'"
+                           th:attr="data-report-type='loanEmiReport', data-id=${row.overrideId}">
+                            <img th:src="@{/images/delete-icon.png}" alt="Revert" style="width: 20px; height: 20px;" />
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <br/>
+        </th:block>
+        <h2 class="fh-report-summary-line" th:text="|Total EMI for ${selectedYear}: ${yearTotal}|"></h2>
+    </th:block>
+
+    <p th:if="${scheduleGroups == null or scheduleGroups.isEmpty()}"
+       style="text-align: center; color: var(--fh-text-muted); font-style: italic;">
+        No EMI entries for this year. Add a loan or choose another year.
+    </p>
+</div>
+</body>
+</html>

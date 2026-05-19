@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<th:block sec:authorize="isAuthenticated()">
+    <div class="content">
+        <h1>Loan Reports</h1>
+        <div class="tabs">
+            <button type="button" class="tab-button active" th:onclick="'showReport(\'loansReport\')'">My Loans</button>
+            <button type="button" class="tab-button" th:onclick="'showReport(\'loanEmiReport\')'">EMI Schedule</button>
+        </div>
+    </div>
+    <div class="tab-content" id="loansReport" style="display:none;"></div>
+    <div class="tab-content" id="loanEmiReport" style="display:none;"></div>
+</th:block>
+<th:block sec:authorize="!isAuthenticated()">
+    <p>Please log in to access this page.</p>
+</th:block>
+</body>
+</html>

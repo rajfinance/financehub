@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:if="${loans != null and !loans.isEmpty()}">
+    <div id="reportContent">
+        <h1 class="h1report">My Loans</h1>
+        <table>
+            <thead>
+            <tr>
+                <th>Account</th>
+                <th>Bank</th>
+                <th>Type</th>
+                <th>Sanctioned Amount</th>
+                <th>EMI</th>
+                <th>Tenure</th>
+                <th>First EMI</th>
+                <th>End Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="loan : ${loans}">
+                <td style="text-align: left;" th:text="${loan.loanAccountNumber}"></td>
+                <td style="text-align: left;" th:text="${loan.bankName}"></td>
+                <td th:text="${loan.loanType}"></td>
+                <td style="text-align: right;" th:text="${loan.formattedLoanAmount}"></td>
+                <td style="text-align: right;" th:text="${loan.formattedEmiAmount}"></td>
+                <td th:text="${loan.tenure} + ' months'"></td>
+                <td th:text="${loan.formattedFirstEmiDate}"></td>
+                <td th:text="${loan.formattedEndDate}"></td>
+                <td th:text="${loan.loanStatus}"></td>
+                <td>
+                    <a href="javascript:void(0);"
+                       th:onclick="'deleteEntity(this, \'loan\', \'/api/loan/deleteLoan\')'"
+                       th:attr="data-report-type='loansReport', data-id=${loan.id}">
+                        <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width: 20px; height: 20px;" />
+                    </a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<p th:if="${loans == null or loans.isEmpty()}" style="text-align: center; color: var(--fh-text-muted); font-style: italic;">
+    No loans added yet. Use <a href="javascript:void(0);" th:onclick="'loadContent(\'/api/loan/addLoan\')'">Add Loan</a> to register a loan.
+</p>
+</body>
+</html>
