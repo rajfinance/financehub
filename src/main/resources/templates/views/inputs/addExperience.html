@@ -10,39 +10,57 @@
 
         <div th:if="${error != null}" class="form-banner form-banner--error">
             <span th:text="${error}"></span>
-            <a th:href="@{/api/work/workReport}" href="/api/work/workReport">View Experience</a>
+            <a href="javascript:void(0);" th:onclick="'loadContent(\'/api/work/workReport\')'">View Experience</a>
         </div>
 
         <form id="addExperience" th:action="@{/api/work/addExperience}" method="post" onsubmit="submitForm(event)">
             <input th:if="${action == 'edit'}" type="hidden" name="companyId" th:value="${company?.companyId}" />
 
-            <div class="input-group">
-                <label for="companyName">Company Name<span class="mandatory">*</span>:</label>
-                <input type="text" id="companyName" name="companyName" th:value="${company != null ? company.companyName : ''}" required="required" />
+            <div class="form-row">
+                <div class="form-column">
+                    <div class="input-group">
+                        <label for="companyName">Company Name<span class="mandatory">*</span>:</label>
+                        <input type="text" id="companyName" name="companyName" th:value="${company != null ? company.companyName : ''}" required="required" />
+                    </div>
+                </div>
+                <div class="form-column">
+                    <div class="input-group">
+                        <label for="clientName">Client Name<span class="mandatory">*</span>:</label>
+                        <input type="text" id="clientName" name="clientName" th:value="${company != null ? company.clientName : ''}" required="required" />
+                    </div>
+                </div>
             </div>
 
-            <div class="input-group">
-                <label for="clientName">Client Name<span class="mandatory">*</span>:</label>
-                <input type="text" id="clientName" name="clientName" th:value="${company != null ? company.clientName : ''}" required="required" />
+            <div class="form-row">
+                <div class="form-column">
+                    <div class="input-group">
+                        <label for="projectName">Project Name<span class="mandatory">*</span>:</label>
+                        <input type="text" id="projectName" name="projectName" th:value="${company != null ? company.projectName : ''}" required="required" />
+                    </div>
+                </div>
+                <div class="form-column">
+                    <div class="input-group">
+                        <label for="currentlyEmployed">
+                            <input type="checkbox" id="currentlyEmployed" name="currentlyEmployed" th:checked="${company != null and company.currentlyEmployed}" onclick="toggleToDate()" />
+                            Currently Employed
+                        </label>
+                    </div>
+                </div>
             </div>
 
-            <div class="input-group">
-                <label for="projectName">Project Name<span class="mandatory">*</span>:</label>
-                <input type="text" id="projectName" name="projectName" th:value="${company != null ? company.projectName : ''}" required="required" />
-            </div>
-
-            <div class="input-group">
-                <label for="fromDate">Experience From (MM/DD/YYYY)<span class="mandatory">*</span>:</label>
-                <input type="date" id="fromDate" name="fromDate" th:value="${company != null ? company.fromDate : ''}" required="required" max="9999-12-31" class="styled-date" />
-            </div>
-
-            <div class="input-group">
-                <label>Currently Employed <input type="checkbox" id="currentlyEmployed" name="currentlyEmployed" th:checked="${company != null and company.currentlyEmployed}" onclick="toggleToDate()" /></label>
-            </div>
-
-            <div class="input-group">
-                <label for="toDate">Experience To (MM/DD/YYYY):</label>
-                <input type="date" id="toDate" name="toDate" th:value="${company != null and company.toDate != null ? company.toDate : ''}" th:disabled="${company != null and company.currentlyEmployed}" max="9999-12-31" />
+            <div class="form-row">
+                <div class="form-column">
+                    <div class="input-group">
+                        <label for="fromDate">Experience From (MM/DD/YYYY)<span class="mandatory">*</span>:</label>
+                        <input type="date" id="fromDate" name="fromDate" th:value="${company != null ? company.fromDate : ''}" required="required" max="9999-12-31" class="styled-date" />
+                    </div>
+                </div>
+                <div class="form-column">
+                    <div class="input-group">
+                        <label for="toDate">Experience To (MM/DD/YYYY):</label>
+                        <input type="date" id="toDate" name="toDate" th:value="${company != null and company.toDate != null ? company.toDate : ''}" th:disabled="${company != null and company.currentlyEmployed}" max="9999-12-31" />
+                    </div>
+                </div>
             </div>
 
             <button type="submit" th:text="${action == 'edit'} ? 'Update Experience' : 'Add Experience'">Add Experience</button>

@@ -8,5 +8,7 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
 
     List<Loan> findByUserId(Long userId);
 
+    List<Loan> findByUserIdOrderByCreatedAtDesc(Long userId);
+
     boolean existsByLoanAccountNumber(String loanAccountNumber);
 }

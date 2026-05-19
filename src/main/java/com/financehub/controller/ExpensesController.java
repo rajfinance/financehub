@@ -12,8 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
+import java.time.YearMonth;
 import java.text.DecimalFormat;
 import java.util.*;
 
@@ -65,38 +64,75 @@ public class ExpensesController {
         return ResponseEntity.ok().build();
     }
     @GetMapping("/add")
-    public String addExpenses(@RequestParam(value = "id", required = false) Long id,@RequestParam(value="type", required = false) String expenseType, Model model) {
-        double totalExpense =0;
-        List<ExpenseCategories> categories = expensesService.getEnabledCategories(userService.getUserId());
-        model.addAttribute("categories", categories);
-        ExpenseReportDTO dto = expensesService.getExpenseDetailsById(id);
-        if (dto != null) {
-            dto.setExpenseType(expenseType);
-            model.addAttribute("expenseDetails", dto);
-            if(expenseType.equalsIgnoreCase("plan")) {
-                totalExpense = dto.getPlannedExpenses().values().stream().mapToDouble(Double::doubleValue).sum();
-            }
-            else{
-                totalExpense = dto.getActualExpenses().values().stream().mapToDouble(Double::doubleValue).sum();
-            }
-            model.addAttribute("totalExpense", totalExpense);
-        }
+    public String addExpenses(@RequestParam(value = "id", required = false) Long id,
+                              @RequestParam(value = "type", required = false) String expenseType,
+                              Model model) {
+        prepareAddExpensesModel(model, id, expenseType, null);
         return "views/expenses/addExpenses";
     }
 
     @PostMapping("/save")
-    public String saveExpenses(@ModelAttribute ExpenseRequest expenseRequest, RedirectAttributes redirectAttributes) {
+    public String saveExpenses(@ModelAttribute ExpenseRequest expenseRequest, Model model) {
+        boolean updated = expenseRequest.getExpenseId() != null;
         try {
             expensesService.saveExpense(expenseRequest);
-            if(expenseRequest.getExpenseId()!=null){
-                redirectAttributes.addFlashAttribute("message", "Expenses Updated Successfully!");
-            }else {
-                redirectAttributes.addFlashAttribute("message", "Expenses Saved Successfully!");
-            }
+            model.addAttribute("message", updated ? "Expenses Updated Successfully!" : "Expenses Saved Successfully!");
+            prepareAddExpensesModel(model, updated ? expenseRequest.getExpenseId() : null, expenseRequest.getExpenseType(), null);
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Failed to save expenses: " + e.getMessage());
+            model.addAttribute("error", "Failed to save expenses: " + e.getMessage());
+            prepareAddExpensesModel(model, expenseRequest.getExpenseId(), expenseRequest.getExpenseType(), expenseRequest);
         }
-        return "redirect:/api/expenses/add";
+        return "views/expenses/addExpenses";
+    }
+
+    private void prepareAddExpensesModel(Model model, Long id, String expenseType, ExpenseRequest submitted) {
+        model.addAttribute("categories", expensesService.getEnabledCategories(userService.getUserId()));
+
+        ExpenseReportDTO dto = null;
+        if (id != null) {
+            dto = expensesService.getExpenseDetailsById(id);
+            if (dto != null && expenseType != null) {
+                dto.setExpenseType(expenseType);
+            }
+        } else if (submitted != null && submitted.getMonth() != null && !submitted.getMonth().isBlank()) {
+            dto = buildDtoFromSubmitted(submitted);
+        }
+
+        if (dto == null) {
+            return;
+        }
+
+        model.addAttribute("expenseDetails", dto);
+        String type = dto.getExpenseType() != null ? dto.getExpenseType() : "plan";
+        Map<Integer, Double> amounts = "plan".equalsIgnoreCase(type)
+                ? dto.getPlannedExpenses()
+                : dto.getActualExpenses();
+        double totalExpense = amounts != null
+                ? amounts.values().stream().mapToDouble(Double::doubleValue).sum()
+                : 0.0;
+        model.addAttribute("totalExpense", totalExpense);
+    }
+
+    private ExpenseReportDTO buildDtoFromSubmitted(ExpenseRequest submitted) {
+        YearMonth ym = YearMonth.parse(submitted.getMonth());
+        String type = submitted.getExpenseType() != null ? submitted.getExpenseType() : "plan";
+        Map<Integer, Double> amounts = submitted.getExpenses() != null ? submitted.getExpenses() : Map.of();
+        Map<Integer, Double> planned = "plan".equalsIgnoreCase(type) ? amounts : null;
+        Map<Integer, Double> actual = "plan".equalsIgnoreCase(type) ? null : amounts;
+        int rowId = submitted.getExpenseId() != null ? submitted.getExpenseId().intValue() : 0;
+        ExpenseReportDTO dto = new ExpenseReportDTO(
+                rowId,
+                ym.getYear(),
+                ym.getMonthValue(),
+                "",
+                planned,
+                actual,
+                0,
+                0,
+                ""
+        );
+        dto.setExpenseType(type);
+        return dto;
     }
 
     @GetMapping("/manageExpenses")

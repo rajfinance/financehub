@@ -14,6 +14,18 @@ function appendCsrfToFormData(formData) {
     }
 }
 
+function appendCsrfToUrlSearchParams(params) {
+    if (typeof window.__csrfParameterName !== 'undefined' && window.__csrfToken) {
+        if (!params.has(window.__csrfParameterName)) {
+            params.append(window.__csrfParameterName, window.__csrfToken);
+        }
+    }
+}
+
+function formHasFileInput(form) {
+    return form.querySelector('input[type="file"]') !== null;
+}
+
 function loadContent(apiUrl) {
     const pageContent = document.getElementById('page-content');
     const dashboardContent = document.getElementById('dashboardContent');
@@ -57,12 +69,22 @@ function submitForm(event) {
     if (!validForm(formId)) {
         return;
     }
-    const formData = new FormData(form);
-    appendCsrfToFormData(formData);
+    const headers = getCsrfHeaders();
+    let body;
+    if (formHasFileInput(form)) {
+        const formData = new FormData(form);
+        appendCsrfToFormData(formData);
+        body = formData;
+    } else {
+        const params = new URLSearchParams(new FormData(form));
+        appendCsrfToUrlSearchParams(params);
+        body = params;
+        headers['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
+    }
     fetch(form.action, {
         method: 'POST',
-        body: formData,
-        headers: getCsrfHeaders(),
+        body: body,
+        headers: headers,
         credentials: 'same-origin'
     })
         .then(response => response.text())

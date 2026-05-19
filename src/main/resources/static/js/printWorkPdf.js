@@ -26,6 +26,18 @@ function prepareUrl(reportType){
         baseUrl = '/api/rent/'+reportType;
     else if(reportType === "manageReport")
         baseUrl = '/api/expenses/'+reportType;
+    else if(reportType === "loansReport" || reportType === "loanEmiReport")
+        baseUrl = '/api/loan/' + reportType;
+    if (reportType === "loanEmiReport") {
+        const yearEl = document.getElementById('emiScheduleYear');
+        const loanEl = document.getElementById('emiScheduleLoan');
+        const emiYear = yearEl ? yearEl.value : new Date().getFullYear();
+        let url = `${baseUrl}?year=${encodeURIComponent(emiYear)}`;
+        if (loanEl && loanEl.value) {
+            url += `&loanId=${encodeURIComponent(loanEl.value)}`;
+        }
+        return url;
+    }
     return year ? `${baseUrl}?year=${year}` : baseUrl;
 }
 
@@ -34,7 +46,10 @@ function fetchReportContent(reportType) {
     if (reportType.includes("_")) {
         reportType = reportType.split("_")[2];
     }
-    fetch(url)
+    fetch(url, {
+        credentials: 'same-origin',
+        headers: typeof getCsrfHeaders === 'function' ? getCsrfHeaders() : {}
+    })
         .then(response => response.text())
         .then(data => {
             const reportContainer = document.getElementById(reportType);
@@ -113,6 +128,29 @@ function attachReportListeners(reportContainer, reportType) {
            });
        }
 }
+function reloadLoanEmiReport() {
+    const yearEl = document.getElementById('emiScheduleYear');
+    const loanEl = document.getElementById('emiScheduleLoan');
+    const y = yearEl ? yearEl.value : new Date().getFullYear();
+    const container = document.getElementById('loanEmiReport');
+    if (!container) {
+        return;
+    }
+    let url = `/api/loan/loanEmiReport?year=${encodeURIComponent(y)}`;
+    if (loanEl && loanEl.value) {
+        url += `&loanId=${encodeURIComponent(loanEl.value)}`;
+    }
+    fetch(url, {
+        credentials: 'same-origin',
+        headers: typeof getCsrfHeaders === 'function' ? getCsrfHeaders() : {}
+    })
+        .then(response => response.text())
+        .then(html => {
+            container.innerHTML = html;
+        })
+        .catch(error => console.error('Error loading loan EMI report:', error));
+}
+
 function downloadPdf(param) {
     let parts = param.split("|");
     let reportType = parts[0];

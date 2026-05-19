@@ -128,14 +128,29 @@ public class ExpensesService {
         });
     }
 
+    @Transactional
     public void saveExpense(ExpenseRequest expenseRequest) {
+            if (expenseRequest.getMonth() == null || expenseRequest.getMonth().isBlank()) {
+                throw new IllegalArgumentException("Month is required.");
+            }
+            if (expenseRequest.getExpenseType() == null || expenseRequest.getExpenseType().isBlank()) {
+                throw new IllegalArgumentException("Expense type is required.");
+            }
+            Long userId = userService.getUserId();
+            if (userId == null || userId <= 0) {
+                throw new IllegalStateException("You must be signed in to save expenses.");
+            }
+
             YearMonth yearMonth = YearMonth.parse(expenseRequest.getMonth());
             int year = yearMonth.getYear();
             int month = yearMonth.getMonthValue();
-            Long userId = userService.getUserId();
+
+            Map<Integer, Double> amounts = expenseRequest.getExpenses();
+            if (amounts == null) {
+                amounts = new HashMap<>();
+            }
 
             boolean isPlanned = "plan".equalsIgnoreCase(expenseRequest.getExpenseType());
-            String expenseTypeChar = "plan".equalsIgnoreCase(expenseRequest.getExpenseType()) ? "P" : "A";
 
             Optional<Expenses> existingExpenseOpt = expensesRepository.findByUserIdAndExpenseYearAndExpenseMonth(userId, year, month);
 
@@ -145,9 +160,9 @@ public class ExpensesService {
                 expenseEntity.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
 
                 if (isPlanned) {
-                    expenseEntity.setPlannedExpenses(expenseRequest.getExpenses());
+                    expenseEntity.setPlannedExpenses(amounts);
                 } else {
-                    expenseEntity.setActualExpenses(expenseRequest.getExpenses());
+                    expenseEntity.setActualExpenses(amounts);
                 }
             } else {
                 expenseEntity = new Expenses();
@@ -158,10 +173,10 @@ public class ExpensesService {
                 expenseEntity.setUpdatedAt(Timestamp.valueOf(LocalDateTime.now()));
 
                 if (isPlanned) {
-                    expenseEntity.setPlannedExpenses(expenseRequest.getExpenses());
+                    expenseEntity.setPlannedExpenses(amounts);
                     expenseEntity.setActualExpenses(null);
                 } else {
-                    expenseEntity.setActualExpenses(expenseRequest.getExpenses());
+                    expenseEntity.setActualExpenses(amounts);
                     expenseEntity.setPlannedExpenses(null);
                 }
             }

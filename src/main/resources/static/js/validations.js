@@ -130,6 +130,9 @@ function validForm(formId){
     else if(formId=="addLoanForm"){
         return true;
     }
+    else if(formId=="recordEmiForm"){
+        return true;
+    }
 }
 function validateCategories(){
     const categoryName = document.getElementById("categoryName").value.trim();

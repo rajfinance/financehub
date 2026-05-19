@@ -1216,8 +1216,28 @@ main.content.static-page,
     }
 }
 
+.form-container .form-row--3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 900px) {
+    .form-container .form-row--3 {
+        grid-template-columns: 1fr;
+    }
+}
+
 .form-container .form-column {
     min-width: 0;
+}
+
+.form-container .form-column .input-group {
+    margin-bottom: 0;
+}
+
+.form-container .form-row + .form-row,
+.form-container .form-row + .input-group,
+.form-container .input-group + .form-row {
+    margin-top: 0;
 }
 
 .form-banner {
@@ -1251,6 +1271,19 @@ main.content.static-page,
 
 .form-banner a:hover {
     text-decoration: underline;
+}
+
+.fh-form-hint {
+    color: var(--fh-text-muted);
+    font-size: 0.92rem;
+    margin: 0 0 1rem;
+    line-height: 1.45;
+}
+
+.fh-report-section-title {
+    font-size: 1.05rem;
+    margin: 1.25rem 0 0.5rem;
+    font-weight: 600;
 }
 
 .form-container .success-message,

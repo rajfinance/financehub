@@ -12,8 +12,9 @@
         <div th:if="${error != null}" class="form-banner form-banner--error" th:text="${error}"></div>
 
         <form id="expensesForm" th:action="@{/api/expenses/save}" method="post" th:onsubmit="submitForm(event)">
-            <input type="hidden" name="expenseId"
-                   th:value="${expenseDetails != null} ? ${expenseDetails.id} : ''" />
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="expenseId" th:if="${expenseDetails != null}"
+                   th:value="${expenseDetails.id}" />
 
             <div class="expenses-form-row">
                 <div class="form-group expenses-form-field">
