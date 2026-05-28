@@ -1742,6 +1742,10 @@ button.fh-btn:active,
     border-bottom: 1px solid var(--fh-border);
 }
 
+#yearwise > h2.fh-plan-actual-title {
+    text-align: center;
+}
+
 #yearwise h1,
 #yearwise h1.h1report {
     display: flex;
@@ -1778,7 +1782,7 @@ button.fh-btn:active,
 
 #yearwise .summaryTable thead th:first-child,
 #yearwise .summaryTable tbody td:first-child {
-    width: 13%;
+    width: 9%;
     min-width: 5.25rem;
 }
 
@@ -2345,8 +2349,7 @@ button.fh-btn:active,
     border-bottom: 2px solid rgba(0, 100, 148, 0.2);
     text-align: center;
     box-sizing: border-box;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    white-space: nowrap;
 }
 
 #yearwise .summaryTable td {
@@ -2354,8 +2357,15 @@ button.fh-btn:active,
     padding: 0.34rem 0.24rem;
     text-align: right;
     box-sizing: border-box;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    white-space: nowrap;
+}
+
+#yearwise .summaryTable th.fh-summary-total-col,
+#yearwise .summaryTable td.fh-summary-total-col,
+#yearwise .summaryTable th.fh-summary-avg-col,
+#yearwise .summaryTable td.fh-summary-avg-col {
+    min-width: 6.75rem;
+    width: 8.5%;
 }
 
 #yearwise .summaryTable tbody tr:nth-child(even) {

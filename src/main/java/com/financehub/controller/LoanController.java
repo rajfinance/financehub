@@ -1,6 +1,7 @@
 package com.financehub.controller;
 
 import com.financehub.dtos.LoanDTO;
+import com.financehub.dtos.LoanBankEmiProjectionReportDTO;
 import com.financehub.dtos.LoanEmiPaymentDTO;
 import com.financehub.dtos.LoanSummaryDTO;
 import com.financehub.services.LoanService;
@@ -104,7 +105,15 @@ public class LoanController {
         model.addAttribute("selectedYear", selectedYear);
         model.addAttribute("years", loanService.getScheduleYearsForUser());
         model.addAttribute("yearTotal", loanService.getFormattedYearTotal(selectedYear, loanId));
+        model.addAttribute("yearPendingTotal", loanService.getFormattedYearPendingAmount(selectedYear, loanId));
         return "views/loan/loanEmiScheduleReport";
+    }
+
+    @GetMapping("/loanBankProjectionReport")
+    public String loanBankProjectionReport(Model model) {
+        LoanBankEmiProjectionReportDTO report = loanService.getBankNextMonthProjectionReport();
+        model.addAttribute("projectionReport", report);
+        return "views/loan/loanBankProjectionReport";
     }
 
     @DeleteMapping("/deleteLoan")

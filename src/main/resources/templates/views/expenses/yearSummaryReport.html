@@ -25,7 +25,7 @@
                 <th>Category</th>
                 <th>JAN</th> <th>FEB</th> <th>MAR</th> <th>APR</th> <th>MAY</th>
                 <th>JUN</th> <th>JUL</th> <th>AUG</th> <th>SEP</th> <th>OCT</th>
-                <th>NOV</th> <th>DEC</th> <th>TOTAL</th> <th>AVG</th>
+                <th>NOV</th> <th>DEC</th> <th class="fh-summary-total-col">TOTAL</th> <th class="fh-summary-avg-col">AVG</th>
             </tr>
             </thead>
             <tbody>
@@ -39,16 +39,16 @@
                             : 0, 0)}
                         : '0'" th:remove="tag"></span>
                 </td>
-                <td><strong th:text="${entry.value}"></strong></td>
-                <td><strong th:text="${categoryAverages[entry.key]}"></strong></td>
+                <td class="fh-summary-total-col"><strong th:text="${entry.value}"></strong></td>
+                <td class="fh-summary-avg-col"><strong th:text="${categoryAverages[entry.key]}"></strong></td>
             </tr>
             <tr class="fh-report-footer-row">
                 <td style="text-align: left; font-weight: bold;"><strong>Total</strong></td>
                 <td th:each="month : ${#numbers.sequence(1, 12)}">
                     <strong th:text="${monthlySums[month.toString()] ?: '0'}"></strong>
                 </td>
-                <td><strong th:text="${grandTotal}"></strong></td>
-                <td><strong th:text="${totalAverage}"></strong></td>
+                <td class="fh-summary-total-col"><strong th:text="${grandTotal}"></strong></td>
+                <td class="fh-summary-avg-col"><strong th:text="${totalAverage}"></strong></td>
             </tr>
             </tbody>
         </table>

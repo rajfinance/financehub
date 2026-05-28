@@ -26,7 +26,7 @@ function prepareUrl(reportType){
         baseUrl = '/api/rent/'+reportType;
     else if(reportType === "manageReport")
         baseUrl = '/api/expenses/'+reportType;
-    else if(reportType === "loansReport" || reportType === "loanEmiReport")
+    else if(reportType === "loansReport" || reportType === "loanEmiReport" || reportType === "loanBankProjectionReport")
         baseUrl = '/api/loan/' + reportType;
     if (reportType === "loanEmiReport") {
         const yearEl = document.getElementById('emiScheduleYear');

@@ -68,7 +68,11 @@
             </table>
             <br/>
         </th:block>
-        <h2 class="fh-report-summary-line" th:text="|Total EMI for ${selectedYear}: ${yearTotal}|"></h2>
+        <h2 class="fh-report-summary-line">
+            <span th:text="|Total EMI for ${selectedYear}: ${yearTotal}|"></span>
+            <span>&nbsp;|&nbsp;</span>
+            <span th:text="|Pending Amount for ${selectedYear}: ${yearPendingTotal}|"></span>
+        </h2>
     </th:block>
 
     <p th:if="${scheduleGroups == null or scheduleGroups.isEmpty()}"

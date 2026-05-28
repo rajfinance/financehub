@@ -1,6 +1,8 @@
 package com.financehub.services;
 
 import com.financehub.dtos.LoanDTO;
+import com.financehub.dtos.LoanBankEmiProjectionReportDTO;
+import com.financehub.dtos.LoanBankEmiProjectionRowDTO;
 import com.financehub.dtos.LoanEmiPaymentDTO;
 import com.financehub.dtos.LoanEmiScheduleGroupDTO;
 import com.financehub.dtos.LoanEmiScheduleRowDTO;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -181,6 +184,88 @@ public class LoanService {
         return formatterUtils.formatInIndianStyle(total);
     }
 
+    public String getFormattedYearPendingAmount(Integer year, Long loanId) {
+        LocalDate today = LocalDate.now();
+        double pending = getEmiScheduleForUser(year, loanId).stream()
+                .filter(row -> row.getDeductionDate() != null && row.getDeductionDate().isAfter(today))
+                .mapToDouble(LoanEmiScheduleRowDTO::getEmiAmount)
+                .sum();
+        return formatterUtils.formatInIndianStyle(pending);
+    }
+
+    public LoanBankEmiProjectionReportDTO getBankNextMonthProjectionReport() {
+        LocalDate nextMonthDate = LocalDate.now().plusMonths(1);
+        YearMonth nextMonth = YearMonth.from(nextMonthDate);
+        LocalDate nextMonthStart = nextMonth.atDay(1);
+
+        List<LoanEmiScheduleRowDTO> scheduleRows = getEmiScheduleForUser(null, null);
+        TreeMap<YearMonth, LoanBankEmiProjectionRowDTO> projectionRows = new TreeMap<>();
+        long axisHeaderAmount = 0;
+        long iciciHeaderAmount = 0;
+        long hdfcHeaderAmount = 0;
+
+        for (LoanEmiScheduleRowDTO row : scheduleRows) {
+            if (row.getDueDate() == null || row.getDueDate().isBefore(nextMonthStart)) {
+                continue;
+            }
+
+            String bucket = resolveBankBucket(row.getBankName());
+            if (bucket == null) {
+                continue;
+            }
+
+            YearMonth installmentMonth = YearMonth.from(row.getDueDate());
+            LoanBankEmiProjectionRowDTO projectionRow = projectionRows.computeIfAbsent(installmentMonth, ym -> {
+                LoanBankEmiProjectionRowDTO dto = new LoanBankEmiProjectionRowDTO();
+                dto.setDate(formatterUtils.formatDate(ym.atDay(7)));
+                return dto;
+            });
+
+            long amount = Math.round(row.getEmiAmount());
+            if ("AXIS".equals(bucket)) {
+                projectionRow.setAxisAmount(projectionRow.getAxisAmount() + amount);
+                if (installmentMonth.equals(nextMonth)) {
+                    axisHeaderAmount += amount;
+                }
+            } else if ("ICICI".equals(bucket)) {
+                projectionRow.setIciciAmount(projectionRow.getIciciAmount() + amount);
+                if (installmentMonth.equals(nextMonth)) {
+                    iciciHeaderAmount += amount;
+                }
+            } else if ("HDFC".equals(bucket)) {
+                projectionRow.setHdfcAmount(projectionRow.getHdfcAmount() + amount);
+                if (installmentMonth.equals(nextMonth)) {
+                    hdfcHeaderAmount += amount;
+                }
+            }
+        }
+
+        List<LoanBankEmiProjectionRowDTO> rows = new ArrayList<>();
+        LoanBankEmiProjectionRowDTO totalRow = new LoanBankEmiProjectionRowDTO();
+        totalRow.setDate("TOTAL");
+        for (LoanBankEmiProjectionRowDTO row : projectionRows.values()) {
+            fillProjectionComputedColumns(row);
+            rows.add(row);
+            totalRow.setAxisAmount(totalRow.getAxisAmount() + row.getAxisAmount());
+            totalRow.setIciciAmount(totalRow.getIciciAmount() + row.getIciciAmount());
+            totalRow.setHdfcAmount(totalRow.getHdfcAmount() + row.getHdfcAmount());
+            totalRow.setTotalAmount(totalRow.getTotalAmount() + row.getTotalAmount());
+            totalRow.setAxisPayAmount(totalRow.getAxisPayAmount() + row.getAxisPayAmount());
+            totalRow.setIciciPayAmount(totalRow.getIciciPayAmount() + row.getIciciPayAmount());
+            totalRow.setHdfcPayAmount(totalRow.getHdfcPayAmount() + row.getHdfcPayAmount());
+            totalRow.setAxisAndHdfcPayAmount(totalRow.getAxisAndHdfcPayAmount() + row.getAxisAndHdfcPayAmount());
+            totalRow.setTotalPayAmount(totalRow.getTotalPayAmount() + row.getTotalPayAmount());
+        }
+
+        LoanBankEmiProjectionReportDTO report = new LoanBankEmiProjectionReportDTO();
+        report.setAxisHeaderAmount(axisHeaderAmount);
+        report.setIciciHeaderAmount(iciciHeaderAmount);
+        report.setHdfcHeaderAmount(hdfcHeaderAmount);
+        report.setRows(rows);
+        report.setTotalRow(totalRow);
+        return report;
+    }
+
     public List<Integer> getScheduleYearsForUser() {
         long userId = requireUserId();
         Set<Integer> years = new TreeSet<>();
@@ -326,6 +411,39 @@ public class LoanService {
             return "Pending";
         }
         return emiDate.isAfter(LocalDate.now()) ? "Pending" : "Completed";
+    }
+
+    private void fillProjectionComputedColumns(LoanBankEmiProjectionRowDTO row) {
+        long axisPay = (long) Math.ceil(row.getAxisAmount() + (row.getAxisAmount() * 0.05) + (row.getAxisAmount() * 0.05 * 0.12));
+        long iciciPay = row.getIciciAmount();
+        long hdfcPay = (long) Math.ceil(row.getHdfcAmount() + (row.getHdfcAmount() * 0.04) + (row.getHdfcAmount() * 0.04 * 0.12));
+        long total = row.getAxisAmount() + row.getIciciAmount() + row.getHdfcAmount();
+        long axisAndHdfc = axisPay + hdfcPay;
+        long totalPay = axisPay + iciciPay + hdfcPay;
+
+        row.setTotalAmount(total);
+        row.setAxisPayAmount(axisPay);
+        row.setIciciPayAmount(iciciPay);
+        row.setHdfcPayAmount(hdfcPay);
+        row.setAxisAndHdfcPayAmount(axisAndHdfc);
+        row.setTotalPayAmount(totalPay);
+    }
+
+    private String resolveBankBucket(String bankName) {
+        if (bankName == null) {
+            return null;
+        }
+        String normalized = bankName.toLowerCase(Locale.ROOT);
+        if (normalized.contains("axis")) {
+            return "AXIS";
+        }
+        if (normalized.contains("icici")) {
+            return "ICICI";
+        }
+        if (normalized.contains("hdfc")) {
+            return "HDFC";
+        }
+        return null;
     }
 
     private String resolveLoanStatus(LocalDate endDate) {

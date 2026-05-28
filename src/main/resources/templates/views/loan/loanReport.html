@@ -8,10 +8,12 @@
         <div class="tabs">
             <button type="button" class="tab-button active" th:onclick="'showReport(\'loansReport\')'">My Loans</button>
             <button type="button" class="tab-button" th:onclick="'showReport(\'loanEmiReport\')'">EMI Schedule</button>
+            <button type="button" class="tab-button" th:onclick="'showReport(\'loanBankProjectionReport\')'">EMI Projection</button>
         </div>
     </div>
     <div class="tab-content" id="loansReport" style="display:none;"></div>
     <div class="tab-content" id="loanEmiReport" style="display:none;"></div>
+    <div class="tab-content" id="loanBankProjectionReport" style="display:none;"></div>
 </th:block>
 <th:block sec:authorize="!isAuthenticated()">
     <p>Please log in to access this page.</p>
