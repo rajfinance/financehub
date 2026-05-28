@@ -1,23 +1,28 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
-<div id="reportContent">
+<div id="reportContent" class="loan-projection-report-content">
     <h1 class="h1report">Bank EMI Projection</h1>
 
     <th:block th:if="${projectionReport != null and projectionReport.rows != null and !projectionReport.rows.isEmpty()}">
         <table>
             <thead>
             <tr>
-                <th>Date</th>
-                <th th:text="|AXIS - ${#numbers.formatInteger(projectionReport.axisHeaderAmount, 0)}|"></th>
-                <th th:text="|ICICI - ${#numbers.formatInteger(projectionReport.iciciHeaderAmount, 0)}|"></th>
-                <th th:text="|HDFC - ${#numbers.formatInteger(projectionReport.hdfcHeaderAmount, 0)}|"></th>
-                <th>TOTAL</th>
-                <th>AXIS PAY</th>
-                <th>ICICI PAY</th>
-                <th>HDFC PAY</th>
-                <th>AXIS + HDFC</th>
-                <th>TOTAL PAY</th>
+                <th rowspan="2">Date</th>
+                <th>AXIS EMI</th>
+                <th>ICICI EMI</th>
+                <th>HDFC EMI</th>
+                <th rowspan="2">TOTAL</th>
+                <th rowspan="2">AXIS PAY</th>
+                <th rowspan="2">ICICI PAY</th>
+                <th rowspan="2">HDFC PAY</th>
+                <th rowspan="2">AXIS + HDFC</th>
+                <th rowspan="2">TOTAL PAY</th>
+            </tr>
+            <tr>
+                <th th:text="${#numbers.formatInteger(projectionReport.axisHeaderAmount, 0)}"></th>
+                <th th:text="${#numbers.formatInteger(projectionReport.iciciHeaderAmount, 0)}"></th>
+                <th th:text="${#numbers.formatInteger(projectionReport.hdfcHeaderAmount, 0)}"></th>
             </tr>
             </thead>
             <tbody>
@@ -31,19 +36,7 @@
                 <td th:text="${#numbers.formatInteger(row.iciciPayAmount, 0)}"></td>
                 <td th:text="${#numbers.formatInteger(row.hdfcPayAmount, 0)}"></td>
                 <td th:text="${#numbers.formatInteger(row.axisAndHdfcPayAmount, 0)}"></td>
-                <td th:text="${#numbers.formatInteger(row.totalPayAmount, 0)}"></td>
-            </tr>
-            <tr class="fh-report-footer-row" th:if="${projectionReport.totalRow != null}">
-                <td><strong th:text="${projectionReport.totalRow.date}"></strong></td>
-                <td><strong th:text="${#numbers.formatInteger(projectionReport.totalRow.axisAmount, 0)}"></strong></td>
-                <td><strong th:text="${#numbers.formatInteger(projectionReport.totalRow.iciciAmount, 0)}"></strong></td>
-                <td><strong th:text="${#numbers.formatInteger(projectionReport.totalRow.hdfcAmount, 0)}"></strong></td>
-                <td><strong th:text="${#numbers.formatInteger(projectionReport.totalRow.totalAmount, 0)}"></strong></td>
-                <td><strong th:text="${#numbers.formatInteger(projectionReport.totalRow.axisPayAmount, 0)}"></strong></td>
-                <td><strong th:text="${#numbers.formatInteger(projectionReport.totalRow.iciciPayAmount, 0)}"></strong></td>
-                <td><strong th:text="${#numbers.formatInteger(projectionReport.totalRow.hdfcPayAmount, 0)}"></strong></td>
-                <td><strong th:text="${#numbers.formatInteger(projectionReport.totalRow.axisAndHdfcPayAmount, 0)}"></strong></td>
-                <td><strong th:text="${#numbers.formatInteger(projectionReport.totalRow.totalPayAmount, 0)}"></strong></td>
+                <td><strong th:text="${#numbers.formatInteger(row.totalPayAmount, 0)}"></strong></td>
             </tr>
             </tbody>
         </table>

@@ -131,12 +131,12 @@ function attachReportListeners(reportContainer, reportType) {
 function reloadLoanEmiReport() {
     const yearEl = document.getElementById('emiScheduleYear');
     const loanEl = document.getElementById('emiScheduleLoan');
-    const y = yearEl ? yearEl.value : new Date().getFullYear();
+    const y = yearEl ? yearEl.value : String(new Date().getFullYear());
     const container = document.getElementById('loanEmiReport');
     if (!container) {
         return;
     }
-    let url = `/api/loan/loanEmiReport?year=${encodeURIComponent(y)}`;
+    let url = `/api/loan/loanEmiReport?year=${encodeURIComponent(y || new Date().getFullYear())}`;
     if (loanEl && loanEl.value) {
         url += `&loanId=${encodeURIComponent(loanEl.value)}`;
     }

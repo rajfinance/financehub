@@ -11,4 +11,11 @@ public class LoanEmiPaymentDTO {
     private Integer emiNumber;
     private Double emiAmount;
     private LocalDate paidOn;
+    private Boolean preClosureSelected;
+    private LocalDate preClosureDate;
+    private Double preClosureAmount;
+    private String preClosureType;
+    private String preClosureReferenceNumber;
+    private Double partialUpdatedEmiAmount;
+    private Integer partialUpdatedTenure;
 }

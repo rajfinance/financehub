@@ -273,6 +273,90 @@ function setActive(button) {
     button.classList.add('active');
 }
 
+function toggleLoanDetails(loanId) {
+    const detailRow = document.getElementById(`loan-detail-${loanId}`);
+    if (!detailRow) {
+        return;
+    }
+    detailRow.style.display = detailRow.style.display === 'none' || detailRow.style.display === '' ? 'table-row' : 'none';
+}
+
+function prefillRecordEmiDate() {
+    const loanSelect = document.getElementById('loanIdDisplay') || document.getElementById('loanId');
+    const emiNumberInput = document.getElementById('emiNumber');
+    const paidOnInput = document.getElementById('paidOn');
+    if (!loanSelect || !emiNumberInput || !paidOnInput || paidOnInput.value) {
+        return;
+    }
+    const selectedOption = loanSelect.options[loanSelect.selectedIndex];
+    if (!selectedOption) {
+        return;
+    }
+    const firstEmi = selectedOption.getAttribute('data-first-emi');
+    const emiNumber = parseInt(emiNumberInput.value, 10);
+    if (!firstEmi || Number.isNaN(emiNumber) || emiNumber < 1) {
+        return;
+    }
+    const baseDate = new Date(`${firstEmi}T00:00:00`);
+    if (Number.isNaN(baseDate.getTime())) {
+        return;
+    }
+    baseDate.setMonth(baseDate.getMonth() + (emiNumber - 1));
+    const y = baseDate.getFullYear();
+    const m = String(baseDate.getMonth() + 1).padStart(2, '0');
+    const d = String(baseDate.getDate()).padStart(2, '0');
+    paidOnInput.value = `${y}-${m}-${d}`;
+}
+
+function toggleRecordEmiPreClosure(checkbox) {
+    const checked = checkbox && checkbox.checked;
+    const section = document.getElementById('preClosureSection');
+    const closureType = document.getElementById('preClosureType');
+    const preClosureDate = document.getElementById('preClosureDate');
+    const preClosureAmount = document.getElementById('preClosureAmount');
+    const referenceNumber = document.getElementById('preClosureReferenceNumber');
+    if (section) {
+        section.style.display = checked ? 'block' : 'none';
+    }
+    if (preClosureDate) preClosureDate.required = checked;
+    if (preClosureAmount) preClosureAmount.required = checked;
+    if (referenceNumber) referenceNumber.required = checked;
+    if (checked) {
+        const paidOnInput = document.getElementById('paidOn');
+        if (preClosureDate && !preClosureDate.value && paidOnInput && paidOnInput.value) {
+            preClosureDate.value = paidOnInput.value;
+        }
+    }
+    toggleRecordEmiClosureType(closureType);
+}
+
+function toggleRecordEmiClosureType(selectEl) {
+    const section = document.getElementById('partialClosureSection');
+    const preClosureSelected = document.getElementById('preClosureSelected');
+    const updatedEmi = document.getElementById('partialUpdatedEmiAmount') || document.getElementById('updatedEmiAmount');
+    const updatedTenure = document.getElementById('partialUpdatedTenure') || document.getElementById('updatedTenure');
+    const preClosureEnabled = preClosureSelected ? preClosureSelected.checked : true;
+    const partial = preClosureEnabled && selectEl && selectEl.value === 'PARTIAL';
+    if (section) {
+        section.style.display = partial ? 'block' : 'none';
+    }
+    if (updatedEmi) updatedEmi.required = partial;
+    if (updatedTenure) updatedTenure.required = partial;
+}
+
+function confirmAndSubmitRecordEmi(event) {
+    const preClosureSelected = document.getElementById('preClosureSelected');
+    if (preClosureSelected && preClosureSelected.checked) {
+        const proceed = window.confirm("Remaining EMIs will be closed/adjusted after pre-closure. Continue?");
+        if (!proceed) {
+            event.preventDefault();
+            return false;
+        }
+    }
+    submitForm(event);
+    return false;
+}
+
 function persistCategoryOrder(tbody) {
     const ids = [...tbody.querySelectorAll("tr[data-category-id]")]
         .map((r) => parseInt(r.getAttribute("data-category-id"), 10))

@@ -3,6 +3,7 @@ package com.financehub.controller;
 import com.financehub.dtos.LoanDTO;
 import com.financehub.dtos.LoanBankEmiProjectionReportDTO;
 import com.financehub.dtos.LoanEmiPaymentDTO;
+import com.financehub.dtos.LoanPreClosureDTO;
 import com.financehub.dtos.LoanSummaryDTO;
 import com.financehub.services.LoanService;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,7 @@ public class LoanController {
         model.addAttribute("loan", new LoanDTO());
         model.addAttribute("bankNames", BANK_NAMES);
         model.addAttribute("loanTypes", LOAN_TYPES);
+        model.addAttribute("isEdit", false);
         return "views/loan/addLoan";
     }
 
@@ -50,6 +52,26 @@ public class LoanController {
         return "redirect:/api/loan/addLoan";
     }
 
+    @GetMapping("/editLoan")
+    public String editLoanForm(@RequestParam("loanId") Long loanId, Model model) {
+        model.addAttribute("loan", loanService.getLoanForEdit(loanId));
+        model.addAttribute("bankNames", BANK_NAMES);
+        model.addAttribute("loanTypes", LOAN_TYPES);
+        model.addAttribute("isEdit", true);
+        return "views/loan/addLoan";
+    }
+
+    @PostMapping("/updateLoan")
+    public String updateLoan(@ModelAttribute("loan") LoanDTO loanDTO, RedirectAttributes redirectAttributes) {
+        try {
+            loanService.updateLoanFromDto(loanDTO);
+            redirectAttributes.addFlashAttribute("successMessage", "Loan updated successfully.");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/api/loan/editLoan?loanId=" + loanDTO.getId();
+    }
+
     @GetMapping("/recordEmi")
     public String recordEmiForm(@RequestParam(value = "id", required = false) Long id,
                                 @RequestParam(value = "loanId", required = false) Long loanId,
@@ -58,9 +80,16 @@ public class LoanController {
         List<LoanSummaryDTO> loans = loanService.getLoansForCurrentUser();
         model.addAttribute("loans", loans);
         if (id != null) {
-            model.addAttribute("emiPayment", loanService.getEmiPaymentById(id));
+            LoanEmiPaymentDTO dto = loanService.getEmiPaymentById(id);
+            loanService.prefillEmiPayment(dto);
+            if (dto.getPreClosureType() == null) {
+                dto.setPreClosureType("FULL");
+            }
+            model.addAttribute("emiPayment", dto);
         } else {
             LoanEmiPaymentDTO dto = new LoanEmiPaymentDTO();
+            dto.setPreClosureType("FULL");
+            dto.setPreClosureSelected(Boolean.FALSE);
             if (loanId != null) {
                 dto.setLoanId(loanId);
                 dto.setEmiNumber(emiNumber);
@@ -95,15 +124,25 @@ public class LoanController {
     }
 
     @GetMapping("/loanEmiReport")
-    public String loanEmiScheduleReport(@RequestParam(value = "year", required = false) Integer year,
+    public String loanEmiScheduleReport(@RequestParam(value = "year", required = false) String year,
                                         @RequestParam(value = "loanId", required = false) Long loanId,
                                         Model model) {
-        int selectedYear = year != null ? year : LocalDate.now().getYear();
+        Integer selectedYear;
+        if (year == null || year.isBlank()) {
+            selectedYear = LocalDate.now().getYear();
+        } else if ("all".equalsIgnoreCase(year)) {
+            selectedYear = loanId != null ? null : LocalDate.now().getYear();
+        } else {
+            selectedYear = Integer.valueOf(year);
+        }
         model.addAttribute("loans", loanService.getLoansForCurrentUser());
         model.addAttribute("selectedLoanId", loanId);
         model.addAttribute("scheduleGroups", loanService.getEmiScheduleGroups(selectedYear, loanId));
         model.addAttribute("selectedYear", selectedYear);
-        model.addAttribute("years", loanService.getScheduleYearsForUser());
+        model.addAttribute("selectedYearLabel", selectedYear == null ? "All Years" : selectedYear.toString());
+        model.addAttribute("allowAllYears", loanId != null);
+        model.addAttribute("years",
+                loanId != null ? loanService.getScheduleYearsForLoan(loanId) : loanService.getScheduleYearsForUser());
         model.addAttribute("yearTotal", loanService.getFormattedYearTotal(selectedYear, loanId));
         model.addAttribute("yearPendingTotal", loanService.getFormattedYearPendingAmount(selectedYear, loanId));
         return "views/loan/loanEmiScheduleReport";
@@ -114,6 +153,31 @@ public class LoanController {
         LoanBankEmiProjectionReportDTO report = loanService.getBankNextMonthProjectionReport();
         model.addAttribute("projectionReport", report);
         return "views/loan/loanBankProjectionReport";
+    }
+
+    @GetMapping("/preCloseLoan")
+    public String preCloseLoanForm(@RequestParam("loanId") Long loanId, Model model) {
+        LoanSummaryDTO loan = loanService.getLoanSummaryById(loanId);
+        LoanPreClosureDTO preClosure = loanService.getPreClosureDetails(loanId);
+        model.addAttribute("loan", loan);
+        model.addAttribute("preClosure", preClosure);
+        model.addAttribute("remainingEmiCount",
+                loanService.getRemainingEmiCountFromDate(loanId, preClosure.getPreClosureDate()));
+        model.addAttribute("remainingPendingAmount",
+                loanService.getFormattedRemainingPendingAmountFromDate(loanId, preClosure.getPreClosureDate()));
+        return "views/loan/preCloseLoan";
+    }
+
+    @PostMapping("/preCloseLoan")
+    public String preCloseLoan(@ModelAttribute("preClosure") LoanPreClosureDTO dto,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            loanService.savePreClosure(dto);
+            redirectAttributes.addFlashAttribute("successMessage", "Loan pre-closure saved successfully.");
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/api/loan/preCloseLoan?loanId=" + dto.getLoanId();
     }
 
     @DeleteMapping("/deleteLoan")

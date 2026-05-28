@@ -13,25 +13,27 @@
 
         <form th:if="${loans != null and !loans.isEmpty()}" id="recordEmiForm"
               th:action="@{/api/loan/recordEmi}" th:object="${emiPayment}" method="post"
-              onsubmit="submitForm(event)">
+              onsubmit="return confirmAndSubmitRecordEmi(event)">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
             <input type="hidden" th:field="*{id}" th:if="${emiPayment.id != null}"/>
 
             <div class="form-row">
                 <div class="form-column">
+                    <input type="hidden" th:field="*{loanId}" />
                     <div class="input-group">
-                        <label for="loanId">Loan<span class="mandatory">*</span></label>
-                        <select id="loanId" th:field="*{loanId}" required>
+                        <label for="loanIdDisplay">Loan<span class="mandatory">*</span></label>
+                        <select id="loanIdDisplay" onchange="prefillRecordEmiDate()" disabled>
                             <option value="">Select loan</option>
                             <option th:each="loan : ${loans}"
                                     th:value="${loan.id}"
                                     th:text="${loan.bankName} + ' — ' + ${loan.loanAccountNumber}"
+                                    th:attr="data-first-emi=${loan.firstEmiDate}"
                                     th:selected="${emiPayment.loanId != null and emiPayment.loanId == loan.id}"></option>
                         </select>
                     </div>
                     <div class="input-group">
                         <label for="emiNumber">EMI installment #<span class="mandatory">*</span></label>
-                        <input type="number" id="emiNumber" th:field="*{emiNumber}" min="1" required />
+                        <input type="number" id="emiNumber" th:field="*{emiNumber}" min="1" readonly />
                     </div>
                 </div>
                 <div class="form-column">
@@ -41,14 +43,94 @@
                     </div>
                     <div class="input-group">
                         <label for="paidOn">Deduction date<span class="mandatory">*</span></label>
-                        <input type="date" id="paidOn" th:field="*{paidOn}" required />
+                        <input type="date"
+                               id="paidOn"
+                               name="paidOn"
+                               th:value="${emiPayment.paidOn != null ? #temporals.format(emiPayment.paidOn, 'yyyy-MM-dd') : ''}"
+                               required />
+                    </div>
+                </div>
+            </div>
+            <div class="form-row" style="justify-content: flex-start;">
+                <div class="input-group" style="margin-top: 0.25rem;">
+                    <div style="display: flex; align-items: center; gap: 0.55rem;">
+                        <label for="preClosureSelected" style="margin: 0;">Mark loan as pre-closed?</label>
+                        <input type="checkbox" id="preClosureSelected" th:field="*{preClosureSelected}"
+                               onchange="toggleRecordEmiPreClosure(this)" />
                     </div>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Save EMI</button>
+            <div id="preClosureSection" th:style="${emiPayment.preClosureSelected} ? 'display:block;' : 'display:none;'">
+                <div class="form-row" style="display: flex; gap: 1rem; align-items: flex-end;">
+                    <div class="input-group" style="flex: 1;">
+                        <label for="preClosureType">Pre-closure Type<span class="mandatory">*</span></label>
+                        <select id="preClosureType" th:field="*{preClosureType}" onchange="toggleRecordEmiClosureType(this)">
+                            <option value="FULL">Full</option>
+                            <option value="PARTIAL">Partial</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label for="preClosureReferenceNumber">NOC / Foreclosure Number<span class="mandatory">*</span></label>
+                        <input type="text" id="preClosureReferenceNumber" th:field="*{preClosureReferenceNumber}" maxlength="80"
+                               th:attr="required=${emiPayment.preClosureSelected} ? 'required' : null" />
+                    </div>
+                </div>
+
+                <div class="form-row" style="display: flex; gap: 1rem; align-items: flex-end;">
+                    <div class="input-group" style="flex: 1;">
+                        <label for="preClosureDate">Pre-closure date<span class="mandatory">*</span></label>
+                        <input type="date" id="preClosureDate" th:field="*{preClosureDate}"
+                               th:attr="required=${emiPayment.preClosureSelected} ? 'required' : null" />
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label for="preClosureAmount">Pre-closure amount<span class="mandatory">*</span></label>
+                        <input type="number" id="preClosureAmount" th:field="*{preClosureAmount}" min="0" step="0.01"
+                               th:attr="required=${emiPayment.preClosureSelected} ? 'required' : null" />
+                    </div>
+                </div>
+
+                <div id="partialClosureSection"
+                     th:style="${emiPayment.preClosureSelected and emiPayment.preClosureType == 'PARTIAL'} ? 'display:block;' : 'display:none;'">
+                    <div class="form-row" style="display: flex; gap: 1rem; align-items: flex-end;">
+                        <div class="input-group" style="flex: 1;">
+                            <label for="partialUpdatedEmiAmount">Updated EMI Amount<span class="mandatory">*</span></label>
+                            <input type="number" id="partialUpdatedEmiAmount" th:field="*{partialUpdatedEmiAmount}" min="0" step="0.01"
+                                   th:attr="required=${emiPayment.preClosureSelected and emiPayment.preClosureType == 'PARTIAL'} ? 'required' : null" />
+                        </div>
+                        <div class="input-group" style="flex: 1;">
+                            <label for="partialUpdatedTenure">Updated Tenure (months)<span class="mandatory">*</span></label>
+                            <input type="number" id="partialUpdatedTenure" th:field="*{partialUpdatedTenure}" min="1"
+                                   th:attr="required=${emiPayment.preClosureSelected and emiPayment.preClosureType == 'PARTIAL'} ? 'required' : null" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group fh-btn-group">
+                <button type="submit" class="btn btn-primary">Save EMI</button>
+                <button type="button" class="btn btn-secondary"
+                        th:onclick="'loadContent(\'/api/loan/reports\')'">
+                    Cancel
+                </button>
+            </div>
         </form>
     </th:block>
 </div>
+<script>
+    (function initRecordEmiScreen() {
+        if (typeof prefillRecordEmiDate === 'function') {
+            prefillRecordEmiDate();
+        }
+        const preClosureSelected = document.getElementById('preClosureSelected');
+        if (preClosureSelected && typeof toggleRecordEmiPreClosure === 'function') {
+            toggleRecordEmiPreClosure(preClosureSelected);
+        }
+        const preClosureType = document.getElementById('preClosureType');
+        if (preClosureType && typeof toggleRecordEmiClosureType === 'function') {
+            toggleRecordEmiClosureType(preClosureType);
+        }
+    })();
+</script>
 </body>
 </html>

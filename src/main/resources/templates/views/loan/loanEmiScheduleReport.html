@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
-<div id="reportContent">
+<div id="reportContent" class="emi-schedule-report-content">
     <h1 class="h1report">EMI Schedule</h1>
 
     <div class="form-row form-row--3" style="margin-bottom: 1rem;">
@@ -18,6 +18,7 @@
         <div class="input-group">
             <label for="emiScheduleYear">Year</label>
             <select id="emiScheduleYear" onchange="reloadLoanEmiReport()">
+                <option value="all" th:if="${allowAllYears}" th:selected="${selectedYear == null}">All</option>
                 <option th:each="y : ${years}" th:value="${y}" th:text="${y}"
                         th:selected="${y == selectedYear}"></option>
             </select>
@@ -35,8 +36,7 @@
                     <th>Due Date</th>
                     <th>Deduction Date</th>
                     <th>EMI Amount</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th>Status / Action</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -45,8 +45,13 @@
                     <td th:text="${row.formattedDueDate}"></td>
                     <td th:text="${row.formattedDeductionDate}"></td>
                     <td style="text-align: right;" th:text="${row.formattedEmiAmount}"></td>
-                    <td th:text="${row.emiStatus}"></td>
                     <td>
+                        <span class="fh-status-badge"
+                              th:classappend="${row.emiStatus == 'Pending'} ? ' fh-status-pending' :
+                                              (${row.emiStatus == 'Pre-Closure'} ? ' fh-status-preclosure' : ' fh-status-completed')"
+                              th:text="${row.emiStatus}"></span>
+                        <th:block th:if="${row.emiStatus == 'Pending'}">
+                            <span>&nbsp;</span>
                         <a th:if="${row.recorded}" href="javascript:void(0);"
                            th:onclick="|loadEditPageContent('/api/loan/recordEmi?id=${row.overrideId}')|"
                            style="text-decoration: none;">
@@ -62,6 +67,7 @@
                            th:attr="data-report-type='loanEmiReport', data-id=${row.overrideId}">
                             <img th:src="@{/images/delete-icon.png}" alt="Revert" style="width: 20px; height: 20px;" />
                         </a>
+                        </th:block>
                     </td>
                 </tr>
                 </tbody>
@@ -69,15 +75,15 @@
             <br/>
         </th:block>
         <h2 class="fh-report-summary-line">
-            <span th:text="|Total EMI for ${selectedYear}: ${yearTotal}|"></span>
+            <span th:text="|Total EMI for ${selectedYearLabel}: ${yearTotal}|"></span>
             <span>&nbsp;|&nbsp;</span>
-            <span th:text="|Pending Amount for ${selectedYear}: ${yearPendingTotal}|"></span>
+            <span th:text="|Pending Amount for ${selectedYearLabel}: ${yearPendingTotal}|"></span>
         </h2>
     </th:block>
 
     <p th:if="${scheduleGroups == null or scheduleGroups.isEmpty()}"
        style="text-align: center; color: var(--fh-text-muted); font-style: italic;">
-        No EMI entries for this year. Add a loan or choose another year.
+        <span th:text="|No EMI entries for ${selectedYearLabel}. Add a loan or choose another year.|"></span>
     </p>
 </div>
 </body>

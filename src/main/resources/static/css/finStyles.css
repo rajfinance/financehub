@@ -1801,6 +1801,40 @@ button.fh-btn:active,
     box-sizing: border-box;
 }
 
+#reportContent.loan-report-content {
+    max-width: 1200px;
+    overflow-x: auto;
+}
+
+#reportContent .loan-summary-table {
+    min-width: 980px;
+}
+
+#reportContent .loan-detail-cell {
+    text-align: left;
+    background: rgba(0, 100, 148, 0.05);
+}
+
+#reportContent .loan-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+#reportContent.emi-schedule-report-content {
+    max-width: 980px;
+}
+
+#reportContent.loan-projection-report-content {
+    max-width: 1250px;
+}
+
+#reportContent.loan-projection-report-content table th,
+#reportContent.loan-projection-report-content table td {
+    white-space: nowrap;
+}
+
 #reportContent h1,
 #reportContent h1.h1report {
     width: 100%;
@@ -1901,6 +1935,40 @@ button.fh-btn:active,
     font-weight: 600;
     color: var(--fh-text-muted);
     border: none;
+}
+
+.fh-status-badge {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    border: 1px solid transparent;
+}
+
+.fh-status-pending {
+    background: rgba(234, 179, 8, 0.16);
+    color: #854d0e;
+    border-color: rgba(180, 83, 9, 0.28);
+}
+
+.fh-status-completed {
+    background: rgba(13, 122, 82, 0.14);
+    color: #065f46;
+    border-color: rgba(6, 95, 70, 0.24);
+}
+
+.fh-status-preclosure {
+    background: rgba(37, 99, 235, 0.14);
+    color: #1d4ed8;
+    border-color: rgba(29, 78, 216, 0.26);
+}
+
+.fh-status-partial {
+    background: rgba(124, 58, 237, 0.14);
+    color: #6d28d9;
+    border-color: rgba(109, 40, 217, 0.26);
 }
 
 .fh-report-empty {
@@ -2391,6 +2459,60 @@ button.fh-btn:active,
 .chart-container canvas {
     width: 100%;
     height: auto;
+}
+
+.fh-dashboard-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.65rem;
+    margin-bottom: 1rem;
+}
+
+.fh-kpi-card {
+    border: 1px solid var(--fh-border);
+    border-radius: 10px;
+    background: var(--fh-surface);
+    padding: 0.7rem 0.8rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.fh-kpi-card h3 {
+    margin: 0;
+    font-size: 0.82rem;
+    color: var(--fh-text-muted);
+    font-weight: 700;
+}
+
+.fh-kpi-card p {
+    margin: 0.35rem 0 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--fh-text);
+}
+
+.fh-dashboard-insights {
+    border: 1px solid var(--fh-border);
+    border-radius: 10px;
+    background: #f8fbff;
+    padding: 0.7rem 0.85rem;
+    margin-bottom: 1rem;
+}
+
+.fh-dashboard-insights h3 {
+    margin: 0 0 0.45rem 0;
+    font-size: 0.92rem;
+    color: var(--fh-text);
+}
+
+.fh-dashboard-insights ul {
+    margin: 0;
+    padding-left: 1rem;
+}
+
+.fh-dashboard-insights li {
+    margin: 0.15rem 0;
+    color: var(--fh-text-muted);
+    font-size: 0.86rem;
 }
 .section-divider {
     display: flex;

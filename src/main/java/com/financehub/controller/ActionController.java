@@ -4,6 +4,7 @@ import com.financehub.dtos.ClientUserDTO;
 import com.financehub.entities.ClientUser;
 import com.financehub.security.PasswordResetSession;
 import com.financehub.services.ExpensesService;
+import com.financehub.services.LoanService;
 import com.financehub.services.RentalService;
 import com.financehub.services.UserService;
 import com.financehub.services.WorkService;
@@ -38,13 +39,15 @@ public class ActionController {
 	private final WorkService workService;
 	private final RentalService rentalService;
 	private final ExpensesService expensesService;
+	private final LoanService loanService;
 
 	public ActionController(UserService userService, WorkService workService,
-			RentalService rentalService, ExpensesService expensesService) {
+			RentalService rentalService, ExpensesService expensesService, LoanService loanService) {
 		this.userService = userService;
 		this.workService = workService;
 		this.rentalService = rentalService;
 		this.expensesService = expensesService;
+		this.loanService = loanService;
 	}
 
 	@PostMapping(value = "/perform_signup", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -141,10 +144,28 @@ public class ActionController {
 
 		Map<String, Integer> yearlyRent = rentalService.getYearlyRentData();
 		model.addAttribute("yearlyRentData", yearlyRent);
+		Map<String, Integer> yearlyLoanEmi = loanService.getYearlyEmiDataForCurrentUser();
+		model.addAttribute("yearlyLoanEmiData", yearlyLoanEmi);
+		model.addAttribute("loanStatusData", loanService.getLoanStatusCountForCurrentUser());
+		model.addAttribute("loanBankData", loanService.getLoanBankCountForCurrentUser());
 
 		Map<String, Integer> monthlyExpenseData = expensesService.getMonthlyExpenseData(currentYear);
 		model.addAttribute("salaryData", monthlySal);
 		model.addAttribute("expenseData", monthlyExpenseData);
+
+		int currentYearSalary = yearlySal.getOrDefault(String.valueOf(currentYear), 0);
+		int currentYearExpense = yearlyExp.getOrDefault(String.valueOf(currentYear), 0);
+		int currentYearRent = yearlyRent.getOrDefault(String.valueOf(currentYear), 0);
+		int currentYearLoanEmi = loanService.getCurrentYearTotalEmiAmount();
+		int currentYearPendingLoanEmi = loanService.getCurrentYearPendingEmiAmount();
+		int netBalance = currentYearSalary - currentYearExpense - currentYearRent - currentYearLoanEmi;
+		model.addAttribute("currentYearSalary", currentYearSalary);
+		model.addAttribute("currentYearExpense", currentYearExpense);
+		model.addAttribute("currentYearRent", currentYearRent);
+		model.addAttribute("currentYearLoanEmi", currentYearLoanEmi);
+		model.addAttribute("currentYearPendingLoanEmi", currentYearPendingLoanEmi);
+		model.addAttribute("currentYearNetBalance", netBalance);
+		model.addAttribute("loanCount", loanService.getLoansForCurrentUser().size());
 
 		return "views/login/dashboard";
 	}

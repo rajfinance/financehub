@@ -10,5 +10,4 @@ public class LoanBankEmiProjectionReportDTO {
     private long iciciHeaderAmount;
     private long hdfcHeaderAmount;
     private List<LoanBankEmiProjectionRowDTO> rows;
-    private LoanBankEmiProjectionRowDTO totalRow;
 }

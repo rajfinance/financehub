@@ -133,6 +133,9 @@ function validForm(formId){
     else if(formId=="recordEmiForm"){
         return true;
     }
+    else if(formId=="preCloseLoanForm"){
+        return true;
+    }
 }
 function validateCategories(){
     const categoryName = document.getElementById("categoryName").value.trim();

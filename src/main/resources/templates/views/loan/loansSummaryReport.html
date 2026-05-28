@@ -2,35 +2,46 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
 <div th:if="${loans != null and !loans.isEmpty()}">
-    <div id="reportContent">
+    <div id="reportContent" class="loan-report-content">
         <h1 class="h1report">My Loans</h1>
-        <table>
+        <table class="loan-summary-table">
             <thead>
             <tr>
                 <th>Account</th>
                 <th>Bank</th>
                 <th>Type</th>
                 <th>Sanctioned Amount</th>
-                <th>EMI</th>
-                <th>Tenure</th>
-                <th>First EMI</th>
-                <th>End Date</th>
+                <th>Pre-Closure</th>
                 <th>Status</th>
                 <th>Action</th>
             </tr>
             </thead>
             <tbody>
-            <tr th:each="loan : ${loans}">
-                <td style="text-align: left;" th:text="${loan.loanAccountNumber}"></td>
+            <th:block th:each="loan : ${loans}">
+            <tr>
+                <td style="text-align: left;">
+                    <a href="javascript:void(0);"
+                       th:onclick="|toggleLoanDetails(${loan.id})|"
+                       style="text-decoration: none; color: var(--fh-brand); font-weight: 700;"
+                       th:text="${loan.loanAccountNumber}"></a>
+                </td>
                 <td style="text-align: left;" th:text="${loan.bankName}"></td>
                 <td th:text="${loan.loanType}"></td>
                 <td style="text-align: right;" th:text="${loan.formattedLoanAmount}"></td>
-                <td style="text-align: right;" th:text="${loan.formattedEmiAmount}"></td>
-                <td th:text="${loan.tenure} + ' months'"></td>
-                <td th:text="${loan.formattedFirstEmiDate}"></td>
-                <td th:text="${loan.formattedEndDate}"></td>
-                <td th:text="${loan.loanStatus}"></td>
+                <td th:text="${loan.preClosed ? 'Yes' : 'No'}"></td>
                 <td>
+                    <span class="fh-status-badge"
+                          th:classappend="${loan.loanStatus == 'Open'} ? ' fh-status-pending' :
+                                          (${loan.loanStatus == 'Partially Closed'} ? ' fh-status-partial' :
+                                          (${loan.loanStatus == 'Pre-Closed'} ? ' fh-status-preclosure' : ' fh-status-completed'))"
+                          th:text="${loan.loanStatus}"></span>
+                </td>
+                <td>
+                    <a href="javascript:void(0);"
+                       th:onclick="|loadEditPageContent('/api/loan/editLoan?loanId=${loan.id}')|"
+                       style="text-decoration: none; margin-right: 10px;">
+                        <img th:src="@{/images/edit-icon.png}" alt="Edit Loan" style="width: 20px; height: 20px;" />
+                    </a>
                     <a href="javascript:void(0);"
                        th:onclick="'deleteEntity(this, \'loan\', \'/api/loan/deleteLoan\')'"
                        th:attr="data-report-type='loansReport', data-id=${loan.id}">
@@ -38,6 +49,24 @@
                     </a>
                 </td>
             </tr>
+            <tr th:id="|loan-detail-${loan.id}|" style="display: none;">
+                <td colspan="7" class="loan-detail-cell">
+                    <div class="loan-detail-grid">
+                        <div><strong>EMI:</strong> <span th:text="${loan.formattedEmiAmount}"></span></div>
+                        <div><strong>Tenure:</strong> <span th:text="${loan.tenure} + ' months'"></span></div>
+                        <div><strong>Type:</strong> <span th:text="${loan.loanType}"></span></div>
+
+                        <div><strong>First EMI Date:</strong> <span th:text="${loan.formattedFirstEmiDate}"></span></div>
+                        <div><strong>Last EMI Date:</strong> <span th:text="${loan.formattedEndDate}"></span></div>
+                        <div><strong>Last EMI Paid Date:</strong> <span th:text="${loan.formattedLastEmiPaidDate != null and !#strings.isEmpty(loan.formattedLastEmiPaidDate) ? loan.formattedLastEmiPaidDate : '-'}"></span></div>
+
+                        <div th:if="${loan.preClosed}"><strong>Pre-closure Date:</strong> <span th:text="${loan.formattedPreClosureDate}"></span></div>
+                        <div th:if="${loan.preClosed}"><strong>Pre-closure Amount:</strong> <span th:text="${loan.formattedPreClosureAmount}"></span></div>
+                        <div th:if="${loan.preClosed}"><strong>NOC/Foreclosure No:</strong> <span th:text="${loan.preClosureReferenceNumber != null and !#strings.isEmpty(loan.preClosureReferenceNumber) ? loan.preClosureReferenceNumber : '-'}"></span></div>
+                    </div>
+                </td>
+            </tr>
+            </th:block>
             </tbody>
         </table>
     </div>
