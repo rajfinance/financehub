@@ -1,63 +1,125 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<body>
-<th:block sec:authorize="isAuthenticated()">
-<div th:replace="~{views/common/header :: header(true)}"></div>
-<th:block th:replace="~{views/common/menu :: appMainShell}"></th:block>
-    <script th:inline="javascript">
-        var monthlySalaryData = /*[[${monthlySalaryData}]]*/ {};
-        var yearlySalaryData = /*[[${yearlySalaryData}]]*/ {};
-        var yearlyExpenseData = /*[[${yearlyExpenseData}]]*/ {};
-        var yearlyRentData = /*[[${yearlyRentData}]]*/ {};
-        var salaryData = /*[[${salaryData}]]*/ {};
-        var expenseData = /*[[${expenseData}]]*/ {};
-    </script>
-    <script th:src="@{/js/homeCharts.js}" src="/js/homeCharts.js"></script>
-    <div class="container" data-page="dashboard" id="dashboardContent">
-        <div class="content-box">
-            <h1 th:text="'Dashboard For User ' + ${username}">Dashboard For User</h1>
-            <div class="dashboard">
-                <div class="fh-dashboard-kpis">
-                    <div class="fh-kpi-card">
-                        <h3>Current Year Salary</h3>
-                        <p th:text="${#numbers.formatInteger(currentYearSalary, 0)}">0</p>
-                    </div>
-                    <div class="fh-kpi-card">
-                        <h3>Current Year Expenses</h3>
-                        <p th:text="${#numbers.formatInteger(currentYearExpense, 0)}">0</p>
-                    </div>
-                    <div class="fh-kpi-card">
-                        <h3>Current Year Rent</h3>
-                        <p th:text="${#numbers.formatInteger(currentYearRent, 0)}">0</p>
-                    </div>
-                    <div class="fh-kpi-card">
-                        <h3>Pending EMI This Year</h3>
-                        <p th:text="${#numbers.formatInteger(currentYearPendingLoanEmi, 0)}">0</p>
-                    </div>
-                    <div class="fh-kpi-card">
-                        <h3>Net Balance (Year)</h3>
-                        <p th:text="${#numbers.formatInteger(currentYearNetBalance, 0)}">0</p>
-                    </div>
-                </div>
-                <div class="chart-row">
-                    <div class="chart-container">
-                        <canvas id="salaryExpenseChart"></canvas>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="yearlySalaryChart"></canvas>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="rentChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</th:block>
-<th:block sec:authorize="!isAuthenticated()">
-    <p>Please log in to access your dashboard.</p>
-</th:block>
-</body>
-</html>
-
+<!DOCTYPE html>
+
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<body>
+
+<th:block sec:authorize="isAuthenticated()">
+
+<div th:replace="~{views/common/header :: header(true)}"></div>
+
+<th:block th:replace="~{views/common/menu :: appMainShell}"></th:block>
+
+    <script th:inline="javascript">
+
+        var monthlySalaryData = /*[[${monthlySalaryData}]]*/ {};
+
+        var yearlySalaryData = /*[[${yearlySalaryData}]]*/ {};
+
+        var yearlyExpenseData = /*[[${yearlyExpenseData}]]*/ {};
+
+        var yearlyRentData = /*[[${yearlyRentData}]]*/ {};
+
+        var salaryData = /*[[${salaryData}]]*/ {};
+
+        var expenseData = /*[[${expenseData}]]*/ {};
+
+    </script>
+
+    <script th:src="@{/js/homeCharts.js}" src="/js/homeCharts.js"></script>
+
+    <div class="container" data-page="dashboard" id="dashboardContent">
+
+        <div class="content-box">
+
+            <h1 class="fh-dashboard-title">Dashboard For User <span class="fh-display-username" th:text="${displayUsername}">User</span></h1>
+
+            <div class="dashboard">
+
+                <div class="fh-dashboard-kpis">
+
+                    <div class="fh-kpi-card fh-kpi-card--salary">
+
+                        <h3>Current Year Salary</h3>
+
+                        <p th:text="${#numbers.formatInteger(currentYearSalary, 0)}">0</p>
+
+                    </div>
+
+                    <div class="fh-kpi-card fh-kpi-card--expense">
+
+                        <h3>Current Year Expenses</h3>
+
+                        <p th:text="${#numbers.formatInteger(currentYearExpense, 0)}">0</p>
+
+                    </div>
+
+                    <div class="fh-kpi-card fh-kpi-card--balance">
+
+                        <h3>Net Balance</h3>
+
+                        <p th:text="${#numbers.formatInteger(currentYearNetBalance, 0)}">0</p>
+
+                    </div>
+
+                    <div class="fh-kpi-card fh-kpi-card--rent">
+
+                        <h3>Current Year Rent</h3>
+
+                        <p th:text="${#numbers.formatInteger(currentYearRent, 0)}">0</p>
+
+                    </div>
+
+                    <div class="fh-kpi-card fh-kpi-card--emi">
+
+                        <h3>Pending EMI This Year</h3>
+
+                        <p th:text="${#numbers.formatInteger(currentYearPendingLoanEmi, 0)}">0</p>
+
+                    </div>
+
+                </div>
+
+                <div class="chart-row">
+
+                    <div class="chart-container">
+
+                        <canvas id="salaryExpenseChart"></canvas>
+
+                    </div>
+
+                    <div class="chart-container">
+
+                        <canvas id="yearlySalaryChart"></canvas>
+
+                    </div>
+
+                    <div class="chart-container">
+
+                        <canvas id="rentChart"></canvas>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</th:block>
+
+<th:block sec:authorize="!isAuthenticated()">
+
+    <p>Please log in to access your dashboard.</p>
+
+</th:block>
+
+</body>
+
+</html>
+
+

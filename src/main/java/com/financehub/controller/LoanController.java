@@ -135,16 +135,17 @@ public class LoanController {
         } else {
             selectedYear = Integer.valueOf(year);
         }
-        model.addAttribute("loans", loanService.getLoansForCurrentUser());
+        LoanService.EmiScheduleReportBundle report = loanService.buildEmiScheduleReport(selectedYear, loanId);
+        model.addAttribute("loans", report.getLoanOptions());
         model.addAttribute("selectedLoanId", loanId);
-        model.addAttribute("scheduleGroups", loanService.getEmiScheduleGroups(selectedYear, loanId));
+        model.addAttribute("scheduleGroups", report.getScheduleGroups());
         model.addAttribute("selectedYear", selectedYear);
         model.addAttribute("selectedYearLabel", selectedYear == null ? "All Years" : selectedYear.toString());
         model.addAttribute("allowAllYears", loanId != null);
         model.addAttribute("years",
                 loanId != null ? loanService.getScheduleYearsForLoan(loanId) : loanService.getScheduleYearsForUser());
-        model.addAttribute("yearTotal", loanService.getFormattedYearTotal(selectedYear, loanId));
-        model.addAttribute("yearPendingTotal", loanService.getFormattedYearPendingAmount(selectedYear, loanId));
+        model.addAttribute("yearTotal", report.getYearTotal());
+        model.addAttribute("yearPendingTotal", report.getYearPendingTotal());
         return "views/loan/loanEmiScheduleReport";
     }
 

@@ -285,10 +285,61 @@ header.app-header {
     align-items:center;
 }
 .userinfo .userinfo-name {
-    color: #1a1a1a;
     margin-right: 10px;
+    font-weight: 800;
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+}
+
+.fh-display-username {
+    color: #005a82;
+    font-weight: 800;
+}
+
+/* High-contrast username in sky-blue top bar (same element: .userinfo-name.fh-display-username) */
+.app-header .userinfo .userinfo-name.fh-display-username,
+header.app-header .userinfo .userinfo-name {
+    color: #ffffff;
+    background: linear-gradient(135deg, #0077a8 0%, #004d6e 100%);
+    padding: 0.32rem 0.7rem;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 61, 87, 0.45);
+    box-shadow: 0 1px 4px rgba(0, 50, 75, 0.35);
+    text-shadow: none;
+}
+
+.fh-dashboard-title .fh-display-username {
+    color: var(--fh-brand);
+    background: none;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+}
+
+.profile-account-form .form-actions-footer {
+    text-align: center;
+    margin-top: 1.25rem;
+}
+
+.login-page .login-container .profile-account-form .form-actions-footer button[type="submit"] {
+    width: auto;
+    min-width: 10rem;
+    display: inline-block;
+    margin: 0;
+    padding: 0.5rem 1.1rem;
+    font-size: 0.9375rem;
     font-weight: 700;
-    font-size: 18px;
+    color: #0f172a;
+    background: var(--fh-header-bg);
+    border: 1px solid var(--fh-border);
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.login-page .login-container .profile-account-form .form-actions-footer button[type="submit"]:hover {
+    background: rgba(0, 100, 148, 0.1);
+    border-color: rgba(0, 100, 148, 0.28);
+    color: #0f172a;
 }
 .header-account-btn {
     display: inline-flex;
@@ -714,10 +765,6 @@ body.account-spa-shell .main-content {
     margin: 0 0 0.75rem 0;
     padding: 0 0 0.75rem 0;
     font-size: 1.5rem;
-}
-
-.login-container--profile {
-    max-width: 460px;
 }
 
 .login-container {
@@ -1827,12 +1874,44 @@ button.fh-btn:active,
 }
 
 #reportContent.loan-projection-report-content {
-    max-width: 1250px;
+    max-width: 100%;
 }
 
-#reportContent.loan-projection-report-content table th,
-#reportContent.loan-projection-report-content table td {
+.fh-projection-table-wrap {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.fh-projection-table {
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+    font-size: 0.78rem;
+}
+
+#reportContent.loan-projection-report-content .fh-projection-table th,
+#reportContent.loan-projection-report-content .fh-projection-table td {
     white-space: nowrap;
+    padding: 0.35rem 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fh-projection-table .fh-col-sno {
+    width: 3%;
+    text-align: center;
+}
+
+.fh-projection-table .fh-col-date {
+    width: 9%;
+}
+
+.fh-projection-table .fh-col-emi {
+    width: 9%;
+}
+
+.fh-projection-table .fh-col-narrow {
+    width: 7%;
 }
 
 #reportContent h1,
@@ -2463,7 +2542,7 @@ button.fh-btn:active,
 
 .fh-dashboard-kpis {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 0.65rem;
     margin-bottom: 1rem;
 }
@@ -2472,22 +2551,148 @@ button.fh-btn:active,
     border: 1px solid var(--fh-border);
     border-radius: 10px;
     background: var(--fh-surface);
-    padding: 0.7rem 0.8rem;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    padding: 0.7rem 0.65rem;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+    min-width: 0;
 }
 
 .fh-kpi-card h3 {
     margin: 0;
-    font-size: 0.82rem;
+    font-size: 0.76rem;
     color: var(--fh-text-muted);
     font-weight: 700;
+    line-height: 1.25;
 }
 
 .fh-kpi-card p {
     margin: 0.35rem 0 0;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--fh-text);
+}
+
+.fh-kpi-card--salary {
+    background: linear-gradient(145deg, #e8f5e9 0%, #c8e6c9 100%);
+    border-color: #81c784;
+}
+
+.fh-kpi-card--salary h3,
+.fh-kpi-card--salary p {
+    color: #1b5e20;
+}
+
+.fh-kpi-card--expense {
+    background: linear-gradient(145deg, #ffebee 0%, #ffcdd2 100%);
+    border-color: #e57373;
+}
+
+.fh-kpi-card--expense h3,
+.fh-kpi-card--expense p {
+    color: #b71c1c;
+}
+
+.fh-kpi-card--balance {
+    background: linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%);
+    border-color: #64b5f6;
+}
+
+.fh-kpi-card--balance h3,
+.fh-kpi-card--balance p {
+    color: #0d47a1;
+}
+
+.fh-kpi-card--rent {
+    background: linear-gradient(145deg, #fff3e0 0%, #ffe0b2 100%);
+    border-color: #ffb74d;
+}
+
+.fh-kpi-card--rent h3,
+.fh-kpi-card--rent p {
+    color: #e65100;
+}
+
+.fh-kpi-card--emi {
+    background: linear-gradient(145deg, #f3e5f5 0%, #e1bee7 100%);
+    border-color: #ba68c8;
+}
+
+.fh-kpi-card--emi h3,
+.fh-kpi-card--emi p {
+    color: #6a1b9a;
+}
+
+.fh-kpi-hint {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.68rem;
+    color: inherit;
+    opacity: 0.85;
+    font-weight: 500;
+}
+
+@media (max-width: 1100px) {
+    .fh-dashboard-kpis {
+        grid-template-columns: repeat(5, minmax(120px, 1fr));
+        overflow-x: auto;
+    }
+
+    .fh-kpi-card h3 {
+        font-size: 0.7rem;
+    }
+
+    .fh-kpi-card p {
+        font-size: 0.85rem;
+    }
+}
+
+.fh-emi-status-cell {
+    white-space: nowrap;
+}
+
+.fh-emi-pending-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    border: 1px solid #f9a825;
+    background: linear-gradient(180deg, #fff8e1 0%, #ffecb3 100%);
+    color: #e65100;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fh-emi-pending-action:hover {
+    background: #ffe082;
+    box-shadow: 0 1px 4px rgba(230, 81, 0, 0.25);
+    text-decoration: none;
+    color: #bf360c;
+}
+
+.fh-emi-pending-action__icon {
+    display: inline-flex;
+    flex-shrink: 0;
+}
+
+.fh-emi-revert-link {
+    margin-left: 0.45rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--fh-text-muted);
+    text-decoration: underline;
+}
+
+.fh-emi-revert-link:hover {
+    color: #c62828;
+}
+
+.loan-projection-report-content .fh-amount-col,
+.fh-projection-table .fh-amount-col {
+    text-align: right;
+    white-space: nowrap;
 }
 
 .fh-dashboard-insights {
@@ -2624,4 +2829,245 @@ button.fh-btn:active,
 .login-page .login-container .login-form button[type="submit"]:hover {
     background: linear-gradient(180deg, #0c8ed4 0%, var(--fh-brand-hover) 100%);
     color: #fff;
+}
+
+/* ----- Update profile: dedicated shell (not .login-container max-width 400px) ----- */
+body.account-spa-shell #page-content .fh-profile-update-shell {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    min-height: 0;
+    box-sizing: border-box;
+}
+
+body.account-spa-shell #page-content .fh-profile-update-panel {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+    background: var(--fh-surface);
+    padding: 1.75rem 2rem 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--fh-border);
+    box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        0 12px 32px rgba(0, 100, 148, 0.08);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+body.account-spa-shell #page-content .fh-profile-update-panel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--fh-brand) 0%, #0ea5e9 55%, var(--fh-brand-muted) 100%);
+}
+
+.fh-profile-update-form h1 {
+    width: 100%;
+    max-width: none;
+    margin: 0 0 0.65rem 0;
+    padding: 0 0 0.65rem 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--fh-text);
+    border-bottom: 1px solid var(--fh-border);
+}
+
+.fh-profile-update-form .profile-username-inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: flex-start;
+    gap: 0.35rem 0.5rem;
+    margin: 0 0 1rem 0;
+    padding: 0 0 1rem 0;
+    border-bottom: 1px solid var(--fh-border);
+    text-align: left;
+}
+
+.fh-profile-update-form .profile-username-inline .profile-username-label {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--fh-text-muted);
+    margin: 0;
+}
+
+.fh-profile-update-form .profile-username-value {
+    font-size: 1.15rem;
+    line-height: 1.2;
+}
+
+.fh-profile-update-form .form-alert {
+    border-radius: 8px;
+    padding: 0.65rem 0.85rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: left;
+}
+
+.fh-profile-update-form .form-alert--error {
+    color: var(--fh-danger);
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+}
+
+.fh-profile-update-form .form-alert--success {
+    color: var(--fh-success);
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+}
+
+.fh-profile-update-form .profile-update-fields {
+    width: 100%;
+    text-align: left;
+}
+
+.fh-profile-update-form .input-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+}
+
+.fh-profile-update-form .input-group label {
+    width: auto;
+    margin: 0;
+    text-align: left;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--fh-text);
+}
+
+.fh-profile-update-form .input-group input {
+    border-radius: 8px;
+    border: 1px solid var(--fh-border);
+    background: #fafbfc;
+    padding: 0.65rem 0.75rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.fh-profile-update-form .input-group input:focus {
+    outline: none;
+    border-color: var(--fh-brand);
+    background: var(--fh-surface);
+    box-shadow: 0 0 0 3px rgba(0, 100, 148, 0.15);
+}
+
+.fh-profile-update-form .profile-form-row-2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.75rem 1.25rem;
+    width: 100%;
+    margin-bottom: 1rem;
+    box-sizing: border-box;
+}
+
+.fh-profile-update-form .profile-form-row-2 .input-group {
+    margin-bottom: 0;
+    min-width: 0;
+}
+
+.fh-profile-update-form .profile-photo-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+.fh-profile-update-form .profile-photo-row .profile-photo-upload {
+    flex: 1 1 280px;
+    margin-bottom: 0;
+}
+
+.fh-profile-update-form .profile-photo-row .profile-photo-preview-wrap {
+    flex: 0 0 auto;
+    margin-bottom: 0;
+    text-align: center;
+}
+
+.fh-profile-update-form .profile-photo-preview-wrap .profile-readonly-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+    color: var(--fh-text-muted);
+    font-size: 0.8125rem;
+}
+
+.fh-profile-update-form .profile-photo-preview {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid var(--fh-border);
+    display: block;
+    margin: 0 auto;
+    background: #e2e8f0;
+}
+
+.fh-profile-update-form .profile-photo-row .profile-checkbox-row {
+    margin-top: 0.5rem;
+    font-size: 0.82rem;
+}
+
+.fh-profile-update-form .profile-file-hint {
+    margin: 0.4rem 0 0;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--fh-text-muted);
+}
+
+.fh-profile-update-form .input-group input[type="file"] {
+    width: 100%;
+    padding: 0.5rem 0.35rem;
+    font-size: 0.85rem;
+}
+
+.fh-profile-update-form .form-actions-footer {
+    text-align: center;
+    margin-top: 1.25rem;
+}
+
+body.account-spa-shell #page-content .fh-profile-update-form .form-actions-footer button[type="submit"] {
+    width: auto;
+    min-width: 10rem;
+    display: inline-block;
+    margin: 0;
+    padding: 0.5rem 1.1rem;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #0f172a;
+    background: var(--fh-header-bg);
+    border: 1px solid var(--fh-border);
+    border-radius: 10px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+body.account-spa-shell #page-content .fh-profile-update-form .form-actions-footer button[type="submit"]:hover {
+    background: rgba(0, 100, 148, 0.1);
+    border-color: rgba(0, 100, 148, 0.28);
+    color: #0f172a;
+}
+
+@media (max-width: 640px) {
+    body.account-spa-shell #page-content .fh-profile-update-panel {
+        padding: 1.25rem 1rem 1.25rem;
+    }
+
+    .fh-profile-update-form .profile-form-row-2 {
+        grid-template-columns: 1fr;
+    }
 }

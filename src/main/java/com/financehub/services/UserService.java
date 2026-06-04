@@ -71,7 +71,7 @@ public class UserService {
 
 	public Map<String, String> handleSignup(ClientUserDTO clientUserDTO) {
 		Map<String, String> response = new HashMap<>();
-		if (clientUserRepository.existsByUsername(clientUserDTO.getUsername())) {
+		if (clientUserRepository.existsByUsernameIgnoreCase(clientUserDTO.getUsername())) {
 			response.put("error", "Username already exists.");
 			return response;
 		}
@@ -95,7 +95,7 @@ public class UserService {
 	}
 
 	public Optional<ClientUser> findByUsernameAndEmail(String username, String email) {
-		return clientUserRepository.findByUsernameAndEmail(username, email);
+		return clientUserRepository.findByUsernameIgnoreCaseAndEmailIgnoreCase(username, email);
 	}
 
 	public Optional<ClientUser> getCurrentClientUser() {

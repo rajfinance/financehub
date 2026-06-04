@@ -5,41 +5,45 @@
     <h1 class="h1report">Bank EMI Projection</h1>
 
     <th:block th:if="${projectionReport != null and projectionReport.rows != null and !projectionReport.rows.isEmpty()}">
-        <table>
+        <div class="fh-projection-table-wrap">
+        <table class="fh-projection-table">
             <thead>
             <tr>
-                <th rowspan="2">Date</th>
-                <th>AXIS EMI</th>
-                <th>ICICI EMI</th>
-                <th>HDFC EMI</th>
-                <th rowspan="2">TOTAL</th>
-                <th rowspan="2">AXIS PAY</th>
-                <th rowspan="2">ICICI PAY</th>
-                <th rowspan="2">HDFC PAY</th>
-                <th rowspan="2">AXIS + HDFC</th>
-                <th rowspan="2">TOTAL PAY</th>
+                <th rowspan="2" class="fh-col-sno">S.No</th>
+                <th rowspan="2" class="fh-col-date">Date</th>
+                <th class="fh-amount-col fh-col-emi">AXIS EMI</th>
+                <th class="fh-amount-col fh-col-emi">ICICI EMI</th>
+                <th class="fh-amount-col fh-col-emi">HDFC EMI</th>
+                <th rowspan="2" class="fh-amount-col fh-col-narrow">TOTAL</th>
+                <th rowspan="2" class="fh-amount-col fh-col-narrow">AXIS PAY</th>
+                <th rowspan="2" class="fh-amount-col fh-col-narrow">ICICI PAY</th>
+                <th rowspan="2" class="fh-amount-col fh-col-narrow">HDFC PAY</th>
+                <th rowspan="2" class="fh-amount-col fh-col-narrow">AXIS + HDFC</th>
+                <th rowspan="2" class="fh-amount-col fh-col-narrow">TOTAL PAY</th>
             </tr>
             <tr>
-                <th th:text="${#numbers.formatInteger(projectionReport.axisHeaderAmount, 0)}"></th>
-                <th th:text="${#numbers.formatInteger(projectionReport.iciciHeaderAmount, 0)}"></th>
-                <th th:text="${#numbers.formatInteger(projectionReport.hdfcHeaderAmount, 0)}"></th>
+                <th class="fh-amount-col fh-col-emi" th:text="${projectionReport.formattedAxisHeaderAmount}"></th>
+                <th class="fh-amount-col fh-col-emi" th:text="${projectionReport.formattedIciciHeaderAmount}"></th>
+                <th class="fh-amount-col fh-col-emi" th:text="${projectionReport.formattedHdfcHeaderAmount}"></th>
             </tr>
             </thead>
             <tbody>
-            <tr th:each="row : ${projectionReport.rows}">
-                <td th:text="${row.date}"></td>
-                <td th:text="${#numbers.formatInteger(row.axisAmount, 0)}"></td>
-                <td th:text="${#numbers.formatInteger(row.iciciAmount, 0)}"></td>
-                <td th:text="${#numbers.formatInteger(row.hdfcAmount, 0)}"></td>
-                <td th:text="${#numbers.formatInteger(row.totalAmount, 0)}"></td>
-                <td th:text="${#numbers.formatInteger(row.axisPayAmount, 0)}"></td>
-                <td th:text="${#numbers.formatInteger(row.iciciPayAmount, 0)}"></td>
-                <td th:text="${#numbers.formatInteger(row.hdfcPayAmount, 0)}"></td>
-                <td th:text="${#numbers.formatInteger(row.axisAndHdfcPayAmount, 0)}"></td>
-                <td><strong th:text="${#numbers.formatInteger(row.totalPayAmount, 0)}"></strong></td>
+            <tr th:each="row, rowStat : ${projectionReport.rows}">
+                <td class="fh-col-sno" th:text="${rowStat.count}"></td>
+                <td class="fh-col-date" th:text="${row.date}"></td>
+                <td class="fh-amount-col fh-col-emi" th:text="${row.formattedAxisAmount}"></td>
+                <td class="fh-amount-col fh-col-emi" th:text="${row.formattedIciciAmount}"></td>
+                <td class="fh-amount-col fh-col-emi" th:text="${row.formattedHdfcAmount}"></td>
+                <td class="fh-amount-col fh-col-narrow" th:text="${row.formattedTotalAmount}"></td>
+                <td class="fh-amount-col fh-col-narrow" th:text="${row.formattedAxisPayAmount}"></td>
+                <td class="fh-amount-col fh-col-narrow" th:text="${row.formattedIciciPayAmount}"></td>
+                <td class="fh-amount-col fh-col-narrow" th:text="${row.formattedHdfcPayAmount}"></td>
+                <td class="fh-amount-col fh-col-narrow" th:text="${row.formattedAxisAndHdfcPayAmount}"></td>
+                <td class="fh-amount-col fh-col-narrow"><strong th:text="${row.formattedTotalPayAmount}"></strong></td>
             </tr>
             </tbody>
         </table>
+        </div>
     </th:block>
 
     <p th:if="${projectionReport == null or projectionReport.rows == null or projectionReport.rows.isEmpty()}"

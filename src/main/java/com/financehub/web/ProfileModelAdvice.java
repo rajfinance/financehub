@@ -2,6 +2,7 @@ package com.financehub.web;
 
 import com.financehub.security.ClientUserPrincipal;
 import com.financehub.services.UserService;
+import com.financehub.utils.UsernameDisplayUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -16,6 +17,14 @@ public class ProfileModelAdvice {
 
 	public ProfileModelAdvice(UserService userService) {
 		this.userService = userService;
+	}
+
+	@ModelAttribute("displayUsername")
+	public String displayUsername(Authentication authentication) {
+		if (authentication == null || !authentication.isAuthenticated()) {
+			return "";
+		}
+		return UsernameDisplayUtils.toDisplayName(authentication.getName());
 	}
 
 	@ModelAttribute("profileAvatarVersion")

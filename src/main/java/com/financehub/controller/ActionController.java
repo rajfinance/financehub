@@ -117,16 +117,17 @@ public class ActionController {
 		String username = principal != null ? principal.getUsername() : "";
 		model.addAttribute("username", username);
 
-		int currentYear = Year.now().getValue();
+		int kpiYear = Year.now().getValue();
+		int chartYear = kpiYear;
 		int currentMonth = LocalDate.now().getMonthValue();
 		if (currentMonth == 1) {
 			currentMonth = 12;
-			currentYear -= 1;
+			chartYear -= 1;
 		} else {
 			currentMonth -= 1;
 		}
 
-		Map<String, Integer> monthlySal = workService.getMonthlySalaryData(currentYear);
+		Map<String, Integer> monthlySal = workService.getMonthlySalaryData(chartYear);
 		model.addAttribute("monthlySalaryData", monthlySal);
 
 		Map<String, Integer> yearlySal = workService.getYearlySalaryData();
@@ -144,28 +145,21 @@ public class ActionController {
 
 		Map<String, Integer> yearlyRent = rentalService.getYearlyRentData();
 		model.addAttribute("yearlyRentData", yearlyRent);
-		Map<String, Integer> yearlyLoanEmi = loanService.getYearlyEmiDataForCurrentUser();
-		model.addAttribute("yearlyLoanEmiData", yearlyLoanEmi);
-		model.addAttribute("loanStatusData", loanService.getLoanStatusCountForCurrentUser());
-		model.addAttribute("loanBankData", loanService.getLoanBankCountForCurrentUser());
 
-		Map<String, Integer> monthlyExpenseData = expensesService.getMonthlyExpenseData(currentYear);
+		Map<String, Integer> monthlyExpenseData = expensesService.getMonthlyExpenseData(chartYear);
 		model.addAttribute("salaryData", monthlySal);
 		model.addAttribute("expenseData", monthlyExpenseData);
 
-		int currentYearSalary = yearlySal.getOrDefault(String.valueOf(currentYear), 0);
-		int currentYearExpense = yearlyExp.getOrDefault(String.valueOf(currentYear), 0);
-		int currentYearRent = yearlyRent.getOrDefault(String.valueOf(currentYear), 0);
-		int currentYearLoanEmi = loanService.getCurrentYearTotalEmiAmount();
+		int currentYearSalary = yearlySal.getOrDefault(String.valueOf(kpiYear), 0);
+		int currentYearExpense = yearlyExp.getOrDefault(String.valueOf(kpiYear), 0);
+		int currentYearRent = yearlyRent.getOrDefault(String.valueOf(kpiYear), 0);
 		int currentYearPendingLoanEmi = loanService.getCurrentYearPendingEmiAmount();
-		int netBalance = currentYearSalary - currentYearExpense - currentYearRent - currentYearLoanEmi;
+		int netBalance = currentYearSalary - currentYearExpense;
 		model.addAttribute("currentYearSalary", currentYearSalary);
 		model.addAttribute("currentYearExpense", currentYearExpense);
 		model.addAttribute("currentYearRent", currentYearRent);
-		model.addAttribute("currentYearLoanEmi", currentYearLoanEmi);
 		model.addAttribute("currentYearPendingLoanEmi", currentYearPendingLoanEmi);
 		model.addAttribute("currentYearNetBalance", netBalance);
-		model.addAttribute("loanCount", loanService.getLoansForCurrentUser().size());
 
 		return "views/login/dashboard";
 	}

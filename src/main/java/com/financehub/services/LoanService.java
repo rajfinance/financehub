@@ -35,6 +35,61 @@ public class LoanService {
     private final JdbcTemplate jdbcTemplate;
     private volatile boolean preClosureTableChecked = false;
 
+    private record ScheduleAmountSlice(int emiNumber,
+                                       LocalDate dueDate,
+                                       double amount,
+                                       LocalDate deductionDate,
+                                       boolean recorded,
+                                       Long overrideId) {
+    }
+
+    private static final class ScheduleContext {
+        private final List<Loan> loans;
+        private final Map<Long, Map<Integer, LoanEmiPayment>> overridesByLoan;
+        private final Map<Long, LoanPreClosureDTO> preClosureByLoan;
+
+        private ScheduleContext(List<Loan> loans,
+                                Map<Long, Map<Integer, LoanEmiPayment>> overridesByLoan,
+                                Map<Long, LoanPreClosureDTO> preClosureByLoan) {
+            this.loans = loans;
+            this.overridesByLoan = overridesByLoan;
+            this.preClosureByLoan = preClosureByLoan;
+        }
+    }
+
+    public static final class EmiScheduleReportBundle {
+        private final List<LoanSummaryDTO> loanOptions;
+        private final List<LoanEmiScheduleGroupDTO> scheduleGroups;
+        private final String yearTotal;
+        private final String yearPendingTotal;
+
+        public EmiScheduleReportBundle(List<LoanSummaryDTO> loanOptions,
+                                        List<LoanEmiScheduleGroupDTO> scheduleGroups,
+                                        String yearTotal,
+                                        String yearPendingTotal) {
+            this.loanOptions = loanOptions;
+            this.scheduleGroups = scheduleGroups;
+            this.yearTotal = yearTotal;
+            this.yearPendingTotal = yearPendingTotal;
+        }
+
+        public List<LoanSummaryDTO> getLoanOptions() {
+            return loanOptions;
+        }
+
+        public List<LoanEmiScheduleGroupDTO> getScheduleGroups() {
+            return scheduleGroups;
+        }
+
+        public String getYearTotal() {
+            return yearTotal;
+        }
+
+        public String getYearPendingTotal() {
+            return yearPendingTotal;
+        }
+    }
+
     public LoanService(LoanRepository loanRepository,
                        LoanEmiPaymentRepository loanEmiPaymentRepository,
                        UserService userService,
@@ -93,15 +148,22 @@ public class LoanService {
     }
 
     public List<LoanSummaryDTO> getLoansForCurrentUser() {
-        long userId = requireUserId();
-        return loanRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
-                .map(this::toSummaryDto)
+        ScheduleContext context = buildScheduleContext();
+        return context.loans.stream()
+                .map(loan -> toSummaryDto(
+                        loan,
+                        context.preClosureByLoan.get(loan.getId()),
+                        context.overridesByLoan.getOrDefault(loan.getId(), Map.of())))
                 .collect(Collectors.toList());
     }
 
     public LoanSummaryDTO getLoanSummaryById(Long loanId) {
         Loan loan = requireOwnedLoan(loanId);
-        return toSummaryDto(loan);
+        List<Long> loanIds = List.of(loan.getId());
+        return toSummaryDto(
+                loan,
+                loadPreClosuresByLoanIds(loanIds).get(loan.getId()),
+                loadOverridesByLoan(loanIds).getOrDefault(loan.getId(), Map.of()));
     }
 
     public LoanEmiPaymentDTO getEmiPaymentById(Long id) {
@@ -308,98 +370,80 @@ public class LoanService {
      * Optional {@link LoanEmiPayment} rows override amount and deduction date for that installment.
      */
     public List<LoanEmiScheduleRowDTO> getEmiScheduleForUser(Integer year, Long loanId) {
-        long userId = requireUserId();
-        List<Loan> loans = loanRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        List<LoanEmiScheduleRowDTO> rows = new ArrayList<>();
-        for (Loan loan : loans) {
-            if (loanId != null && !loan.getId().equals(loanId)) {
-                continue;
-            }
-            rows.addAll(buildScheduleForLoan(loan, year));
-        }
-        rows.sort(Comparator
-                .comparing(LoanEmiScheduleRowDTO::getDueDate)
-                .thenComparing(LoanEmiScheduleRowDTO::getBankName)
-                .thenComparing(LoanEmiScheduleRowDTO::getEmiNumber));
-        return rows;
+        return buildScheduleRows(buildScheduleContext(), year, loanId);
     }
 
-    public Map<Long, List<LoanEmiScheduleRowDTO>> getEmiScheduleGroupedByLoan(Integer year, Long loanId) {
-        return getEmiScheduleForUser(year, loanId).stream()
+    public EmiScheduleReportBundle buildEmiScheduleReport(Integer year, Long loanId) {
+        ScheduleContext context = buildScheduleContext();
+        List<LoanEmiScheduleRowDTO> rows = buildScheduleRows(context, year, loanId);
+        Map<Long, List<LoanEmiScheduleRowDTO>> grouped = rows.stream()
                 .collect(Collectors.groupingBy(LoanEmiScheduleRowDTO::getLoanId, LinkedHashMap::new, Collectors.toList()));
-    }
 
-    public List<LoanEmiScheduleGroupDTO> getEmiScheduleGroups(Integer year, Long loanId) {
-        Map<Long, List<LoanEmiScheduleRowDTO>> grouped = getEmiScheduleGroupedByLoan(year, loanId);
         List<LoanEmiScheduleGroupDTO> groups = new ArrayList<>();
-        for (LoanSummaryDTO loan : getLoansForCurrentUser()) {
+        List<LoanSummaryDTO> loanOptions = new ArrayList<>();
+        for (Loan loan : context.loans) {
+            loanOptions.add(toLightSummaryDto(loan));
             if (loanId != null && !loan.getId().equals(loanId)) {
                 continue;
             }
-            List<LoanEmiScheduleRowDTO> rows = grouped.get(loan.getId());
-            if (rows == null || rows.isEmpty()) {
+            List<LoanEmiScheduleRowDTO> loanRows = grouped.get(loan.getId());
+            if (loanRows == null || loanRows.isEmpty()) {
                 continue;
             }
             LoanEmiScheduleGroupDTO group = new LoanEmiScheduleGroupDTO();
-            group.setLoan(loan);
-            group.setScheduleRows(rows);
+            group.setLoan(toLightSummaryDto(loan));
+            group.setScheduleRows(loanRows);
             groups.add(group);
         }
-        return groups;
-    }
 
-    public String getFormattedYearTotal(Integer year, Long loanId) {
-        double total = getEmiScheduleForUser(year, loanId).stream()
-                .mapToDouble(LoanEmiScheduleRowDTO::getEmiAmount)
-                .sum();
-        return formatterUtils.formatInIndianStyle(total);
-    }
-
-    public String getFormattedYearPendingAmount(Integer year, Long loanId) {
-        LocalDate today = LocalDate.now();
-        double pending = getEmiScheduleForUser(year, loanId).stream()
-                .filter(row -> row.getDeductionDate() != null && row.getDeductionDate().isAfter(today))
-                .mapToDouble(LoanEmiScheduleRowDTO::getEmiAmount)
-                .sum();
-        return formatterUtils.formatInIndianStyle(pending);
+        double total = sumScheduleAmounts(context, year, loanId, false);
+        double pending = sumScheduleAmounts(context, year, loanId, true);
+        return new EmiScheduleReportBundle(
+                loanOptions,
+                groups,
+                formatterUtils.formatInIndianStyle(total),
+                formatterUtils.formatInIndianStyle(pending));
     }
 
     public LoanBankEmiProjectionReportDTO getBankNextMonthProjectionReport() {
         LocalDate nextMonthStart = LocalDate.now().plusMonths(1).withDayOfMonth(1);
-
-        List<LoanEmiScheduleRowDTO> scheduleRows = getEmiScheduleForUser(null, null);
+        ScheduleContext context = buildScheduleContext();
         TreeMap<YearMonth, LoanBankEmiProjectionRowDTO> monthlyDeductionRows = new TreeMap<>();
         long axisPendingTotal = 0;
         long iciciPendingTotal = 0;
         long hdfcPendingTotal = 0;
 
-        for (LoanEmiScheduleRowDTO row : scheduleRows) {
-            if (row.getDueDate() == null || row.getDueDate().isBefore(nextMonthStart)) {
+        for (Loan loan : context.loans) {
+            if (loan.getEmiDate() == null || loan.getTenure() == null || loan.getEmiAmount() == null) {
                 continue;
             }
-
-            String bucket = resolveBankBucket(row.getBankName());
-            if (bucket == null) {
-                continue;
-            }
-
-            YearMonth installmentMonth = YearMonth.from(row.getDueDate());
-            LoanBankEmiProjectionRowDTO monthlyDeductionRow = monthlyDeductionRows.computeIfAbsent(installmentMonth, ym -> {
-                LoanBankEmiProjectionRowDTO dto = new LoanBankEmiProjectionRowDTO();
-                dto.setDate(formatterUtils.formatDate(ym.atDay(7)));
-                return dto;
-            });
-
-            long amount = Math.round(row.getEmiAmount());
-            if ("AXIS".equals(bucket)) {
-                monthlyDeductionRow.setAxisAmount(monthlyDeductionRow.getAxisAmount() + amount);
-                axisPendingTotal += amount;
-            } else if ("ICICI".equals(bucket)) {
-                monthlyDeductionRow.setIciciAmount(monthlyDeductionRow.getIciciAmount() + amount);
-                iciciPendingTotal += amount;
-            } else if ("HDFC".equals(bucket)) {
-                monthlyDeductionRow.setHdfcAmount(monthlyDeductionRow.getHdfcAmount() + amount);
-                hdfcPendingTotal += amount;
+            LoanPreClosureDTO preClosure = context.preClosureByLoan.get(loan.getId());
+            Map<Integer, LoanEmiPayment> overrides = context.overridesByLoan.getOrDefault(loan.getId(), Map.of());
+            for (ScheduleAmountSlice slice : buildScheduleAmountSlices(loan, null, preClosure, overrides)) {
+                if (slice.dueDate() == null || slice.dueDate().isBefore(nextMonthStart)) {
+                    continue;
+                }
+                String bucket = resolveBankBucket(loan.getBankName());
+                if (bucket == null) {
+                    continue;
+                }
+                YearMonth installmentMonth = YearMonth.from(slice.dueDate());
+                LoanBankEmiProjectionRowDTO monthlyDeductionRow = monthlyDeductionRows.computeIfAbsent(installmentMonth, ym -> {
+                    LoanBankEmiProjectionRowDTO dto = new LoanBankEmiProjectionRowDTO();
+                    dto.setDate(formatterUtils.formatDate(ym.atDay(7)));
+                    return dto;
+                });
+                long amount = Math.round(slice.amount());
+                if ("AXIS".equals(bucket)) {
+                    monthlyDeductionRow.setAxisAmount(monthlyDeductionRow.getAxisAmount() + amount);
+                    axisPendingTotal += amount;
+                } else if ("ICICI".equals(bucket)) {
+                    monthlyDeductionRow.setIciciAmount(monthlyDeductionRow.getIciciAmount() + amount);
+                    iciciPendingTotal += amount;
+                } else if ("HDFC".equals(bucket)) {
+                    monthlyDeductionRow.setHdfcAmount(monthlyDeductionRow.getHdfcAmount() + amount);
+                    hdfcPendingTotal += amount;
+                }
             }
         }
 
@@ -427,6 +471,7 @@ public class LoanService {
             pendingRow.setIciciAmount(iciciRunningPending);
             pendingRow.setHdfcAmount(hdfcRunningPending);
             fillProjectionComputedColumns(pendingRow);
+            applyProjectionFormatting(pendingRow);
             rows.add(pendingRow);
         }
 
@@ -434,52 +479,16 @@ public class LoanService {
         report.setAxisHeaderAmount(axisHeaderEmi);
         report.setIciciHeaderAmount(iciciHeaderEmi);
         report.setHdfcHeaderAmount(hdfcHeaderEmi);
+        report.setFormattedAxisHeaderAmount(formatterUtils.formatInIndianStyleWholeNumber(axisHeaderEmi));
+        report.setFormattedIciciHeaderAmount(formatterUtils.formatInIndianStyleWholeNumber(iciciHeaderEmi));
+        report.setFormattedHdfcHeaderAmount(formatterUtils.formatInIndianStyleWholeNumber(hdfcHeaderEmi));
         report.setRows(rows);
         return report;
     }
 
-    public Map<String, Integer> getYearlyEmiDataForCurrentUser() {
-        return getEmiScheduleForUser(null, null).stream()
-                .filter(r -> r.getDueDate() != null)
-                .collect(Collectors.groupingBy(
-                        r -> String.valueOf(r.getDueDate().getYear()),
-                        TreeMap::new,
-                        Collectors.summingInt(r -> (int) Math.round(r.getEmiAmount()))
-                ));
-    }
-
-    public Map<String, Integer> getLoanStatusCountForCurrentUser() {
-        return getLoansForCurrentUser().stream()
-                .collect(Collectors.groupingBy(
-                        loan -> loan.getLoanStatus() == null ? "Unknown" : loan.getLoanStatus(),
-                        LinkedHashMap::new,
-                        Collectors.summingInt(l -> 1)
-                ));
-    }
-
-    public Map<String, Integer> getLoanBankCountForCurrentUser() {
-        return getLoansForCurrentUser().stream()
-                .collect(Collectors.groupingBy(
-                        loan -> loan.getBankName() == null ? "Unknown" : loan.getBankName(),
-                        LinkedHashMap::new,
-                        Collectors.summingInt(l -> 1)
-                ));
-    }
-
-    public int getCurrentYearTotalEmiAmount() {
-        int year = LocalDate.now().getYear();
-        return (int) Math.round(getEmiScheduleForUser(year, null).stream()
-                .mapToDouble(LoanEmiScheduleRowDTO::getEmiAmount)
-                .sum());
-    }
-
     public int getCurrentYearPendingEmiAmount() {
         int year = LocalDate.now().getYear();
-        LocalDate today = LocalDate.now();
-        return (int) Math.round(getEmiScheduleForUser(year, null).stream()
-                .filter(r -> r.getDeductionDate() != null && r.getDeductionDate().isAfter(today))
-                .mapToDouble(LoanEmiScheduleRowDTO::getEmiAmount)
-                .sum());
+        return (int) Math.round(sumScheduleAmounts(buildScheduleContext(), year, null, true));
     }
 
     public List<Integer> getScheduleYearsForUser() {
@@ -492,7 +501,7 @@ public class LoanService {
                 continue;
             }
             LocalDate start = loan.getEmiDate();
-            LocalDate end = getLastDueDateForLoan(loan);
+            LocalDate end = getLastDueDateForLoan(loan, getPersistedPreClosure(loan.getId()).orElse(null));
             for (int y = start.getYear(); y <= end.getYear(); y++) {
                 years.add(y);
             }
@@ -509,7 +518,7 @@ public class LoanService {
             return new ArrayList<>(years);
         }
         LocalDate start = loan.getEmiDate();
-        LocalDate end = getLastDueDateForLoan(loan);
+        LocalDate end = getLastDueDateForLoan(loan, getPersistedPreClosure(loanId).orElse(null));
         for (int y = start.getYear(); y <= end.getYear(); y++) {
             years.add(y);
         }
@@ -517,7 +526,10 @@ public class LoanService {
     }
 
     public LocalDate getDueDateForInstallment(Loan loan, int emiNumber) {
-        LoanPreClosureDTO preClosure = getPersistedPreClosure(loan.getId()).orElse(null);
+        return getDueDateForInstallment(loan, emiNumber, getPersistedPreClosure(loan.getId()).orElse(null));
+    }
+
+    private LocalDate getDueDateForInstallment(Loan loan, int emiNumber, LoanPreClosureDTO preClosure) {
         if (preClosure != null
                 && "PARTIAL".equalsIgnoreCase(preClosure.getPreClosureType())
                 && preClosure.getUpdatedTenure() != null
@@ -563,25 +575,108 @@ public class LoanService {
         }
     }
 
-    private List<LoanEmiScheduleRowDTO> buildScheduleForLoan(Loan loan, Integer year) {
+    private ScheduleContext buildScheduleContext() {
+        long userId = requireUserId();
+        List<Loan> loans = loanRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<Long> loanIds = loans.stream().map(Loan::getId).toList();
+        return new ScheduleContext(loans, loadOverridesByLoan(loanIds), loadPreClosuresByLoanIds(loanIds));
+    }
+
+    private List<LoanEmiScheduleRowDTO> buildScheduleRows(ScheduleContext context, Integer year, Long loanId) {
+        List<LoanEmiScheduleRowDTO> rows = new ArrayList<>();
+        for (Loan loan : context.loans) {
+            if (loanId != null && !loan.getId().equals(loanId)) {
+                continue;
+            }
+            rows.addAll(buildScheduleForLoan(
+                    loan,
+                    year,
+                    context.preClosureByLoan.get(loan.getId()),
+                    context.overridesByLoan.getOrDefault(loan.getId(), Map.of())));
+        }
+        rows.sort(Comparator
+                .comparing(LoanEmiScheduleRowDTO::getDueDate)
+                .thenComparing(LoanEmiScheduleRowDTO::getBankName)
+                .thenComparing(LoanEmiScheduleRowDTO::getEmiNumber));
+        return rows;
+    }
+
+    private Map<Long, Map<Integer, LoanEmiPayment>> loadOverridesByLoan(List<Long> loanIds) {
+        if (loanIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, Map<Integer, LoanEmiPayment>> overridesByLoan = new HashMap<>();
+        for (LoanEmiPayment payment : loanEmiPaymentRepository
+                .findByLoanIdInAndEmiNumberGreaterThanOrderByLoanIdAscEmiNumberAsc(loanIds, 0)) {
+            if (payment.getEmiNumber() == null) {
+                continue;
+            }
+            overridesByLoan
+                    .computeIfAbsent(payment.getLoanId(), ignored -> new HashMap<>())
+                    .put(payment.getEmiNumber(), payment);
+        }
+        return overridesByLoan;
+    }
+
+    private Map<Long, LoanPreClosureDTO> loadPreClosuresByLoanIds(List<Long> loanIds) {
+        if (loanIds.isEmpty()) {
+            return Map.of();
+        }
+        ensurePreClosureTable();
+        String placeholders = String.join(",", Collections.nCopies(loanIds.size(), "?"));
+        List<LoanPreClosureDTO> rows = jdbcTemplate.query(
+                "SELECT loan_id, pre_closure_date, settlement_amount, pre_closure_type, " +
+                        "reference_number, updated_emi_amount, updated_tenure " +
+                        "FROM loan_preclosures WHERE loan_id IN (" + placeholders + ")",
+                preClosureRowMapper(),
+                loanIds.toArray());
+        Map<Long, LoanPreClosureDTO> preClosureByLoan = new HashMap<>();
+        for (LoanPreClosureDTO row : rows) {
+            preClosureByLoan.putIfAbsent(row.getLoanId(), row);
+        }
+        return preClosureByLoan;
+    }
+
+    private double sumScheduleAmounts(ScheduleContext context, Integer year, Long loanId, boolean pendingOnly) {
+        LocalDate today = LocalDate.now();
+        double total = 0;
+        for (Loan loan : context.loans) {
+            if (loanId != null && !loan.getId().equals(loanId)) {
+                continue;
+            }
+            for (ScheduleAmountSlice slice : buildScheduleAmountSlices(
+                    loan,
+                    year,
+                    context.preClosureByLoan.get(loan.getId()),
+                    context.overridesByLoan.getOrDefault(loan.getId(), Map.of()))) {
+                if (pendingOnly && (slice.deductionDate() == null || !slice.deductionDate().isAfter(today))) {
+                    continue;
+                }
+                total += slice.amount();
+            }
+        }
+        return total;
+    }
+
+    private List<ScheduleAmountSlice> buildScheduleAmountSlices(Loan loan,
+                                                                Integer year,
+                                                                LoanPreClosureDTO preClosure,
+                                                                Map<Integer, LoanEmiPayment> overrides) {
         if (loan.getEmiDate() == null || loan.getTenure() == null || loan.getEmiAmount() == null) {
             return List.of();
         }
-        Map<Integer, LoanEmiPayment> overrides = loanEmiPaymentRepository.findByLoanIdOrderByEmiNumberAsc(loan.getId())
-                .stream()
-                .filter(p -> p.getEmiNumber() != null && p.getEmiNumber() > 0)
-                .collect(Collectors.toMap(LoanEmiPayment::getEmiNumber, p -> p, (a, b) -> b));
-        LoanPreClosureDTO preClosure = getPersistedPreClosure(loan.getId()).orElse(null);
-        LocalDate preClosureDate = preClosure != null ? preClosure.getPreClosureDate() : getPreClosureDateForLoan(loan.getId());
-        Integer preClosureEmiNumber = preClosureDate != null ? resolvePreClosureTargetEmiNumber(loan, preClosureDate) : null;
+        LocalDate preClosureDate = preClosure != null ? preClosure.getPreClosureDate() : null;
+        Integer preClosureEmiNumber = preClosureDate != null
+                ? resolvePreClosureTargetEmiNumber(loan, preClosureDate, preClosure)
+                : null;
         boolean partialClosure = preClosure != null && "PARTIAL".equalsIgnoreCase(preClosure.getPreClosureType())
                 && preClosure.getUpdatedTenure() != null && preClosure.getUpdatedTenure() > 0
                 && preClosure.getUpdatedEmiAmount() != null && preClosure.getUpdatedEmiAmount() > 0;
         int maxEmiNumber = partialClosure ? preClosureEmiNumber + preClosure.getUpdatedTenure() : loan.getTenure();
 
-        List<LoanEmiScheduleRowDTO> rows = new ArrayList<>();
+        List<ScheduleAmountSlice> slices = new ArrayList<>();
         for (int i = 1; i <= maxEmiNumber; i++) {
-            LocalDate dueDate = getDueDateForInstallment(loan, i);
+            LocalDate dueDate = getDueDateForInstallment(loan, i, preClosure);
             if (!partialClosure && preClosureEmiNumber != null && i > preClosureEmiNumber) {
                 continue;
             }
@@ -596,26 +691,42 @@ public class LoanService {
             }
             double amount = recorded ? override.getEmiAmount() : recurringAmount;
             LocalDate deductionDate = recorded ? override.getPaidOn() : dueDate;
+            Long overrideId = recorded ? override.getId() : null;
+            slices.add(new ScheduleAmountSlice(i, dueDate, amount, deductionDate, recorded, overrideId));
+        }
+        return slices;
+    }
 
+    private List<LoanEmiScheduleRowDTO> buildScheduleForLoan(Loan loan,
+                                                               Integer year,
+                                                               LoanPreClosureDTO preClosure,
+                                                               Map<Integer, LoanEmiPayment> overrides) {
+        List<LoanEmiScheduleRowDTO> rows = new ArrayList<>();
+        LocalDate preClosureDate = preClosure != null ? preClosure.getPreClosureDate() : null;
+        Integer preClosureEmiNumber = preClosureDate != null
+                ? resolvePreClosureTargetEmiNumber(loan, preClosureDate, preClosure)
+                : null;
+
+        for (ScheduleAmountSlice slice : buildScheduleAmountSlices(loan, year, preClosure, overrides)) {
             LoanEmiScheduleRowDTO row = new LoanEmiScheduleRowDTO();
             row.setLoanId(loan.getId());
             row.setLoanAccountNumber(loan.getLoanAccountNumber());
             row.setBankName(loan.getBankName());
             row.setLoanType(loan.getLoanType());
-            row.setEmiNumber(i);
-            row.setDueDate(dueDate);
-            row.setFormattedDueDate(formatterUtils.formatDate(dueDate));
-            row.setDeductionDate(deductionDate);
-            row.setFormattedDeductionDate(formatterUtils.formatDate(deductionDate));
-            row.setEmiAmount(amount);
-            row.setFormattedEmiAmount(formatterUtils.formatInIndianStyle(amount));
-            String emiStatus = resolveEmiStatus(deductionDate);
-            if (preClosureEmiNumber != null && i == preClosureEmiNumber) {
+            row.setEmiNumber(slice.emiNumber());
+            row.setDueDate(slice.dueDate());
+            row.setFormattedDueDate(formatterUtils.formatDate(slice.dueDate()));
+            row.setDeductionDate(slice.deductionDate());
+            row.setFormattedDeductionDate(formatterUtils.formatDate(slice.deductionDate()));
+            row.setEmiAmount(slice.amount());
+            row.setFormattedEmiAmount(formatterUtils.formatInIndianStyle(slice.amount()));
+            String emiStatus = resolveEmiStatus(slice.deductionDate());
+            if (preClosureEmiNumber != null && slice.emiNumber() == preClosureEmiNumber) {
                 emiStatus = "Pre-Closure";
             }
             row.setEmiStatus(emiStatus);
-            row.setRecorded(recorded);
-            row.setOverrideId(recorded ? override.getId() : null);
+            row.setRecorded(slice.recorded());
+            row.setOverrideId(slice.overrideId());
             rows.add(row);
         }
         return rows;
@@ -698,6 +809,18 @@ public class LoanService {
         row.setTotalPayAmount(totalPay);
     }
 
+    private void applyProjectionFormatting(LoanBankEmiProjectionRowDTO row) {
+        row.setFormattedAxisAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getAxisAmount()));
+        row.setFormattedIciciAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getIciciAmount()));
+        row.setFormattedHdfcAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getHdfcAmount()));
+        row.setFormattedTotalAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getTotalAmount()));
+        row.setFormattedAxisPayAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getAxisPayAmount()));
+        row.setFormattedIciciPayAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getIciciPayAmount()));
+        row.setFormattedHdfcPayAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getHdfcPayAmount()));
+        row.setFormattedAxisAndHdfcPayAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getAxisAndHdfcPayAmount()));
+        row.setFormattedTotalPayAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getTotalPayAmount()));
+    }
+
     private String resolveBankBucket(String bankName) {
         if (bankName == null) {
             return null;
@@ -739,14 +862,33 @@ public class LoanService {
     }
 
     private int resolvePreClosureTargetEmiNumber(Loan loan, LocalDate preClosureDate) {
-        int maxSearch = Math.max(loan.getTenure(), getMaxAllowedEmiNumberWithoutRecursion(loan));
+        return resolvePreClosureTargetEmiNumber(loan, preClosureDate, getPersistedPreClosure(loan.getId()).orElse(null));
+    }
+
+    private int resolvePreClosureTargetEmiNumber(Loan loan, LocalDate preClosureDate, LoanPreClosureDTO preClosure) {
+        int maxSearch = loan.getTenure() == null ? 0 : loan.getTenure();
+        if (preClosure != null
+                && "PARTIAL".equalsIgnoreCase(preClosure.getPreClosureType())
+                && preClosure.getUpdatedTenure() != null
+                && preClosure.getUpdatedTenure() > 0) {
+            int cutOffEmiNumber = 1;
+            for (int i = 1; i <= loan.getTenure(); i++) {
+                LocalDate dueDate = loan.getEmiDate().plusMonths(i - 1L);
+                if (!dueDate.isBefore(preClosureDate)) {
+                    cutOffEmiNumber = i;
+                    break;
+                }
+                cutOffEmiNumber = i;
+            }
+            maxSearch = Math.max(maxSearch, cutOffEmiNumber + preClosure.getUpdatedTenure());
+        }
         for (int i = 1; i <= maxSearch; i++) {
             LocalDate dueDate = loan.getEmiDate().plusMonths(i - 1L);
             if (!dueDate.isBefore(preClosureDate)) {
                 return i;
             }
         }
-        return Math.max(1, loan.getTenure());
+        return Math.max(1, loan.getTenure() == null ? 1 : loan.getTenure());
     }
 
     private int getMaxAllowedEmiNumberWithoutRecursion(Loan loan) {
@@ -770,20 +912,19 @@ public class LoanService {
         return loan.getTenure();
     }
 
-    private LocalDate getLastDueDateForLoan(Loan loan) {
+    private LocalDate getLastDueDateForLoan(Loan loan, LoanPreClosureDTO preClosure) {
         int maxEmiNumber = loan.getTenure();
-        Optional<LoanPreClosureDTO> preClosure = getPersistedPreClosure(loan.getId());
-        if (preClosure.isPresent() && preClosure.get().getPreClosureDate() != null) {
-            int cutOffEmiNumber = resolvePreClosureTargetEmiNumber(loan, preClosure.get().getPreClosureDate());
-            if ("PARTIAL".equalsIgnoreCase(preClosure.get().getPreClosureType())
-                    && preClosure.get().getUpdatedTenure() != null
-                    && preClosure.get().getUpdatedTenure() > 0) {
-                maxEmiNumber = cutOffEmiNumber + preClosure.get().getUpdatedTenure();
+        if (preClosure != null && preClosure.getPreClosureDate() != null) {
+            int cutOffEmiNumber = resolvePreClosureTargetEmiNumber(loan, preClosure.getPreClosureDate(), preClosure);
+            if ("PARTIAL".equalsIgnoreCase(preClosure.getPreClosureType())
+                    && preClosure.getUpdatedTenure() != null
+                    && preClosure.getUpdatedTenure() > 0) {
+                maxEmiNumber = cutOffEmiNumber + preClosure.getUpdatedTenure();
             } else {
                 maxEmiNumber = cutOffEmiNumber;
             }
         }
-        return getDueDateForInstallment(loan, maxEmiNumber);
+        return getDueDateForInstallment(loan, maxEmiNumber, preClosure);
     }
 
     private Optional<LoanPreClosureDTO> getPersistedPreClosure(Long loanId) {
@@ -884,7 +1025,18 @@ public class LoanService {
         return LocalDate.now().isAfter(endDate) ? "Closed" : "Open";
     }
 
-    private LoanSummaryDTO toSummaryDto(Loan loan) {
+    private LoanSummaryDTO toLightSummaryDto(Loan loan) {
+        LoanSummaryDTO dto = new LoanSummaryDTO();
+        dto.setId(loan.getId());
+        dto.setLoanAccountNumber(loan.getLoanAccountNumber());
+        dto.setBankName(loan.getBankName());
+        dto.setLoanType(loan.getLoanType());
+        return dto;
+    }
+
+    private LoanSummaryDTO toSummaryDto(Loan loan,
+                                        LoanPreClosureDTO preClosure,
+                                        Map<Integer, LoanEmiPayment> overrides) {
         LoanSummaryDTO dto = new LoanSummaryDTO();
         dto.setId(loan.getId());
         dto.setLoanAccountNumber(loan.getLoanAccountNumber());
@@ -898,32 +1050,31 @@ public class LoanService {
         dto.setFormattedEmiAmount(formatterUtils.formatInIndianStyle(loan.getEmiAmount()));
         dto.setFirstEmiDate(loan.getEmiDate());
         dto.setFormattedFirstEmiDate(formatterUtils.formatDate(loan.getEmiDate()));
-        LocalDate lastPaidDate = buildScheduleForLoan(loan, null).stream()
-                .filter(r -> r.getDeductionDate() != null && !r.getDeductionDate().isAfter(LocalDate.now()))
-                .map(LoanEmiScheduleRowDTO::getDeductionDate)
+        LocalDate lastPaidDate = overrides.values().stream()
+                .filter(p -> p.getPaidOn() != null && !p.getPaidOn().isAfter(LocalDate.now()))
+                .map(LoanEmiPayment::getPaidOn)
                 .max(LocalDate::compareTo)
                 .orElse(null);
         dto.setFormattedLastEmiPaidDate(formatterUtils.formatDate(lastPaidDate));
 
-        Optional<LoanPreClosureDTO> preClosure = getPersistedPreClosure(loan.getId());
-        if (preClosure.isPresent()) {
+        if (preClosure != null) {
             dto.setPreClosed(true);
-            dto.setPreClosureDate(preClosure.get().getPreClosureDate());
-            dto.setFormattedPreClosureDate(formatterUtils.formatDate(preClosure.get().getPreClosureDate()));
-            dto.setPreClosureAmount(preClosure.get().getSettlementAmount());
-            dto.setFormattedPreClosureAmount(formatterUtils.formatInIndianStyle(preClosure.get().getSettlementAmount()));
-            dto.setPreClosureType(preClosure.get().getPreClosureType());
-            dto.setPreClosureReferenceNumber(preClosure.get().getReferenceNumber());
-            LocalDate lastDate = getLastDueDateForLoan(loan);
+            dto.setPreClosureDate(preClosure.getPreClosureDate());
+            dto.setFormattedPreClosureDate(formatterUtils.formatDate(preClosure.getPreClosureDate()));
+            dto.setPreClosureAmount(preClosure.getSettlementAmount());
+            dto.setFormattedPreClosureAmount(formatterUtils.formatInIndianStyle(preClosure.getSettlementAmount()));
+            dto.setPreClosureType(preClosure.getPreClosureType());
+            dto.setPreClosureReferenceNumber(preClosure.getReferenceNumber());
+            LocalDate lastDate = getLastDueDateForLoan(loan, preClosure);
             dto.setEndDate(lastDate);
             dto.setFormattedEndDate(formatterUtils.formatDate(lastDate));
-            dto.setLoanStatus("PARTIAL".equalsIgnoreCase(preClosure.get().getPreClosureType())
+            dto.setLoanStatus("PARTIAL".equalsIgnoreCase(preClosure.getPreClosureType())
                     ? "Partially Closed"
                     : "Pre-Closed");
             return dto;
         }
         if (loan.getEmiDate() != null && loan.getTenure() != null && loan.getTenure() > 0) {
-            LocalDate endDate = getDueDateForInstallment(loan, loan.getTenure());
+            LocalDate endDate = getDueDateForInstallment(loan, loan.getTenure(), null);
             dto.setEndDate(endDate);
             dto.setFormattedEndDate(formatterUtils.formatDate(endDate));
             dto.setLoanStatus(resolveLoanStatus(endDate));

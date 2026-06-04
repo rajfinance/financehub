@@ -160,6 +160,43 @@ function callEditCategory(element) {
 
         editCategory(id, name, icon, sortOrder, enabled);
 }
+let profilePhotoPreviewObjectUrl = null;
+
+function previewProfilePhoto(fileInput) {
+    const preview = document.getElementById('profilePhotoPreview');
+    if (!preview) {
+        return;
+    }
+    if (profilePhotoPreviewObjectUrl) {
+        URL.revokeObjectURL(profilePhotoPreviewObjectUrl);
+        profilePhotoPreviewObjectUrl = null;
+    }
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+        const defaultSrc = preview.getAttribute('data-default-src');
+        if (defaultSrc) {
+            preview.src = defaultSrc;
+        }
+        return;
+    }
+    const file = fileInput.files[0];
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png'];
+    const name = (file.name || '').toLowerCase();
+    const typeOk = file.type && allowed.includes(file.type.toLowerCase());
+    const extOk = name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png');
+    if (!typeOk && !extOk) {
+        alert('Please choose a JPG, JPEG, or PNG image.');
+        fileInput.value = '';
+        return;
+    }
+    if (file.size > 512 * 1024) {
+        alert('Image must be 512 KB or smaller.');
+        fileInput.value = '';
+        return;
+    }
+    profilePhotoPreviewObjectUrl = URL.createObjectURL(file);
+    preview.src = profilePhotoPreviewObjectUrl;
+}
+
 function previewCategoryIcon(fileInput) {
     const preview = document.getElementById("categoryIconPreview");
     if (!preview || !fileInput || !fileInput.files || !fileInput.files[0]) {

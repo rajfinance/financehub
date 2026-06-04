@@ -14,4 +14,13 @@ public class LoanBankEmiProjectionRowDTO {
     private long hdfcPayAmount;
     private long axisAndHdfcPayAmount;
     private long totalPayAmount;
+    private String formattedAxisAmount;
+    private String formattedIciciAmount;
+    private String formattedHdfcAmount;
+    private String formattedTotalAmount;
+    private String formattedAxisPayAmount;
+    private String formattedIciciPayAmount;
+    private String formattedHdfcPayAmount;
+    private String formattedAxisAndHdfcPayAmount;
+    private String formattedTotalPayAmount;
 }

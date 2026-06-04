@@ -36,7 +36,7 @@
                     <th>Due Date</th>
                     <th>Deduction Date</th>
                     <th>EMI Amount</th>
-                    <th>Status / Action</th>
+                    <th>EMI Status</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -44,30 +44,41 @@
                     <td th:text="${row.emiNumber}"></td>
                     <td th:text="${row.formattedDueDate}"></td>
                     <td th:text="${row.formattedDeductionDate}"></td>
-                    <td style="text-align: right;" th:text="${row.formattedEmiAmount}"></td>
-                    <td>
-                        <span class="fh-status-badge"
-                              th:classappend="${row.emiStatus == 'Pending'} ? ' fh-status-pending' :
-                                              (${row.emiStatus == 'Pre-Closure'} ? ' fh-status-preclosure' : ' fh-status-completed')"
-                              th:text="${row.emiStatus}"></span>
+                    <td class="fh-amount-col" th:text="${row.formattedEmiAmount}"></td>
+                    <td class="fh-emi-status-cell">
                         <th:block th:if="${row.emiStatus == 'Pending'}">
-                            <span>&nbsp;</span>
-                        <a th:if="${row.recorded}" href="javascript:void(0);"
-                           th:onclick="|loadEditPageContent('/api/loan/recordEmi?id=${row.overrideId}')|"
-                           style="text-decoration: none;">
-                            <img th:src="@{/images/edit-icon.png}" alt="Record EMI" style="width: 20px; height: 20px; margin-right: 12px;" />
-                        </a>
-                        <a th:unless="${row.recorded}" href="javascript:void(0);"
-                           th:onclick="|loadEditPageContent('/api/loan/recordEmi?loanId=${group.loan.id}&emiNumber=${row.emiNumber}')|"
-                           style="text-decoration: none;">
-                            <img th:src="@{/images/edit-icon.png}" alt="Record EMI" style="width: 20px; height: 20px; margin-right: 12px;" />
-                        </a>
-                        <a th:if="${row.recorded}" href="javascript:void(0);"
-                           th:onclick="'deleteEntity(this, \'EMI payment\', \'/api/loan/deleteEmiPayment\')'"
-                           th:attr="data-report-type='loanEmiReport', data-id=${row.overrideId}">
-                            <img th:src="@{/images/delete-icon.png}" alt="Revert" style="width: 20px; height: 20px;" />
-                        </a>
+                            <a class="fh-emi-pending-action" href="javascript:void(0);"
+                               th:if="${row.recorded}"
+                               th:onclick="|loadEditPageContent('/api/loan/recordEmi?id=${row.overrideId}')|"
+                               title="Update recorded EMI">
+                                <span class="fh-emi-pending-action__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>
+                                    </svg>
+                                </span>
+                                <span>Pending — tap to update</span>
+                            </a>
+                            <a class="fh-emi-pending-action" href="javascript:void(0);"
+                               th:unless="${row.recorded}"
+                               th:onclick="|loadEditPageContent('/api/loan/recordEmi?loanId=${group.loan.id}&emiNumber=${row.emiNumber}')|"
+                               title="Record this EMI payment">
+                                <span class="fh-emi-pending-action__icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>
+                                    </svg>
+                                </span>
+                                <span>Pending — tap to record</span>
+                            </a>
+                            <a th:if="${row.recorded}" class="fh-emi-revert-link" href="javascript:void(0);"
+                               th:onclick="'deleteEntity(this, \'EMI payment\', \'/api/loan/deleteEmiPayment\')'"
+                               th:attr="data-report-type='loanEmiReport', data-id=${row.overrideId}"
+                               title="Remove recorded EMI">
+                                Revert
+                            </a>
                         </th:block>
+                        <span th:unless="${row.emiStatus == 'Pending'}" class="fh-status-badge"
+                              th:classappend="${row.emiStatus == 'Pre-Closure'} ? ' fh-status-preclosure' : ' fh-status-completed'"
+                              th:text="${row.emiStatus}"></span>
                     </td>
                 </tr>
                 </tbody>

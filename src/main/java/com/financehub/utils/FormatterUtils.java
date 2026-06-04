@@ -73,20 +73,37 @@ public class FormatterUtils {
         return formatted;
     }
 
+    /** Indian grouping without decimal suffix (e.g. 1,00,000). */
+    public String formatInIndianStyleWholeNumber(double amount) {
+        return groupIndianDigits(String.valueOf(Math.round(amount)));
+    }
+
     private String applyIndianNumberingSystem(String number) {
         String[] parts = number.split("\\.");
         String integerPart = parts[0];
         String decimalPart = parts.length > 1 ? parts[1] : "";
+        String grouped = groupIndianDigits(integerPart);
+        if (decimalPart == null || decimalPart.isEmpty()) {
+            return grouped;
+        }
+        return grouped + "." + decimalPart;
+    }
+
+    private String groupIndianDigits(String integerPart) {
+        if (integerPart == null || integerPart.isEmpty()) {
+            return "0";
+        }
         StringBuilder stringBuilder = new StringBuilder();
-        char amountArray[] = integerPart.toCharArray();
-        int a = 0, b = 0;
+        char[] amountArray = integerPart.toCharArray();
+        int a = 0;
+        int b = 0;
         for (int i = amountArray.length - 1; i >= 0; i--) {
             if (a < 3) {
                 stringBuilder.append(amountArray[i]);
                 a++;
             } else if (b < 2) {
                 if (b == 0) {
-                    stringBuilder.append(",");
+                    stringBuilder.append(',');
                     stringBuilder.append(amountArray[i]);
                     b++;
                 } else {
@@ -95,7 +112,7 @@ public class FormatterUtils {
                 }
             }
         }
-        return stringBuilder.reverse().toString()+"."+decimalPart;
+        return stringBuilder.reverse().toString();
     }
 
     public Cell createStyledCell(Object content, int isHeader) {

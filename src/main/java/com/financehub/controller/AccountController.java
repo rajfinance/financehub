@@ -2,6 +2,7 @@ package com.financehub.controller;
 
 import com.financehub.entities.ClientUser;
 import com.financehub.services.UserService;
+import com.financehub.utils.UsernameDisplayUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.CacheControl;
@@ -64,6 +65,7 @@ public class AccountController {
 		}
 		ClientUser u = user.get();
 		model.addAttribute("username", u.getUsername());
+		model.addAttribute("displayUsername", UsernameDisplayUtils.toDisplayName(u.getUsername()));
 		model.addAttribute("email", u.getEmail());
 		model.addAttribute("phone", u.getPhone());
 		model.addAttribute("hasProfilePhoto", u.getProfilePhoto() != null && u.getProfilePhoto().length > 0);

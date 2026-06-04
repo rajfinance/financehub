@@ -12,10 +12,18 @@ import java.util.Optional;
 @Repository
 public interface ClientUserRepository extends JpaRepository<ClientUser, Long> {
     boolean existsByUsername(String username);
+
+    boolean existsByUsernameIgnoreCase(String username);
+
     boolean existsByEmail(String email);
+
     Optional<ClientUser> findByUsername(String username);
 
+    Optional<ClientUser> findByUsernameIgnoreCase(String username);
+
     Optional<ClientUser> findByUsernameAndEmail(String username, String email);
+
+    Optional<ClientUser> findByUsernameIgnoreCaseAndEmailIgnoreCase(String username, String email);
 
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM ClientUser u WHERE LOWER(u.email) = LOWER(:email) AND u.id <> :id")
     boolean existsAnotherUserWithEmail(@Param("email") String email, @Param("id") int id);
