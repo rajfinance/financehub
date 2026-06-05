@@ -22,6 +22,18 @@
                 <a th:href="@{/login}" href="/login">Go to Login</a>
             </div>
 
+            <div class="signup-row signup-row--cols-2">
+                <div class="input-group">
+                    <label for="firstName">First name<span class="req-mark" aria-hidden="true">*</span></label>
+                    <input type="text" id="firstName" name="firstName" required="required" maxlength="80"
+                           autocomplete="given-name" placeholder="e.g. Raja"/>
+                </div>
+                <div class="input-group">
+                    <label for="lastName">Last name<span class="req-mark" aria-hidden="true">*</span></label>
+                    <input type="text" id="lastName" name="lastName" required="required" maxlength="80"
+                           autocomplete="family-name" placeholder="e.g. Kumar"/>
+                </div>
+            </div>
             <div class="signup-row">
                 <div class="input-group">
                     <label for="username">Username<span class="req-mark" aria-hidden="true">*</span></label>

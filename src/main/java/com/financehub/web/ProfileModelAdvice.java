@@ -24,6 +24,20 @@ public class ProfileModelAdvice {
 		if (authentication == null || !authentication.isAuthenticated()) {
 			return "";
 		}
+		return userService.getCurrentClientUser()
+				.map(u -> UsernameDisplayUtils.toDisplayName(u.getUsername()))
+				.orElse(UsernameDisplayUtils.toDisplayName(authentication.getName()));
+	}
+
+	@ModelAttribute("displayFullName")
+	public String displayFullName(Authentication authentication) {
+		if (authentication == null || !authentication.isAuthenticated()) {
+			return "";
+		}
+		String fullName = userService.getDisplayFullNameForCurrentUser();
+		if (!fullName.isEmpty()) {
+			return fullName;
+		}
 		return UsernameDisplayUtils.toDisplayName(authentication.getName());
 	}
 

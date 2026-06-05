@@ -86,7 +86,7 @@
 
                     <th:block sec:authorize="isAuthenticated()">
 
-                        <span class="userinfo-name fh-display-username" th:text="${displayUsername}">User</span>
+                        <span class="userinfo-name fh-display-username" th:text="${displayFullName}">User</span>
 
                         <a th:href="@{/account/profile}" class="header-profile-link" title="Profile">
 

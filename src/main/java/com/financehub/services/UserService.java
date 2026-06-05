@@ -4,6 +4,7 @@ import com.financehub.dtos.ClientUserDTO;
 import com.financehub.entities.ClientUser;
 import com.financehub.repositories.ClientUserRepository;
 import com.financehub.security.ClientUserPrincipal;
+import com.financehub.utils.UsernameDisplayUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -80,8 +81,17 @@ public class UserService {
 			return response;
 		}
 
+		String firstName = requireNonBlank(clientUserDTO.getFirstName(), "First name is required.");
+		String lastName = requireNonBlank(clientUserDTO.getLastName(), "Last name is required.");
+		if (firstName.length() > 80 || lastName.length() > 80) {
+			response.put("error", "First and last name must be at most 80 characters.");
+			return response;
+		}
+
 		ClientUser newUser = new ClientUser();
-		newUser.setUsername(clientUserDTO.getUsername());
+		newUser.setFirstName(firstName);
+		newUser.setLastName(lastName);
+		newUser.setUsername(clientUserDTO.getUsername().trim());
 		newUser.setEmail(clientUserDTO.getEmail());
 		newUser.setPhone(clientUserDTO.getPhone().trim());
 		newUser.setUsrPassword(passwordEncoder.encode(clientUserDTO.getPassword()));
@@ -106,15 +116,27 @@ public class UserService {
 		return clientUserRepository.findById(uid);
 	}
 
+	public String getDisplayFullNameForCurrentUser() {
+		return getCurrentClientUser()
+				.map(u -> UsernameDisplayUtils.toDisplayFullName(
+						u.getFirstName(), u.getLastName(), u.getUsername()))
+				.orElse("");
+	}
+
 	/**
-	 * Updates email, phone, and optionally profile photo (or clears it) in one transaction.
+	 * Updates name, email, phone, and optionally profile photo (or clears it) in one transaction.
 	 */
 	@Transactional(rollbackFor = Exception.class)
-	public void updateProfile(String emailRaw, String phoneRaw, MultipartFile photo, boolean removePhoto)
-			throws IOException {
+	public void updateProfile(String firstNameRaw, String lastNameRaw, String emailRaw, String phoneRaw,
+			MultipartFile photo, boolean removePhoto) throws IOException {
 		long uid = getUserId();
 		if (uid <= 0) {
 			throw new IllegalStateException("Not signed in.");
+		}
+		String firstName = requireNonBlank(firstNameRaw, "First name is required.");
+		String lastName = requireNonBlank(lastNameRaw, "Last name is required.");
+		if (firstName.length() > 80 || lastName.length() > 80) {
+			throw new IllegalArgumentException("First and last name must be at most 80 characters.");
 		}
 		String email = requireNonBlank(emailRaw, "Email is required.");
 		String phone = requireNonBlank(phoneRaw, "Phone is required.");
@@ -135,6 +157,8 @@ public class UserService {
 				&& clientUserRepository.existsAnotherUserWithPhone(phone, user.getId())) {
 			throw new IllegalArgumentException("That phone number is already used by another account.");
 		}
+		user.setFirstName(firstName);
+		user.setLastName(lastName);
 		user.setEmail(email);
 		user.setPhone(phone);
 

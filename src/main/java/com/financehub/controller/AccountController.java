@@ -66,6 +66,8 @@ public class AccountController {
 		ClientUser u = user.get();
 		model.addAttribute("username", u.getUsername());
 		model.addAttribute("displayUsername", UsernameDisplayUtils.toDisplayName(u.getUsername()));
+		model.addAttribute("firstName", u.getFirstName() != null ? u.getFirstName() : "");
+		model.addAttribute("lastName", u.getLastName() != null ? u.getLastName() : "");
 		model.addAttribute("email", u.getEmail());
 		model.addAttribute("phone", u.getPhone());
 		model.addAttribute("hasProfilePhoto", u.getProfilePhoto() != null && u.getProfilePhoto().length > 0);
@@ -74,13 +76,15 @@ public class AccountController {
 
 	@PostMapping("/api/account/profile")
 	public String updateProfilePost(
+			@RequestParam("firstName") String firstName,
+			@RequestParam("lastName") String lastName,
 			@RequestParam("email") String email,
 			@RequestParam("phone") String phone,
 			@RequestParam(value = "photo", required = false) MultipartFile photo,
 			@RequestParam(value = "removePhoto", defaultValue = "false") boolean removePhoto,
 			RedirectAttributes redirectAttributes) {
 		try {
-			userService.updateProfile(email, phone, photo, removePhoto);
+			userService.updateProfile(firstName, lastName, email, phone, photo, removePhoto);
 			redirectAttributes.addFlashAttribute("success", "Profile updated.");
 		} catch (IllegalArgumentException ex) {
 			redirectAttributes.addFlashAttribute("error", ex.getMessage());

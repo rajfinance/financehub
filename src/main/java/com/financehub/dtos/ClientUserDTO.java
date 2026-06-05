@@ -9,6 +9,14 @@ import lombok.Data;
 @Data
 public class ClientUserDTO {
 
+    @NotBlank(message = "First name is required.")
+    @Size(max = 80, message = "First name must be at most 80 characters.")
+    private String firstName;
+
+    @NotBlank(message = "Last name is required.")
+    @Size(max = 80, message = "Last name must be at most 80 characters.")
+    private String lastName;
+
     @NotBlank(message = "Username is required.")
     private String username;
 
