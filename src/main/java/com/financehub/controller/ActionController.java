@@ -3,11 +3,9 @@ package com.financehub.controller;
 import com.financehub.dtos.ClientUserDTO;
 import com.financehub.entities.ClientUser;
 import com.financehub.security.PasswordResetSession;
-import com.financehub.services.ExpensesService;
-import com.financehub.services.LoanService;
-import com.financehub.services.RentalService;
+import com.financehub.dtos.DashboardChartDataDTO;
+import com.financehub.services.DashboardService;
 import com.financehub.services.UserService;
-import com.financehub.services.WorkService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
@@ -22,32 +20,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.financehub.security.ClientUserPrincipal;
-
-import java.time.LocalDate;
-import java.time.Year;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 @Controller
 @RequestMapping("/api")
 public class ActionController {
 
 	private final UserService userService;
-	private final WorkService workService;
-	private final RentalService rentalService;
-	private final ExpensesService expensesService;
-	private final LoanService loanService;
+	private final DashboardService dashboardService;
 
-	public ActionController(UserService userService, WorkService workService,
-			RentalService rentalService, ExpensesService expensesService, LoanService loanService) {
+	public ActionController(UserService userService, DashboardService dashboardService) {
 		this.userService = userService;
-		this.workService = workService;
-		this.rentalService = rentalService;
-		this.expensesService = expensesService;
-		this.loanService = loanService;
+		this.dashboardService = dashboardService;
 	}
 
 	@PostMapping(value = "/perform_signup", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -113,54 +98,19 @@ public class ActionController {
 	}
 
 	@GetMapping("/home")
-	public String home(@AuthenticationPrincipal ClientUserPrincipal principal, Model model) {
-		String username = principal != null ? principal.getUsername() : "";
-		model.addAttribute("username", username);
-
-		int kpiYear = Year.now().getValue();
-		int chartYear = kpiYear;
-		int currentMonth = LocalDate.now().getMonthValue();
-		if (currentMonth == 1) {
-			currentMonth = 12;
-			chartYear -= 1;
-		} else {
-			currentMonth -= 1;
-		}
-
-		Map<String, Integer> monthlySal = workService.getMonthlySalaryData(chartYear);
-		model.addAttribute("monthlySalaryData", monthlySal);
-
-		Map<String, Integer> yearlySal = workService.getYearlySalaryData();
-		Map<String, Integer> yearlyExp = expensesService.getYearlyExpenseData();
-		Set<String> allYears = new HashSet<>();
-		allYears.addAll(yearlySal.keySet());
-		allYears.addAll(yearlyExp.keySet());
-
-		for (String year : allYears) {
-			yearlySal.putIfAbsent(year, 0);
-			yearlyExp.putIfAbsent(year, 0);
-		}
-		model.addAttribute("yearlySalaryData", yearlySal);
-		model.addAttribute("yearlyExpenseData", yearlyExp);
-
-		Map<String, Integer> yearlyRent = rentalService.getYearlyRentData();
-		model.addAttribute("yearlyRentData", yearlyRent);
-
-		Map<String, Integer> monthlyExpenseData = expensesService.getMonthlyExpenseData(chartYear);
-		model.addAttribute("salaryData", monthlySal);
-		model.addAttribute("expenseData", monthlyExpenseData);
-
-		int currentYearSalary = yearlySal.getOrDefault(String.valueOf(kpiYear), 0);
-		int currentYearExpense = yearlyExp.getOrDefault(String.valueOf(kpiYear), 0);
-		int currentYearRent = yearlyRent.getOrDefault(String.valueOf(kpiYear), 0);
-		int currentYearPendingLoanEmi = loanService.getCurrentYearPendingEmiAmount();
-		int netBalance = currentYearSalary - currentYearExpense;
-		model.addAttribute("currentYearSalary", currentYearSalary);
-		model.addAttribute("currentYearExpense", currentYearExpense);
-		model.addAttribute("currentYearRent", currentYearRent);
-		model.addAttribute("currentYearPendingLoanEmi", currentYearPendingLoanEmi);
-		model.addAttribute("currentYearNetBalance", netBalance);
-
+	public String home(Model model) {
+		Map<String, Integer> kpis = dashboardService.getKpiSummary();
+		model.addAttribute("currentYearSalary", kpis.get("currentYearSalary"));
+		model.addAttribute("currentYearExpense", kpis.get("currentYearExpense"));
+		model.addAttribute("currentYearRent", kpis.get("currentYearRent"));
+		model.addAttribute("currentYearNetBalance", kpis.get("currentYearNetBalance"));
+		model.addAttribute("currentYearPendingLoanEmi", 0);
 		return "views/login/dashboard";
+	}
+
+	@GetMapping("/home/chart-data")
+	@org.springframework.web.bind.annotation.ResponseBody
+	public DashboardChartDataDTO homeChartData() {
+		return dashboardService.getChartData();
 	}
 }

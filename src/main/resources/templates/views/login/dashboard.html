@@ -12,25 +12,9 @@
 
 <th:block th:replace="~{views/common/menu :: appMainShell}"></th:block>
 
-    <script th:inline="javascript">
-
-        var monthlySalaryData = /*[[${monthlySalaryData}]]*/ {};
-
-        var yearlySalaryData = /*[[${yearlySalaryData}]]*/ {};
-
-        var yearlyExpenseData = /*[[${yearlyExpenseData}]]*/ {};
-
-        var yearlyRentData = /*[[${yearlyRentData}]]*/ {};
-
-        var salaryData = /*[[${salaryData}]]*/ {};
-
-        var expenseData = /*[[${expenseData}]]*/ {};
-
-    </script>
-
     <script th:src="@{/js/homeCharts.js}" src="/js/homeCharts.js"></script>
 
-    <div class="container" data-page="dashboard" id="dashboardContent">
+    <div class="container" data-page="dashboard" id="dashboardContent" data-chart-api="/api/home/chart-data">
 
         <div class="content-box">
 
@@ -76,7 +60,7 @@
 
                         <h3>Pending EMI This Year</h3>
 
-                        <p th:text="${#numbers.formatInteger(currentYearPendingLoanEmi, 0)}">0</p>
+                        <p id="kpiPendingEmi" class="fh-kpi-loading">…</p>
 
                     </div>
 

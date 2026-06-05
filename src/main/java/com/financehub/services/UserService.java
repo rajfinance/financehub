@@ -1,10 +1,12 @@
 package com.financehub.services;
 
 import com.financehub.dtos.ClientUserDTO;
+import com.financehub.dtos.ProfileHeaderContext;
 import com.financehub.entities.ClientUser;
 import com.financehub.repositories.ClientUserRepository;
 import com.financehub.security.ClientUserPrincipal;
 import com.financehub.utils.UsernameDisplayUtils;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -123,6 +125,14 @@ public class UserService {
 				.orElse("");
 	}
 
+	public Optional<ProfileHeaderContext> getProfileHeaderContext() {
+		return getCurrentClientUser().map(u -> new ProfileHeaderContext(
+				UsernameDisplayUtils.toDisplayName(u.getUsername()),
+				UsernameDisplayUtils.toDisplayFullName(u.getFirstName(), u.getLastName(), u.getUsername()),
+				u.getUpdatedAt() == null ? 0L
+						: u.getUpdatedAt().atZone(ZoneOffset.UTC).toInstant().toEpochMilli()));
+	}
+
 	/**
 	 * Updates name, email, phone, and optionally profile photo (or clears it) in one transaction.
 	 */
@@ -173,6 +183,28 @@ public class UserService {
 
 		user.setUpdatedAt(LocalDateTime.now());
 		clientUserRepository.saveAndFlush(user);
+		refreshAuthenticatedPrincipal(user);
+	}
+
+	private void refreshAuthenticatedPrincipal(ClientUser user) {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth == null || !(auth.getPrincipal() instanceof ClientUserPrincipal)) {
+			return;
+		}
+		long avatarVersion = user.getUpdatedAt() == null ? 0L
+				: user.getUpdatedAt().atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
+		ClientUserPrincipal principal = new ClientUserPrincipal(
+				user.getId(),
+				user.getUsername(),
+				user.getUsrPassword(),
+				UsernameDisplayUtils.toDisplayName(user.getUsername()),
+				UsernameDisplayUtils.toDisplayFullName(
+						user.getFirstName(), user.getLastName(), user.getUsername()),
+				avatarVersion);
+		UsernamePasswordAuthenticationToken updated = new UsernamePasswordAuthenticationToken(
+				principal, auth.getCredentials(), principal.getAuthorities());
+		updated.setDetails(auth.getDetails());
+		SecurityContextHolder.getContext().setAuthentication(updated);
 	}
 
 	public Long getProfileAvatarVersionForCurrentUser() {

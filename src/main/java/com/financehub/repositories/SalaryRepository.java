@@ -16,6 +16,9 @@ public interface SalaryRepository extends JpaRepository<Salary, Long> {
     List<Salary> findByUserIdAndSalaryYear(Long userId, int salaryYear);
     List<Salary> findByUserId(Long userId);
 
+    @Query("SELECT COALESCE(SUM(s.salaryAmount), 0) FROM Salary s WHERE s.user.id = :userId AND s.salaryYear = :year")
+    double sumAmountByUserIdAndYear(@Param("userId") long userId, @Param("year") int year);
+
     @Query("SELECT s FROM Salary s WHERE s.id = :id AND s.user.id = :userId")
     Optional<Salary> findByIdAndUser_Id(@Param("id") Long id, @Param("userId") int userId);
 }
