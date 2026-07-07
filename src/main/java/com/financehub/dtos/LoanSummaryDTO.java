@@ -30,4 +30,6 @@ public class LoanSummaryDTO {
     private String preClosureType;
     private String preClosureReferenceNumber;
     private String formattedLastEmiPaidDate;
+    private boolean goldLoan;
+    private String formattedTenureLabel;
 }

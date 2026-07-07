@@ -56,6 +56,7 @@ function loadContent(apiUrl) {
         .then(response => response.text())
         .then(html => {
             pageContent.innerHTML = html;
+            initLoadedPageContent();
         })
         .catch(error => {
             console.error('Error loading content:', error);
@@ -90,6 +91,7 @@ function submitForm(event) {
         .then(response => response.text())
         .then(html => {
             document.getElementById('page-content').innerHTML = html;
+            initLoadedPageContent();
         })
         .catch(error => {
             console.error('Error submitting form:', error);
@@ -109,6 +111,7 @@ function loadEditPageContent(url) {
         })
         .then(html => {
             document.getElementById('page-content').innerHTML = html;
+            initLoadedPageContent();
         })
         .catch(error => {
             console.error('Error submitting form:', error);
@@ -318,6 +321,126 @@ function toggleLoanDetails(loanId) {
     detailRow.style.display = detailRow.style.display === 'none' || detailRow.style.display === '' ? 'table-row' : 'none';
 }
 
+function initAddLoanForm() {
+    const emiAmountHidden = document.getElementById('emiAmountHidden');
+    const emiAmountInput = document.getElementById('emiAmount');
+    const emiDateHidden = document.getElementById('emiDate');
+    const emiDateVisible = document.getElementById('emiDateVisible');
+    const goldLoanStartDate = document.getElementById('goldLoanStartDate');
+
+    if (emiAmountHidden && emiAmountInput && emiAmountHidden.value && !emiAmountInput.value) {
+        emiAmountInput.value = emiAmountHidden.value;
+    }
+    if (emiDateHidden && emiDateHidden.value) {
+        if (emiDateVisible && !emiDateVisible.value) {
+            emiDateVisible.value = emiDateHidden.value;
+        }
+        if (goldLoanStartDate && !goldLoanStartDate.value) {
+            goldLoanStartDate.value = emiDateHidden.value;
+        }
+    }
+    const loanType = document.getElementById('loanType');
+    const tenureInput = document.getElementById('tenure');
+    if (loanType && loanType.value === 'Gold' && tenureInput) {
+        tenureInput.value = '12';
+    }
+    toggleGoldLoanFields();
+}
+
+function initLoadedPageContent() {
+    if (document.getElementById('addLoanForm')) {
+        initAddLoanForm();
+    }
+}
+
+function toggleGoldLoanFields() {
+    const loanType = document.getElementById('loanType');
+    const emiDateGroup = document.getElementById('emiDateGroup');
+    const goldLoanStartGroup = document.getElementById('goldLoanStartGroup');
+    const emiAmountGroup = document.getElementById('emiAmountGroup');
+    const tenureInput = document.getElementById('tenure');
+    const emiAmountInput = document.getElementById('emiAmount');
+    const emiDateVisible = document.getElementById('emiDateVisible');
+    const goldLoanStartDate = document.getElementById('goldLoanStartDate');
+    if (!loanType) {
+        return;
+    }
+    const isGold = loanType.value === 'Gold';
+
+    if (emiDateGroup) {
+        emiDateGroup.style.display = isGold ? 'none' : '';
+    }
+    if (goldLoanStartGroup) {
+        goldLoanStartGroup.style.display = isGold ? '' : 'none';
+    }
+    if (emiAmountGroup) {
+        emiAmountGroup.style.display = isGold ? 'none' : '';
+    }
+    if (tenureInput) {
+        if (isGold) {
+            tenureInput.value = '12';
+            tenureInput.readOnly = true;
+            tenureInput.classList.add('fh-readonly-field');
+        } else {
+            tenureInput.readOnly = false;
+            tenureInput.classList.remove('fh-readonly-field');
+            tenureInput.setAttribute('required', 'required');
+        }
+    }
+    if (emiAmountInput) {
+        if (isGold) {
+            emiAmountInput.removeAttribute('required');
+            emiAmountInput.value = '';
+        } else {
+            emiAmountInput.setAttribute('required', 'required');
+        }
+    }
+    if (emiDateVisible) {
+        if (isGold) {
+            emiDateVisible.removeAttribute('required');
+        } else {
+            emiDateVisible.setAttribute('required', 'required');
+        }
+    }
+    if (goldLoanStartDate && isGold) {
+        goldLoanStartDate.setAttribute('required', 'required');
+        if (!goldLoanStartDate.value && emiDateVisible && emiDateVisible.value) {
+            goldLoanStartDate.value = emiDateVisible.value;
+        }
+    } else if (goldLoanStartDate) {
+        goldLoanStartDate.removeAttribute('required');
+        if (emiDateVisible && !emiDateVisible.value && goldLoanStartDate.value) {
+            emiDateVisible.value = goldLoanStartDate.value;
+        }
+    }
+    syncAddLoanHiddenFields();
+}
+
+function syncAddLoanHiddenFields() {
+    const loanType = document.getElementById('loanType');
+    const emiDateHidden = document.getElementById('emiDate');
+    const emiAmountHidden = document.getElementById('emiAmountHidden');
+    const emiAmountInput = document.getElementById('emiAmount');
+    const emiDateVisible = document.getElementById('emiDateVisible');
+    const goldLoanStartDate = document.getElementById('goldLoanStartDate');
+    const isGold = loanType && loanType.value === 'Gold';
+
+    if (emiDateHidden) {
+        if (isGold && goldLoanStartDate) {
+            emiDateHidden.value = goldLoanStartDate.value || '';
+        } else if (emiDateVisible) {
+            emiDateHidden.value = emiDateVisible.value || '';
+        }
+    }
+    if (emiAmountHidden) {
+        if (isGold) {
+            emiAmountHidden.value = '0';
+        } else if (emiAmountInput) {
+            emiAmountHidden.value = emiAmountInput.value || '';
+        }
+    }
+}
+
 function prefillRecordEmiDate() {
     const loanSelect = document.getElementById('loanIdDisplay') || document.getElementById('loanId');
     const emiNumberInput = document.getElementById('emiNumber');
@@ -330,6 +453,7 @@ function prefillRecordEmiDate() {
         return;
     }
     const firstEmi = selectedOption.getAttribute('data-first-emi');
+    const isGoldLoan = selectedOption.getAttribute('data-gold-loan') === 'true';
     const emiNumber = parseInt(emiNumberInput.value, 10);
     if (!firstEmi || Number.isNaN(emiNumber) || emiNumber < 1) {
         return;
@@ -338,7 +462,11 @@ function prefillRecordEmiDate() {
     if (Number.isNaN(baseDate.getTime())) {
         return;
     }
-    baseDate.setMonth(baseDate.getMonth() + (emiNumber - 1));
+    if (isGoldLoan) {
+        baseDate.setMonth(baseDate.getMonth() + (emiNumber * 12));
+    } else {
+        baseDate.setMonth(baseDate.getMonth() + (emiNumber - 1));
+    }
     const y = baseDate.getFullYear();
     const m = String(baseDate.getMonth() + 1).padStart(2, '0');
     const d = String(baseDate.getDate()).padStart(2, '0');

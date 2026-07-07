@@ -27,7 +27,7 @@
                             <option th:each="loan : ${loans}"
                                     th:value="${loan.id}"
                                     th:text="${loan.bankName} + ' — ' + ${loan.loanAccountNumber}"
-                                    th:attr="data-first-emi=${loan.firstEmiDate}"
+                                    th:attr="data-first-emi=${loan.firstEmiDate}, data-gold-loan=${loan.goldLoan}"
                                     th:selected="${emiPayment.loanId != null and emiPayment.loanId == loan.id}"></option>
                         </select>
                     </div>

@@ -128,7 +128,7 @@ function validForm(formId){
         return true;
     }
     else if(formId=="addLoanForm"){
-        return true;
+        return validateAddLoanForm();
     }
     else if(formId=="recordEmiForm"){
         return true;
@@ -283,4 +283,43 @@ function validateRentPaymentForm() {
                 }
 
                 return true;
+}
+
+function validateAddLoanForm() {
+    const loanType = document.getElementById('loanType');
+    const emiAmount = document.getElementById('emiAmount');
+    const emiDateVisible = document.getElementById('emiDateVisible');
+    const goldLoanStartDate = document.getElementById('goldLoanStartDate');
+    const tenure = document.getElementById('tenure');
+    if (!loanType || !loanType.value) {
+        alert('Please select a loan type.');
+        return false;
+    }
+    const isGold = loanType.value === 'Gold';
+    if (typeof syncAddLoanHiddenFields === 'function') {
+        syncAddLoanHiddenFields();
+    }
+    if (isGold) {
+        if (!goldLoanStartDate || !goldLoanStartDate.value) {
+            alert('Loan start date is required for gold loans.');
+            return false;
+        }
+        if (tenure) {
+            tenure.value = '12';
+        }
+        return true;
+    }
+    if (!emiDateVisible || !emiDateVisible.value) {
+        alert('First EMI date is required.');
+        return false;
+    }
+    if (!tenure || !tenure.value || Number(tenure.value) < 1) {
+        alert('Tenure must be at least 1 month.');
+        return false;
+    }
+    if (!emiAmount || !emiAmount.value || Number(emiAmount.value) <= 0) {
+        alert('Monthly EMI amount is required.');
+        return false;
+    }
+    return true;
 }

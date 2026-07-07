@@ -52,13 +52,17 @@
             <tr th:id="|loan-detail-${loan.id}|" style="display: none;">
                 <td colspan="7" class="loan-detail-cell">
                     <div class="loan-detail-grid">
-                        <div><strong>EMI:</strong> <span th:text="${loan.formattedEmiAmount}"></span></div>
-                        <div><strong>Tenure:</strong> <span th:text="${loan.tenure} + ' months'"></span></div>
+                        <div><strong th:text="${loan.goldLoan} ? 'Annual Interest:' : 'EMI:'"></strong>
+                            <span th:text="${loan.formattedEmiAmount}"></span></div>
+                        <div><strong>Tenure:</strong> <span th:text="${loan.formattedTenureLabel}"></span></div>
                         <div><strong>Type:</strong> <span th:text="${loan.loanType}"></span></div>
 
-                        <div><strong>First EMI Date:</strong> <span th:text="${loan.formattedFirstEmiDate}"></span></div>
-                        <div><strong>Last EMI Date:</strong> <span th:text="${loan.formattedEndDate}"></span></div>
-                        <div><strong>Last EMI Paid Date:</strong> <span th:text="${loan.formattedLastEmiPaidDate != null and !#strings.isEmpty(loan.formattedLastEmiPaidDate) ? loan.formattedLastEmiPaidDate : '-'}"></span></div>
+                        <div><strong th:text="${loan.goldLoan} ? 'Loan Start Date:' : 'First EMI Date:'"></strong>
+                            <span th:text="${loan.formattedFirstEmiDate}"></span></div>
+                        <div><strong th:text="${loan.goldLoan} ? 'Interest Due Date:' : 'Last EMI Date:'"></strong>
+                            <span th:text="${loan.formattedEndDate}"></span></div>
+                        <div><strong th:text="${loan.goldLoan} ? 'Last Interest Paid:' : 'Last EMI Paid Date:'"></strong>
+                            <span th:text="${loan.formattedLastEmiPaidDate != null and !#strings.isEmpty(loan.formattedLastEmiPaidDate) ? loan.formattedLastEmiPaidDate : '-'}"></span></div>
 
                         <div th:if="${loan.preClosed}"><strong>Pre-closure Date:</strong> <span th:text="${loan.formattedPreClosureDate}"></span></div>
                         <div th:if="${loan.preClosed}"><strong>Pre-closure Amount:</strong> <span th:text="${loan.formattedPreClosureAmount}"></span></div>

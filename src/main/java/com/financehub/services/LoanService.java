@@ -13,6 +13,7 @@ import com.financehub.entities.LoanEmiPayment;
 import com.financehub.repositories.LoanEmiPaymentRepository;
 import com.financehub.repositories.LoanRepository;
 import com.financehub.utils.FormatterUtils;
+import com.financehub.utils.LoanTypeUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
@@ -129,6 +130,7 @@ public class LoanService {
         dto.setEmiAmount(loan.getEmiAmount());
         dto.setTenure(loan.getTenure());
         dto.setEmiDate(loan.getEmiDate());
+        dto.setGoldLoan(LoanTypeUtils.isGoldLoan(loan));
         return dto;
     }
 
@@ -258,7 +260,7 @@ public class LoanService {
             return 0;
         }
         long count = 0;
-        for (int i = 1; i <= loan.getTenure(); i++) {
+        for (int i = 1; i <= LoanTypeUtils.getScheduleInstallmentCount(loan); i++) {
             LocalDate dueDate = getDueDateForInstallment(loan, i);
             if (dueDate.isAfter(date)) {
                 count++;
@@ -276,7 +278,7 @@ public class LoanService {
                 .filter(p -> p.getEmiNumber() != null && p.getEmiNumber() > 0)
                 .collect(Collectors.toMap(LoanEmiPayment::getEmiNumber, p -> p, (a, b) -> b));
         double pending = 0;
-        for (int i = 1; i <= loan.getTenure(); i++) {
+        for (int i = 1; i <= LoanTypeUtils.getScheduleInstallmentCount(loan); i++) {
             LocalDate dueDate = getDueDateForInstallment(loan, i);
             if (!dueDate.isAfter(date)) {
                 continue;
@@ -414,6 +416,9 @@ public class LoanService {
         long hdfcPendingTotal = 0;
 
         for (Loan loan : context.loans) {
+            if (LoanTypeUtils.isGoldLoan(loan)) {
+                continue;
+            }
             if (loan.getEmiDate() == null || loan.getTenure() == null || loan.getEmiAmount() == null) {
                 continue;
             }
@@ -534,14 +539,30 @@ public class LoanService {
                 && "PARTIAL".equalsIgnoreCase(preClosure.getPreClosureType())
                 && preClosure.getUpdatedTenure() != null
                 && preClosure.getUpdatedTenure() > 0
-                && preClosure.getPreClosureDate() != null) {
+                && preClosure.getPreClosureDate() != null
+                && !LoanTypeUtils.isGoldLoan(loan)) {
             int cutOffEmiNumber = resolvePreClosureTargetEmiNumber(loan, preClosure.getPreClosureDate());
             if (emiNumber > cutOffEmiNumber) {
-                LocalDate cutOffDueDate = loan.getEmiDate().plusMonths(cutOffEmiNumber - 1L);
-                return cutOffDueDate.plusMonths(emiNumber - cutOffEmiNumber);
+                LocalDate cutOffDueDate = shiftInstallmentDate(loan, loan.getEmiDate(), cutOffEmiNumber - 1);
+                return shiftInstallmentDate(loan, cutOffDueDate, emiNumber - cutOffEmiNumber);
             }
         }
-        return loan.getEmiDate().plusMonths(emiNumber - 1L);
+        return shiftInstallmentDate(loan, loan.getEmiDate(), emiNumber - 1);
+    }
+
+    private LocalDate shiftInstallmentDate(Loan loan, LocalDate baseDate, int periodOffset) {
+        if (baseDate == null) {
+            return null;
+        }
+        if (LoanTypeUtils.isGoldLoan(loan)) {
+            int tenureMonths = loan.getTenure() != null && loan.getTenure() > 0
+                    ? loan.getTenure()
+                    : LoanTypeUtils.goldLoanTenureMonths();
+            int installmentCount = LoanTypeUtils.goldLoanInstallmentCount();
+            long emiNumber = periodOffset + 1L;
+            return baseDate.plusMonths(emiNumber * tenureMonths / installmentCount);
+        }
+        return baseDate.plusMonths(periodOffset);
     }
 
     public int resolveEmiNumberFromDate(Loan loan, LocalDate paidOn) {
@@ -553,8 +574,9 @@ public class LoanService {
                 return i;
             }
         }
-        throw new IllegalArgumentException(
-                "Deduction date does not match any EMI month for this loan. Select the correct installment number.");
+        throw new IllegalArgumentException(LoanTypeUtils.isGoldLoan(loan)
+                ? "Payment date does not match the annual due date for this gold loan."
+                : "Deduction date does not match any EMI month for this loan. Select the correct installment number.");
     }
 
     public void prefillEmiPayment(LoanEmiPaymentDTO dto) {
@@ -672,7 +694,9 @@ public class LoanService {
         boolean partialClosure = preClosure != null && "PARTIAL".equalsIgnoreCase(preClosure.getPreClosureType())
                 && preClosure.getUpdatedTenure() != null && preClosure.getUpdatedTenure() > 0
                 && preClosure.getUpdatedEmiAmount() != null && preClosure.getUpdatedEmiAmount() > 0;
-        int maxEmiNumber = partialClosure ? preClosureEmiNumber + preClosure.getUpdatedTenure() : loan.getTenure();
+        int maxEmiNumber = partialClosure
+                ? preClosureEmiNumber + preClosure.getUpdatedTenure()
+                : LoanTypeUtils.getScheduleInstallmentCount(loan);
 
         List<ScheduleAmountSlice> slices = new ArrayList<>();
         for (int i = 1; i <= maxEmiNumber; i++) {
@@ -745,6 +769,16 @@ public class LoanService {
         if (loanDto.getLoanAmount() == null || loanDto.getLoanAmount() <= 0) {
             throw new IllegalArgumentException("Sanctioned loan amount is required.");
         }
+        if (LoanTypeUtils.isGoldLoan(loanDto.getLoanType())) {
+            if (loanDto.getEmiDate() == null) {
+                throw new IllegalArgumentException("Loan start date is required for gold loans.");
+            }
+            loanDto.setTenure(LoanTypeUtils.goldLoanTenureMonths());
+            if (loanDto.getEmiAmount() == null || loanDto.getEmiAmount() < 0) {
+                loanDto.setEmiAmount(0.0);
+            }
+            return;
+        }
         if (loanDto.getTenure() == null || loanDto.getTenure() < 1) {
             throw new IllegalArgumentException("Tenure must be at least 1 month.");
         }
@@ -762,9 +796,15 @@ public class LoanService {
         loan.setLoanType(loanDto.getLoanType());
         loan.setLoanAmount(loanDto.getLoanAmount());
         loan.setInterestRate(loanDto.getInterestRate());
-        loan.setEmiAmount(loanDto.getEmiAmount());
-        loan.setTenure(loanDto.getTenure());
-        loan.setEmiDate(loanDto.getEmiDate());
+        if (LoanTypeUtils.isGoldLoan(loanDto.getLoanType())) {
+            loan.setTenure(LoanTypeUtils.goldLoanTenureMonths());
+            loan.setEmiDate(loanDto.getEmiDate());
+            loan.setEmiAmount(loanDto.getEmiAmount() == null ? 0.0 : loanDto.getEmiAmount());
+        } else {
+            loan.setEmiAmount(loanDto.getEmiAmount());
+            loan.setTenure(loanDto.getTenure());
+            loan.setEmiDate(loanDto.getEmiDate());
+        }
         loan.setUpdatedAt(LocalDateTime.now());
     }
 
@@ -854,11 +894,12 @@ public class LoanService {
                 && "PARTIAL".equalsIgnoreCase(preClosure.get().getPreClosureType())
                 && preClosure.get().getUpdatedTenure() != null
                 && preClosure.get().getUpdatedTenure() > 0
-                && preClosure.get().getPreClosureDate() != null) {
+                && preClosure.get().getPreClosureDate() != null
+                && !LoanTypeUtils.isGoldLoan(loan)) {
             int cutOffEmiNumber = resolvePreClosureTargetEmiNumber(loan, preClosure.get().getPreClosureDate());
             return cutOffEmiNumber + preClosure.get().getUpdatedTenure();
         }
-        return loan.getTenure();
+        return LoanTypeUtils.getScheduleInstallmentCount(loan);
     }
 
     private int resolvePreClosureTargetEmiNumber(Loan loan, LocalDate preClosureDate) {
@@ -866,14 +907,15 @@ public class LoanService {
     }
 
     private int resolvePreClosureTargetEmiNumber(Loan loan, LocalDate preClosureDate, LoanPreClosureDTO preClosure) {
-        int maxSearch = loan.getTenure() == null ? 0 : loan.getTenure();
+        int maxSearch = LoanTypeUtils.getScheduleInstallmentCount(loan);
         if (preClosure != null
                 && "PARTIAL".equalsIgnoreCase(preClosure.getPreClosureType())
                 && preClosure.getUpdatedTenure() != null
-                && preClosure.getUpdatedTenure() > 0) {
+                && preClosure.getUpdatedTenure() > 0
+                && !LoanTypeUtils.isGoldLoan(loan)) {
             int cutOffEmiNumber = 1;
-            for (int i = 1; i <= loan.getTenure(); i++) {
-                LocalDate dueDate = loan.getEmiDate().plusMonths(i - 1L);
+            for (int i = 1; i <= LoanTypeUtils.getScheduleInstallmentCount(loan); i++) {
+                LocalDate dueDate = getDueDateForInstallment(loan, i, preClosure);
                 if (!dueDate.isBefore(preClosureDate)) {
                     cutOffEmiNumber = i;
                     break;
@@ -883,12 +925,12 @@ public class LoanService {
             maxSearch = Math.max(maxSearch, cutOffEmiNumber + preClosure.getUpdatedTenure());
         }
         for (int i = 1; i <= maxSearch; i++) {
-            LocalDate dueDate = loan.getEmiDate().plusMonths(i - 1L);
+            LocalDate dueDate = getDueDateForInstallment(loan, i, preClosure);
             if (!dueDate.isBefore(preClosureDate)) {
                 return i;
             }
         }
-        return Math.max(1, loan.getTenure() == null ? 1 : loan.getTenure());
+        return Math.max(1, LoanTypeUtils.getScheduleInstallmentCount(loan));
     }
 
     private int getMaxAllowedEmiNumberWithoutRecursion(Loan loan) {
@@ -897,10 +939,11 @@ public class LoanService {
                 && "PARTIAL".equalsIgnoreCase(preClosure.get().getPreClosureType())
                 && preClosure.get().getUpdatedTenure() != null
                 && preClosure.get().getUpdatedTenure() > 0
-                && preClosure.get().getPreClosureDate() != null) {
+                && preClosure.get().getPreClosureDate() != null
+                && !LoanTypeUtils.isGoldLoan(loan)) {
             int cutOffEmiNumber = 1;
-            for (int i = 1; i <= loan.getTenure(); i++) {
-                LocalDate dueDate = loan.getEmiDate().plusMonths(i - 1L);
+            for (int i = 1; i <= LoanTypeUtils.getScheduleInstallmentCount(loan); i++) {
+                LocalDate dueDate = getDueDateForInstallment(loan, i, preClosure.get());
                 if (!dueDate.isBefore(preClosure.get().getPreClosureDate())) {
                     cutOffEmiNumber = i;
                     break;
@@ -909,11 +952,11 @@ public class LoanService {
             }
             return cutOffEmiNumber + preClosure.get().getUpdatedTenure();
         }
-        return loan.getTenure();
+        return LoanTypeUtils.getScheduleInstallmentCount(loan);
     }
 
     private LocalDate getLastDueDateForLoan(Loan loan, LoanPreClosureDTO preClosure) {
-        int maxEmiNumber = loan.getTenure();
+        int maxEmiNumber = LoanTypeUtils.getScheduleInstallmentCount(loan);
         if (preClosure != null && preClosure.getPreClosureDate() != null) {
             int cutOffEmiNumber = resolvePreClosureTargetEmiNumber(loan, preClosure.getPreClosureDate(), preClosure);
             if ("PARTIAL".equalsIgnoreCase(preClosure.getPreClosureType())
@@ -1047,7 +1090,14 @@ public class LoanService {
         dto.setTenure(loan.getTenure());
         dto.setInterestRate(loan.getInterestRate());
         dto.setEmiAmount(loan.getEmiAmount());
-        dto.setFormattedEmiAmount(formatterUtils.formatInIndianStyle(loan.getEmiAmount()));
+        boolean goldLoan = LoanTypeUtils.isGoldLoan(loan);
+        dto.setGoldLoan(goldLoan);
+        dto.setFormattedTenureLabel(loan.getTenure() + " months");
+        if (goldLoan && (loan.getEmiAmount() == null || loan.getEmiAmount() <= 0)) {
+            dto.setFormattedEmiAmount("-");
+        } else {
+            dto.setFormattedEmiAmount(formatterUtils.formatInIndianStyle(loan.getEmiAmount()));
+        }
         dto.setFirstEmiDate(loan.getEmiDate());
         dto.setFormattedFirstEmiDate(formatterUtils.formatDate(loan.getEmiDate()));
         LocalDate lastPaidDate = overrides.values().stream()
@@ -1074,7 +1124,7 @@ public class LoanService {
             return dto;
         }
         if (loan.getEmiDate() != null && loan.getTenure() != null && loan.getTenure() > 0) {
-            LocalDate endDate = getDueDateForInstallment(loan, loan.getTenure(), null);
+            LocalDate endDate = getDueDateForInstallment(loan, LoanTypeUtils.getScheduleInstallmentCount(loan), null);
             dto.setEndDate(endDate);
             dto.setFormattedEndDate(formatterUtils.formatDate(endDate));
             dto.setLoanStatus(resolveLoanStatus(endDate));

@@ -14,4 +14,6 @@ public class LoanDTO {
     private Double interestRate;
     private Double emiAmount;
     private LocalDate emiDate;
+    /** True when editing/displaying a gold loan (yearly interest, not monthly EMI). */
+    private boolean goldLoan;
 }

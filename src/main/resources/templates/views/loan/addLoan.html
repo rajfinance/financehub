@@ -13,13 +13,21 @@
               th:object="${loan}" method="post" th:onsubmit="submitForm(event)">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
             <input type="hidden" th:field="*{id}" th:if="${isEdit}" />
+            <input type="hidden" th:field="*{emiDate}" id="emiDate" />
+            <input type="hidden" th:field="*{emiAmount}" id="emiAmountHidden" />
 
+            <!-- Row 1: Loan Type | Bank Name -->
             <div class="form-row">
                 <div class="form-column">
                     <div class="input-group">
-                        <label for="loanAccountNumber">Loan Account Number:<span class="mandatory">*</span></label>
-                        <input type="text" id="loanAccountNumber" th:field="*{loanAccountNumber}" maxlength="30" required />
+                        <label for="loanType">Loan Type:<span class="mandatory">*</span></label>
+                        <select id="loanType" th:field="*{loanType}" required onchange="toggleGoldLoanFields()">
+                            <option value="" selected>Select Loan Type</option>
+                            <option th:each="type : ${loanTypes}" th:value="${type}" th:text="${type}"></option>
+                        </select>
                     </div>
+                </div>
+                <div class="form-column">
                     <div class="input-group">
                         <label for="bankName">Bank Name:<span class="mandatory">*</span></label>
                         <select id="bankName" th:field="*{bankName}" required>
@@ -27,37 +35,61 @@
                             <option th:each="bank : ${bankNames}" th:value="${bank}" th:text="${bank}"></option>
                         </select>
                     </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Loan Account Number | Tenure -->
+            <div class="form-row">
+                <div class="form-column">
                     <div class="input-group">
-                        <label for="loanType">Loan Type:<span class="mandatory">*</span></label>
-                        <select id="loanType" th:field="*{loanType}" required>
-                            <option value="" selected>Select Loan Type</option>
-                            <option th:each="type : ${loanTypes}" th:value="${type}" th:text="${type}"></option>
-                        </select>
+                        <label for="loanAccountNumber">Loan Account Number:<span class="mandatory">*</span></label>
+                        <input type="text" id="loanAccountNumber" th:field="*{loanAccountNumber}" maxlength="30" required />
                     </div>
+                </div>
+                <div class="form-column">
+                    <div class="input-group" id="tenureMonthsGroup">
+                        <label for="tenure">Tenure (months):<span class="mandatory">*</span></label>
+                        <input type="number" id="tenure" th:field="*{tenure}" min="1" required />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Sanctioned Loan Amount | Interest Rate -->
+            <div class="form-row">
+                <div class="form-column">
                     <div class="input-group">
                         <label for="loanAmount">Sanctioned Loan Amount:<span class="mandatory">*</span></label>
                         <input type="number" id="loanAmount" th:field="*{loanAmount}" min="0" step="0.01" required />
                     </div>
                 </div>
-
                 <div class="form-column">
-                    <div class="input-group">
-                        <label for="tenure">Tenure (months):<span class="mandatory">*</span></label>
-                        <input type="number" id="tenure" th:field="*{tenure}" min="1" required />
-                    </div>
                     <div class="input-group">
                         <label for="interestRate">Interest Rate (%):</label>
                         <input type="number" step="0.01" id="interestRate" th:field="*{interestRate}" min="0" max="100" />
                     </div>
-                    <div class="input-group">
-                        <label for="emiAmount">Monthly EMI Amount:<span class="mandatory">*</span></label>
-                        <input type="number" id="emiAmount" th:field="*{emiAmount}" min="0" step="0.01" required />
-                    </div>
-                    <div class="input-group">
-                        <label for="emiDate">First EMI Date:<span class="mandatory">*</span></label>
-                        <input type="date" id="emiDate" th:field="*{emiDate}"
+                </div>
+            </div>
+
+            <!-- Row 4: First EMI Date / Loan Start Date | Monthly EMI Amount -->
+            <div class="form-row" id="emiFieldsRow">
+                <div class="form-column">
+                    <div class="input-group" id="emiDateGroup">
+                        <label for="emiDateVisible">First EMI Date:<span class="mandatory">*</span></label>
+                        <input type="date" id="emiDateVisible"
                                th:value="${loan.emiDate != null ? #temporals.format(loan.emiDate, 'yyyy-MM-dd') : ''}"
                                required />
+                    </div>
+                    <div class="input-group fh-gold-only" id="goldLoanStartGroup" style="display: none;">
+                        <label for="goldLoanStartDate">Loan Start Date:<span class="mandatory">*</span></label>
+                        <input type="date" id="goldLoanStartDate"
+                               th:value="${loan.emiDate != null ? #temporals.format(loan.emiDate, 'yyyy-MM-dd') : ''}" />
+                    </div>
+                </div>
+                <div class="form-column">
+                    <div class="input-group" id="emiAmountGroup">
+                        <label for="emiAmount">Monthly EMI Amount:<span class="mandatory">*</span></label>
+                        <input type="number" id="emiAmount" min="0" step="0.01" required
+                               th:value="${loan.emiAmount}" />
                     </div>
                 </div>
             </div>
