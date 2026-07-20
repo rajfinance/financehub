@@ -2,53 +2,108 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
 <div id="reportContent" class="loan-projection-report-content">
-    <h1 class="h1report">Bank EMI Projection</h1>
+    <h1 class="h1report">EMI Projection</h1>
+
+    <div class="fh-projection-filters" th:if="${projectionReport != null}">
+        <div class="fh-projection-filters-layout">
+            <div class="fh-projection-filter-block fh-projection-loans-panel">
+                <div class="fh-projection-filter-head">
+                    <span>Loans (monthly EMI)</span>
+                    <button type="button" class="fh-link-btn" onclick="toggleAllProjectionLoans(true)">Select all</button>
+                    <button type="button" class="fh-link-btn" onclick="toggleAllProjectionLoans(false)">Clear</button>
+                </div>
+                <div class="fh-projection-loan-list" id="projectionLoanGrid">
+                    <label class="fh-projection-loan-item"
+                           th:each="loan : ${projectionReport.eligibleLoans}">
+                        <input type="checkbox"
+                               class="projection-loan-cb"
+                               th:value="${loan.id}"
+                               th:checked="${projectionReport.selectedLoanIds != null and projectionReport.selectedLoanIds.contains(loan.id)}" />
+                        <span class="fh-projection-loan-item__text"
+                              th:text="|${loan.bankName} — ${loan.loanAccountNumber} (${loan.loanType})|"></span>
+                    </label>
+                </div>
+                <p th:if="${projectionReport.eligibleLoans == null or projectionReport.eligibleLoans.isEmpty()}"
+                   class="fh-projection-empty-hint">No monthly-EMI loans available for projection.</p>
+            </div>
+
+            <div class="fh-projection-filter-block fh-projection-combo-panel">
+                <div class="fh-projection-filter-head">
+                    <span>Combine banks (foreclosure pay)</span>
+                    <span class="fh-projection-combo-preview"
+                          th:text="${projectionReport.comboLabel != null and !#strings.isEmpty(projectionReport.comboLabel) ? 'Selected: ' + projectionReport.comboLabel : 'Select one or more banks'}"></span>
+                </div>
+                <div class="fh-projection-combo-list" id="projectionComboRow"
+                     th:if="${projectionReport.banks != null and !projectionReport.banks.isEmpty()}">
+                    <label class="fh-projection-combo-item" th:each="bank : ${projectionReport.banks}">
+                        <input type="checkbox"
+                               class="projection-combo-cb"
+                               th:value="${bank}"
+                               th:checked="${projectionReport.comboBanks != null and projectionReport.comboBanks.contains(bank)}" />
+                        <span th:text="${bank}"></span>
+                    </label>
+                </div>
+                <p th:if="${projectionReport.banks == null or projectionReport.banks.isEmpty()}"
+                   class="fh-projection-empty-hint">Select loans and Apply to choose banks.</p>
+            </div>
+        </div>
+
+        <div class="fh-projection-actions">
+            <button type="button" class="fh-btn" onclick="reloadLoanBankProjectionReport()">Apply</button>
+        </div>
+    </div>
 
     <th:block th:if="${projectionReport != null and projectionReport.rows != null and !projectionReport.rows.isEmpty()}">
         <div class="fh-projection-table-wrap">
-        <table class="fh-projection-table">
-            <thead>
-            <tr>
-                <th rowspan="2" class="fh-col-sno">S.No</th>
-                <th rowspan="2" class="fh-col-date">Date</th>
-                <th class="fh-amount-col fh-col-emi">AXIS EMI</th>
-                <th class="fh-amount-col fh-col-emi">ICICI EMI</th>
-                <th class="fh-amount-col fh-col-emi">HDFC EMI</th>
-                <th rowspan="2" class="fh-amount-col fh-col-narrow">TOTAL</th>
-                <th rowspan="2" class="fh-amount-col fh-col-narrow">AXIS PAY</th>
-                <th rowspan="2" class="fh-amount-col fh-col-narrow">ICICI PAY</th>
-                <th rowspan="2" class="fh-amount-col fh-col-narrow">HDFC PAY</th>
-                <th rowspan="2" class="fh-amount-col fh-col-narrow">AXIS + HDFC</th>
-                <th rowspan="2" class="fh-amount-col fh-col-narrow">TOTAL PAY</th>
-            </tr>
-            <tr>
-                <th class="fh-amount-col fh-col-emi" th:text="${projectionReport.formattedAxisHeaderAmount}"></th>
-                <th class="fh-amount-col fh-col-emi" th:text="${projectionReport.formattedIciciHeaderAmount}"></th>
-                <th class="fh-amount-col fh-col-emi" th:text="${projectionReport.formattedHdfcHeaderAmount}"></th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="row, rowStat : ${projectionReport.rows}">
-                <td class="fh-col-sno" th:text="${rowStat.count}"></td>
-                <td class="fh-col-date" th:text="${row.date}"></td>
-                <td class="fh-amount-col fh-col-emi" th:text="${row.formattedAxisAmount}"></td>
-                <td class="fh-amount-col fh-col-emi" th:text="${row.formattedIciciAmount}"></td>
-                <td class="fh-amount-col fh-col-emi" th:text="${row.formattedHdfcAmount}"></td>
-                <td class="fh-amount-col fh-col-narrow" th:text="${row.formattedTotalAmount}"></td>
-                <td class="fh-amount-col fh-col-narrow" th:text="${row.formattedAxisPayAmount}"></td>
-                <td class="fh-amount-col fh-col-narrow" th:text="${row.formattedIciciPayAmount}"></td>
-                <td class="fh-amount-col fh-col-narrow" th:text="${row.formattedHdfcPayAmount}"></td>
-                <td class="fh-amount-col fh-col-narrow" th:text="${row.formattedAxisAndHdfcPayAmount}"></td>
-                <td class="fh-amount-col fh-col-narrow"><strong th:text="${row.formattedTotalPayAmount}"></strong></td>
-            </tr>
-            </tbody>
-        </table>
+            <table class="fh-projection-table">
+                <thead>
+                <tr>
+                    <th rowspan="2" class="fh-col-sno">S.No</th>
+                    <th rowspan="2" class="fh-col-date">Date</th>
+                    <th th:each="bank : ${projectionReport.banks}"
+                        class="fh-amount-col fh-col-emi"
+                        th:text="|${bank} EMI|"></th>
+                    <th rowspan="2" class="fh-amount-col fh-col-total">TOTAL</th>
+                    <th th:each="bank : ${projectionReport.banks}"
+                        rowspan="2"
+                        class="fh-amount-col fh-col-pay"
+                        th:text="|${bank} PAY|"></th>
+                    <th rowspan="2" class="fh-amount-col fh-col-combo"
+                        th:if="${projectionReport.comboLabel != null and !#strings.isEmpty(projectionReport.comboLabel)}"
+                        th:text="${projectionReport.comboLabel}"></th>
+                    <th rowspan="2" class="fh-amount-col fh-col-total-pay">TOTAL PAY</th>
+                </tr>
+                <tr>
+                    <th th:each="headerEmi : ${projectionReport.formattedHeaderEmis}"
+                        class="fh-amount-col fh-col-emi"
+                        th:text="${headerEmi}"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row, rowStat : ${projectionReport.rows}">
+                    <td class="fh-col-sno" th:text="${rowStat.count}"></td>
+                    <td class="fh-col-date" th:text="${row.date}"></td>
+                    <td th:each="amount : ${row.formattedAmounts}"
+                        class="fh-amount-col fh-col-emi"
+                        th:text="${amount}"></td>
+                    <td class="fh-amount-col fh-col-total" th:text="${row.formattedTotalAmount}"></td>
+                    <td th:each="pay : ${row.formattedPays}"
+                        class="fh-amount-col fh-col-pay"
+                        th:text="${pay}"></td>
+                    <td class="fh-amount-col fh-col-combo"
+                        th:if="${projectionReport.comboLabel != null and !#strings.isEmpty(projectionReport.comboLabel)}"
+                        th:text="${row.formattedComboPayAmount}"></td>
+                    <td class="fh-amount-col fh-col-total-pay"><strong th:text="${row.formattedTotalPayAmount}"></strong></td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </th:block>
 
-    <p th:if="${projectionReport == null or projectionReport.rows == null or projectionReport.rows.isEmpty()}"
-       style="text-align: center; color: var(--fh-text-muted); font-style: italic;">
-        No upcoming EMI schedule found for Axis, ICICI, or HDFC from next month.
+    <p th:if="${projectionReport != null and (projectionReport.rows == null or projectionReport.rows.isEmpty())}"
+       class="fh-projection-empty-hint">
+        No upcoming EMI schedule for the selected loans from next month.
+        Select loans and click Apply.
     </p>
 </div>
 </body>

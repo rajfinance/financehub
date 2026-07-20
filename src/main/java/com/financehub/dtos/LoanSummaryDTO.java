@@ -32,4 +32,6 @@ public class LoanSummaryDTO {
     private String formattedLastEmiPaidDate;
     private boolean goldLoan;
     private String formattedTenureLabel;
+    /** Gold loan: principal + interest for the tenure year. */
+    private String formattedFullAmountToPay;
 }

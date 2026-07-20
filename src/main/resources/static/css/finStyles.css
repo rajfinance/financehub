@@ -1886,8 +1886,190 @@ button.fh-btn:active,
     max-width: 980px;
 }
 
+.fh-emi-schedule-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0.75rem 1rem;
+    margin: 0.35rem 0 1.25rem;
+    padding: 0.85rem 1.1rem;
+    border-radius: 10px;
+    border: 1px solid #cce7e2;
+    background: linear-gradient(180deg, #f0fdfa 0%, #ecfeff 100%);
+}
+
+.fh-emi-schedule-summary__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    min-width: 11rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.fh-emi-schedule-summary__label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: #64748b;
+}
+
+.fh-emi-schedule-summary__value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.fh-emi-schedule-summary__item--total .fh-emi-schedule-summary__value {
+    color: #0f766e;
+}
+
+.fh-emi-schedule-summary__item--pending .fh-emi-schedule-summary__value {
+    color: #c2410c;
+}
+
+.fh-emi-schedule-summary__divider {
+    width: 1px;
+    align-self: stretch;
+    background: #99f6e4;
+    margin: 0.15rem 0;
+}
+
+.fh-emi-schedule-filters {
+    margin-bottom: 1.15rem;
+    padding-top: 0.25rem;
+}
+
+@media (max-width: 640px) {
+    .fh-emi-schedule-summary__divider {
+        display: none;
+    }
+}
+
 #reportContent.loan-projection-report-content {
     max-width: 100%;
+}
+
+.fh-projection-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin: 0 0 1.1rem;
+    padding: 0.9rem 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+
+.fh-projection-filters-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+}
+
+@media (max-width: 860px) {
+    .fh-projection-filters-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.fh-projection-filter-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.fh-projection-filter-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+.fh-link-btn {
+    border: 0;
+    background: transparent;
+    color: var(--fh-brand, #0f766e);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+}
+
+.fh-link-btn:hover {
+    text-decoration: underline;
+}
+
+.fh-projection-loan-list,
+.fh-projection-combo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 0.35rem 0.15rem;
+}
+
+.fh-projection-loan-item,
+.fh-projection-combo-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 0.82rem;
+    color: #334155;
+    cursor: pointer;
+}
+
+.fh-projection-loan-item:hover,
+.fh-projection-combo-item:hover {
+    border-color: #99f6e4;
+    background: #f0fdfa;
+}
+
+.fh-projection-loan-item input,
+.fh-projection-combo-item input {
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+}
+
+.fh-projection-loan-item__text {
+    line-height: 1.35;
+}
+
+.fh-projection-combo-preview {
+    margin: 0;
+    font-weight: 600;
+    color: #0f766e;
+    font-size: 0.78rem;
+}
+
+.fh-projection-actions {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.fh-projection-empty-hint {
+    text-align: center;
+    color: var(--fh-text-muted, #64748b);
+    font-style: italic;
+    margin: 0.75rem 0 0;
+}
+
+.fh-projection-note {
+    margin: 0.65rem 0 0;
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.4;
 }
 
 .fh-projection-table-wrap {
@@ -1898,29 +2080,38 @@ button.fh-btn:active,
 .fh-projection-table {
     width: 100%;
     max-width: 100%;
-    table-layout: fixed;
+    table-layout: auto;
     font-size: 0.78rem;
 }
 
 #reportContent.loan-projection-report-content .fh-projection-table th,
 #reportContent.loan-projection-report-content .fh-projection-table td {
     white-space: nowrap;
-    padding: 0.35rem 0.25rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    padding: 0.4rem 0.45rem;
 }
 
 .fh-projection-table .fh-col-sno {
-    width: 3%;
+    width: 3rem;
     text-align: center;
 }
 
 .fh-projection-table .fh-col-date {
-    width: 9%;
+    min-width: 5.5rem;
 }
 
 .fh-projection-table .fh-col-emi {
-    width: 9%;
+    background: #f0fdfa;
+}
+
+.fh-projection-table .fh-col-pay {
+    background: #fff7ed;
+}
+
+.fh-projection-table .fh-col-total,
+.fh-projection-table .fh-col-combo,
+.fh-projection-table .fh-col-total-pay {
+    background: #f8fafc;
+    font-weight: 600;
 }
 
 .fh-projection-table .fh-col-narrow {
@@ -2052,15 +2243,20 @@ button.fh-btn:active,
 }
 
 .fh-status-preclosure {
-    background: rgba(37, 99, 235, 0.14);
-    color: #1d4ed8;
-    border-color: rgba(29, 78, 216, 0.26);
+    background: rgba(13, 122, 82, 0.14);
+    color: #065f46;
+    border-color: rgba(6, 95, 70, 0.24);
 }
 
 .fh-status-partial {
     background: rgba(124, 58, 237, 0.14);
     color: #6d28d9;
     border-color: rgba(109, 40, 217, 0.26);
+}
+
+.fh-action-na {
+    color: #94a3b8;
+    font-weight: 600;
 }
 
 .fh-report-empty {

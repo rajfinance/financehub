@@ -49,11 +49,18 @@ BEGIN
         SELECT 1 FROM information_schema.columns
         WHERE table_schema = 'public' AND table_name = 'loan_preclosures' AND column_name = 'foreclosure_ref_number'
     ) THEN
+        EXECUTE 'ALTER TABLE public.loan_preclosures ALTER COLUMN foreclosure_ref_number DROP NOT NULL';
         EXECUTE '
             UPDATE public.loan_preclosures
                SET reference_number = COALESCE(reference_number, foreclosure_ref_number)
              WHERE COALESCE(reference_number, '''') = ''''
                AND COALESCE(foreclosure_ref_number, '''') <> ''''
+        ';
+        EXECUTE '
+            UPDATE public.loan_preclosures
+               SET foreclosure_ref_number = COALESCE(foreclosure_ref_number, reference_number)
+             WHERE COALESCE(foreclosure_ref_number, '''') = ''''
+               AND COALESCE(reference_number, '''') <> ''''
         ';
     END IF;
 

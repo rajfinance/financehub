@@ -38,7 +38,51 @@ function prepareUrl(reportType){
         }
         return url;
     }
+    if (reportType === "loanBankProjectionReport") {
+        return buildLoanBankProjectionUrl(baseUrl);
+    }
     return year ? `${baseUrl}?year=${year}` : baseUrl;
+}
+
+function buildLoanBankProjectionUrl(baseUrl) {
+    const params = new URLSearchParams();
+    const hasLoanGrid = document.getElementById('projectionLoanGrid');
+    if (hasLoanGrid) {
+        params.set('applied', 'true');
+        document.querySelectorAll('.projection-loan-cb:checked').forEach(function (cb) {
+            params.append('loanIds', cb.value);
+        });
+        document.querySelectorAll('.projection-combo-cb:checked').forEach(function (cb) {
+            params.append('combo', cb.value);
+        });
+    }
+    const query = params.toString();
+    return query ? `${baseUrl}?${query}` : baseUrl;
+}
+
+function toggleAllProjectionLoans(selectAll) {
+    document.querySelectorAll('.projection-loan-cb').forEach(function (cb) {
+        cb.checked = !!selectAll;
+    });
+}
+
+function reloadLoanBankProjectionReport() {
+    const container = document.getElementById('loanBankProjectionReport');
+    if (!container) {
+        return;
+    }
+    const url = buildLoanBankProjectionUrl('/api/loan/loanBankProjectionReport');
+    fetch(url, {
+        credentials: 'same-origin',
+        headers: typeof getCsrfHeaders === 'function' ? getCsrfHeaders() : {}
+    })
+        .then(function (response) { return response.text(); })
+        .then(function (html) {
+            container.innerHTML = html;
+        })
+        .catch(function (error) {
+            console.error('Error loading EMI projection report:', error);
+        });
 }
 
 function fetchReportContent(reportType) {

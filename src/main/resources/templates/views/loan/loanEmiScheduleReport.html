@@ -4,14 +4,27 @@
 <div id="reportContent" class="emi-schedule-report-content">
     <h1 class="h1report">EMI Schedule</h1>
 
-    <div class="form-row form-row--3" style="margin-bottom: 1rem;">
+    <div class="fh-emi-schedule-summary"
+         th:if="${scheduleGroups != null and !scheduleGroups.isEmpty()}">
+        <span class="fh-emi-schedule-summary__item fh-emi-schedule-summary__item--total">
+            <span class="fh-emi-schedule-summary__label" th:text="|Total EMI for ${selectedYearLabel}|"></span>
+            <span class="fh-emi-schedule-summary__value" th:text="${yearTotal}"></span>
+        </span>
+        <span class="fh-emi-schedule-summary__divider" aria-hidden="true"></span>
+        <span class="fh-emi-schedule-summary__item fh-emi-schedule-summary__item--pending">
+            <span class="fh-emi-schedule-summary__label" th:text="|Pending Amount for ${selectedYearLabel}|"></span>
+            <span class="fh-emi-schedule-summary__value" th:text="${yearPendingTotal}"></span>
+        </span>
+    </div>
+
+    <div class="form-row form-row--3 fh-emi-schedule-filters">
         <div class="input-group">
             <label for="emiScheduleLoan">Loan</label>
             <select id="emiScheduleLoan" onchange="reloadLoanEmiReport()">
                 <option value="" th:selected="${selectedLoanId == null}">All loans</option>
                 <option th:each="loan : ${loans}"
                         th:value="${loan.id}"
-                        th:text="|${loan.bankName} — ${loan.loanAccountNumber}|"
+                        th:text="|${loan.bankName}-${loan.loanType}-${loan.loanAccountNumber}|"
                         th:selected="${selectedLoanId != null and selectedLoanId == loan.id}"></option>
             </select>
         </div>
@@ -85,11 +98,6 @@
             </table>
             <br/>
         </th:block>
-        <h2 class="fh-report-summary-line">
-            <span th:text="|Total EMI for ${selectedYearLabel}: ${yearTotal}|"></span>
-            <span>&nbsp;|&nbsp;</span>
-            <span th:text="|Pending Amount for ${selectedYearLabel}: ${yearPendingTotal}|"></span>
-        </h2>
     </th:block>
 
     <p th:if="${scheduleGroups == null or scheduleGroups.isEmpty()}"

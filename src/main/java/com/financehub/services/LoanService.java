@@ -35,6 +35,9 @@ public class LoanService {
     private final FormatterUtils formatterUtils;
     private final JdbcTemplate jdbcTemplate;
     private volatile boolean preClosureTableChecked = false;
+    /** Older DBs may still have NOT NULL foreclosure_ref_number alongside reference_number. */
+    private volatile boolean hasLegacyForeclosureRefColumn = false;
+    private volatile boolean hasLegacyNocNumberColumn = false;
 
     private record ScheduleAmountSlice(int emiNumber,
                                        LocalDate dueDate,
@@ -156,7 +159,22 @@ public class LoanService {
                         loan,
                         context.preClosureByLoan.get(loan.getId()),
                         context.overridesByLoan.getOrDefault(loan.getId(), Map.of())))
+                .sorted(Comparator.comparingInt(this::loanStatusSortOrder)
+                        .thenComparing(LoanSummaryDTO::getLoanAccountNumber, Comparator.nullsLast(String::compareToIgnoreCase)))
                 .collect(Collectors.toList());
+    }
+
+    /** Open loans first; closed / pre-closed last. */
+    private int loanStatusSortOrder(LoanSummaryDTO loan) {
+        if (loan == null || loan.getLoanStatus() == null) {
+            return 3;
+        }
+        return switch (loan.getLoanStatus()) {
+            case "Open" -> 0;
+            case "Partially Closed" -> 1;
+            case "Pre-Closed", "Closed" -> 2;
+            default -> 3;
+        };
     }
 
     public LoanSummaryDTO getLoanSummaryById(Long loanId) {
@@ -377,15 +395,31 @@ public class LoanService {
 
     public EmiScheduleReportBundle buildEmiScheduleReport(Integer year, Long loanId) {
         ScheduleContext context = buildScheduleContext();
-        List<LoanEmiScheduleRowDTO> rows = buildScheduleRows(context, year, loanId);
+        List<Loan> eligibleLoans = context.loans.stream()
+                .filter(loan -> isProjectionEligibleLoan(loan, context.preClosureByLoan.get(loan.getId())))
+                .toList();
+        Set<Long> eligibleIds = eligibleLoans.stream()
+                .map(Loan::getId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        Long effectiveLoanId = loanId;
+        if (effectiveLoanId != null && !eligibleIds.contains(effectiveLoanId)) {
+            effectiveLoanId = null;
+        }
+
+        List<LoanSummaryDTO> loanOptions = eligibleLoans.stream()
+                .map(this::toLightSummaryDto)
+                .toList();
+
+        List<LoanEmiScheduleRowDTO> rows = buildScheduleRows(context, year, effectiveLoanId).stream()
+                .filter(row -> eligibleIds.contains(row.getLoanId()))
+                .toList();
         Map<Long, List<LoanEmiScheduleRowDTO>> grouped = rows.stream()
                 .collect(Collectors.groupingBy(LoanEmiScheduleRowDTO::getLoanId, LinkedHashMap::new, Collectors.toList()));
 
         List<LoanEmiScheduleGroupDTO> groups = new ArrayList<>();
-        List<LoanSummaryDTO> loanOptions = new ArrayList<>();
-        for (Loan loan : context.loans) {
-            loanOptions.add(toLightSummaryDto(loan));
-            if (loanId != null && !loan.getId().equals(loanId)) {
+        for (Loan loan : eligibleLoans) {
+            if (effectiveLoanId != null && !loan.getId().equals(effectiveLoanId)) {
                 continue;
             }
             List<LoanEmiScheduleRowDTO> loanRows = grouped.get(loan.getId());
@@ -398,8 +432,8 @@ public class LoanService {
             groups.add(group);
         }
 
-        double total = sumScheduleAmounts(context, year, loanId, false);
-        double pending = sumScheduleAmounts(context, year, loanId, true);
+        double total = sumScheduleAmounts(context, year, effectiveLoanId, false, eligibleIds);
+        double pending = sumScheduleAmounts(context, year, effectiveLoanId, true, eligibleIds);
         return new EmiScheduleReportBundle(
                 loanOptions,
                 groups,
@@ -407,88 +441,204 @@ public class LoanService {
                 formatterUtils.formatInIndianStyle(pending));
     }
 
-    public LoanBankEmiProjectionReportDTO getBankNextMonthProjectionReport() {
-        LocalDate nextMonthStart = LocalDate.now().plusMonths(1).withDayOfMonth(1);
+    public LoanBankEmiProjectionReportDTO getBankNextMonthProjectionReport(List<Long> selectedLoanIds,
+                                                                            List<String> comboBanks,
+                                                                            boolean selectionApplied) {
         ScheduleContext context = buildScheduleContext();
-        TreeMap<YearMonth, LoanBankEmiProjectionRowDTO> monthlyDeductionRows = new TreeMap<>();
-        long axisPendingTotal = 0;
-        long iciciPendingTotal = 0;
-        long hdfcPendingTotal = 0;
+        List<Loan> eligibleLoans = context.loans.stream()
+                .filter(loan -> isProjectionEligibleLoan(loan, context.preClosureByLoan.get(loan.getId())))
+                .toList();
 
-        for (Loan loan : context.loans) {
-            if (LoanTypeUtils.isGoldLoan(loan)) {
+        Set<Long> eligibleIds = eligibleLoans.stream().map(Loan::getId).collect(Collectors.toCollection(LinkedHashSet::new));
+        List<Long> effectiveLoanIds;
+        if (!selectionApplied) {
+            effectiveLoanIds = new ArrayList<>(eligibleIds);
+        } else if (selectedLoanIds == null || selectedLoanIds.isEmpty()) {
+            effectiveLoanIds = List.of();
+        } else {
+            effectiveLoanIds = selectedLoanIds.stream()
+                    .filter(eligibleIds::contains)
+                    .distinct()
+                    .toList();
+        }
+
+        List<Loan> selectedLoans = eligibleLoans.stream()
+                .filter(loan -> effectiveLoanIds.contains(loan.getId()))
+                .toList();
+
+        LinkedHashSet<String> bankOrder = new LinkedHashSet<>();
+        for (Loan loan : selectedLoans) {
+            bankOrder.add(resolveBankBucket(loan.getBankName()));
+        }
+        List<String> banks = new ArrayList<>(bankOrder);
+
+        List<String> effectiveComboBanks = new ArrayList<>();
+        if (comboBanks != null) {
+            for (String bank : comboBanks) {
+                String key = normalizeBankKey(bank);
+                // Allow single-bank or multi-bank combo as long as bank is in the report.
+                if (banks.contains(key) && !effectiveComboBanks.contains(key)) {
+                    effectiveComboBanks.add(key);
+                }
+            }
+        }
+
+        LocalDate nextMonthStart = LocalDate.now().plusMonths(1).withDayOfMonth(1);
+        TreeMap<YearMonth, Map<String, Long>> monthlyEmiByBank = new TreeMap<>();
+        Map<String, Long> pendingTotalByBank = new LinkedHashMap<>();
+        for (String bank : banks) {
+            pendingTotalByBank.put(bank, 0L);
+        }
+
+        for (Loan loan : selectedLoans) {
+            if (loan.getEmiDate() == null || loan.getTenure() == null) {
                 continue;
             }
-            if (loan.getEmiDate() == null || loan.getTenure() == null || loan.getEmiAmount() == null) {
+            // Gold loans have no monthly EMI; still include their annual due in the due month.
+            LoanPreClosureDTO preClosure = context.preClosureByLoan.get(loan.getId());
+            Map<Integer, LoanEmiPayment> overrides = context.overridesByLoan.getOrDefault(loan.getId(), Map.of());
+            String bucket = resolveBankBucket(loan.getBankName());
+            for (ScheduleAmountSlice slice : buildScheduleAmountSlices(loan, null, preClosure, overrides)) {
+                if (slice.dueDate() == null || slice.dueDate().isBefore(nextMonthStart)) {
+                    continue;
+                }
+                long amount = Math.round(slice.amount());
+                if (amount <= 0) {
+                    continue;
+                }
+                YearMonth installmentMonth = YearMonth.from(slice.dueDate());
+                monthlyEmiByBank
+                        .computeIfAbsent(installmentMonth, ym -> {
+                            Map<String, Long> bankMap = new LinkedHashMap<>();
+                            for (String bank : banks) {
+                                bankMap.put(bank, 0L);
+                            }
+                            return bankMap;
+                        })
+                        .merge(bucket, amount, Long::sum);
+                pendingTotalByBank.merge(bucket, amount, Long::sum);
+            }
+        }
+
+        Map<String, Long> runningPending = new LinkedHashMap<>(pendingTotalByBank);
+        List<LoanBankEmiProjectionRowDTO> rows = new ArrayList<>();
+        for (Map.Entry<YearMonth, Map<String, Long>> entry : monthlyEmiByBank.entrySet()) {
+            Map<String, Long> monthEmi = entry.getValue();
+            for (String bank : banks) {
+                long monthAmount = monthEmi.getOrDefault(bank, 0L);
+                runningPending.put(bank, Math.max(0L, runningPending.getOrDefault(bank, 0L) - monthAmount));
+            }
+
+            List<Long> amounts = new ArrayList<>();
+            List<Long> pays = new ArrayList<>();
+            long total = 0;
+            long totalPay = 0;
+            long comboPay = 0;
+            for (String bank : banks) {
+                long amount = runningPending.getOrDefault(bank, 0L);
+                long pay = computeForeclosurePay(bank, amount);
+                amounts.add(amount);
+                pays.add(pay);
+                total += amount;
+                totalPay += pay;
+                if (effectiveComboBanks.contains(bank)) {
+                    comboPay += pay;
+                }
+            }
+
+            LoanBankEmiProjectionRowDTO row = new LoanBankEmiProjectionRowDTO();
+            row.setDate(formatterUtils.formatDate(entry.getKey().atDay(7)));
+            row.setFormattedAmounts(amounts.stream()
+                    .map(formatterUtils::formatInIndianStyleWholeNumber)
+                    .toList());
+            row.setFormattedPays(pays.stream()
+                    .map(formatterUtils::formatInIndianStyleWholeNumber)
+                    .toList());
+            row.setFormattedTotalAmount(formatterUtils.formatInIndianStyleWholeNumber(total));
+            row.setFormattedComboPayAmount(formatterUtils.formatInIndianStyleWholeNumber(comboPay));
+            row.setFormattedTotalPayAmount(formatterUtils.formatInIndianStyleWholeNumber(totalPay));
+            rows.add(row);
+        }
+
+        // Header EMI: use each bank's own next monthly EMI (not only values present in the first shared month).
+        Map<String, Long> headerEmiByBank = resolveHeaderMonthlyEmiByBank(selectedLoans, banks, context, nextMonthStart);
+
+        LoanBankEmiProjectionReportDTO report = new LoanBankEmiProjectionReportDTO();
+        report.setEligibleLoans(eligibleLoans.stream().map(loan -> {
+            LoanSummaryDTO dto = toLightSummaryDto(loan);
+            dto.setGoldLoan(false);
+            dto.setFormattedEmiAmount(formatterUtils.formatInIndianStyle(loan.getEmiAmount()));
+            dto.setEmiAmount(loan.getEmiAmount());
+            return dto;
+        }).toList());
+        report.setSelectedLoanIds(effectiveLoanIds);
+        report.setBanks(banks);
+        report.setFormattedHeaderEmis(banks.stream()
+                .map(bank -> formatterUtils.formatInIndianStyleWholeNumber(headerEmiByBank.getOrDefault(bank, 0L)))
+                .toList());
+        report.setComboBanks(effectiveComboBanks);
+        report.setComboLabel(effectiveComboBanks.isEmpty() ? "" : String.join(" + ", effectiveComboBanks));
+        report.setRows(rows);
+        return report;
+    }
+
+    /**
+     * Next upcoming monthly EMI total per bank (from next month onward), so each bank header
+     * shows its EMI even when the earliest shared projection month has no installment for that bank.
+     */
+    private Map<String, Long> resolveHeaderMonthlyEmiByBank(List<Loan> selectedLoans,
+                                                            List<String> banks,
+                                                            ScheduleContext context,
+                                                            LocalDate nextMonthStart) {
+        Map<String, Long> headerEmiByBank = new LinkedHashMap<>();
+        for (String bank : banks) {
+            headerEmiByBank.put(bank, 0L);
+        }
+        Map<String, YearMonth> firstMonthByBank = new HashMap<>();
+        Map<String, Long> firstMonthAmountByBank = new HashMap<>();
+
+        for (Loan loan : selectedLoans) {
+            if (loan.getEmiDate() == null || loan.getTenure() == null) {
                 continue;
             }
+            String bucket = resolveBankBucket(loan.getBankName());
             LoanPreClosureDTO preClosure = context.preClosureByLoan.get(loan.getId());
             Map<Integer, LoanEmiPayment> overrides = context.overridesByLoan.getOrDefault(loan.getId(), Map.of());
             for (ScheduleAmountSlice slice : buildScheduleAmountSlices(loan, null, preClosure, overrides)) {
                 if (slice.dueDate() == null || slice.dueDate().isBefore(nextMonthStart)) {
                     continue;
                 }
-                String bucket = resolveBankBucket(loan.getBankName());
-                if (bucket == null) {
+                long amount = Math.round(slice.amount());
+                if (amount <= 0) {
                     continue;
                 }
-                YearMonth installmentMonth = YearMonth.from(slice.dueDate());
-                LoanBankEmiProjectionRowDTO monthlyDeductionRow = monthlyDeductionRows.computeIfAbsent(installmentMonth, ym -> {
-                    LoanBankEmiProjectionRowDTO dto = new LoanBankEmiProjectionRowDTO();
-                    dto.setDate(formatterUtils.formatDate(ym.atDay(7)));
-                    return dto;
-                });
-                long amount = Math.round(slice.amount());
-                if ("AXIS".equals(bucket)) {
-                    monthlyDeductionRow.setAxisAmount(monthlyDeductionRow.getAxisAmount() + amount);
-                    axisPendingTotal += amount;
-                } else if ("ICICI".equals(bucket)) {
-                    monthlyDeductionRow.setIciciAmount(monthlyDeductionRow.getIciciAmount() + amount);
-                    iciciPendingTotal += amount;
-                } else if ("HDFC".equals(bucket)) {
-                    monthlyDeductionRow.setHdfcAmount(monthlyDeductionRow.getHdfcAmount() + amount);
-                    hdfcPendingTotal += amount;
+                YearMonth ym = YearMonth.from(slice.dueDate());
+                YearMonth currentFirst = firstMonthByBank.get(bucket);
+                if (currentFirst == null || ym.isBefore(currentFirst)) {
+                    firstMonthByBank.put(bucket, ym);
+                    firstMonthAmountByBank.put(bucket, amount);
+                } else if (ym.equals(currentFirst)) {
+                    firstMonthAmountByBank.merge(bucket, amount, Long::sum);
                 }
             }
         }
-
-        long axisRunningPending = axisPendingTotal;
-        long iciciRunningPending = iciciPendingTotal;
-        long hdfcRunningPending = hdfcPendingTotal;
-        long axisHeaderEmi = 0;
-        long iciciHeaderEmi = 0;
-        long hdfcHeaderEmi = 0;
-        if (!monthlyDeductionRows.isEmpty()) {
-            LoanBankEmiProjectionRowDTO firstMonth = monthlyDeductionRows.firstEntry().getValue();
-            axisHeaderEmi = firstMonth.getAxisAmount();
-            iciciHeaderEmi = firstMonth.getIciciAmount();
-            hdfcHeaderEmi = firstMonth.getHdfcAmount();
+        for (String bank : banks) {
+            headerEmiByBank.put(bank, firstMonthAmountByBank.getOrDefault(bank, 0L));
         }
-        List<LoanBankEmiProjectionRowDTO> rows = new ArrayList<>();
-        for (LoanBankEmiProjectionRowDTO monthlyDeductionRow : monthlyDeductionRows.values()) {
-            axisRunningPending = Math.max(0, axisRunningPending - monthlyDeductionRow.getAxisAmount());
-            iciciRunningPending = Math.max(0, iciciRunningPending - monthlyDeductionRow.getIciciAmount());
-            hdfcRunningPending = Math.max(0, hdfcRunningPending - monthlyDeductionRow.getHdfcAmount());
+        return headerEmiByBank;
+    }
 
-            LoanBankEmiProjectionRowDTO pendingRow = new LoanBankEmiProjectionRowDTO();
-            pendingRow.setDate(monthlyDeductionRow.getDate());
-            pendingRow.setAxisAmount(axisRunningPending);
-            pendingRow.setIciciAmount(iciciRunningPending);
-            pendingRow.setHdfcAmount(hdfcRunningPending);
-            fillProjectionComputedColumns(pendingRow);
-            applyProjectionFormatting(pendingRow);
-            rows.add(pendingRow);
+    private boolean isProjectionEligibleLoan(Loan loan, LoanPreClosureDTO preClosure) {
+        if (LoanTypeUtils.isGoldLoan(loan)) {
+            return false;
         }
-
-        LoanBankEmiProjectionReportDTO report = new LoanBankEmiProjectionReportDTO();
-        report.setAxisHeaderAmount(axisHeaderEmi);
-        report.setIciciHeaderAmount(iciciHeaderEmi);
-        report.setHdfcHeaderAmount(hdfcHeaderEmi);
-        report.setFormattedAxisHeaderAmount(formatterUtils.formatInIndianStyleWholeNumber(axisHeaderEmi));
-        report.setFormattedIciciHeaderAmount(formatterUtils.formatInIndianStyleWholeNumber(iciciHeaderEmi));
-        report.setFormattedHdfcHeaderAmount(formatterUtils.formatInIndianStyleWholeNumber(hdfcHeaderEmi));
-        report.setRows(rows);
-        return report;
+        if (loan.getEmiDate() == null || loan.getTenure() == null || loan.getEmiAmount() == null || loan.getEmiAmount() <= 0) {
+            return false;
+        }
+        if (preClosure != null && !"PARTIAL".equalsIgnoreCase(preClosure.getPreClosureType())) {
+            return false;
+        }
+        return true;
     }
 
     public int getCurrentYearPendingEmiAmount() {
@@ -497,16 +647,16 @@ public class LoanService {
     }
 
     public List<Integer> getScheduleYearsForUser() {
-        long userId = requireUserId();
+        ScheduleContext context = buildScheduleContext();
         Set<Integer> years = new TreeSet<>();
         int currentYear = LocalDate.now().getYear();
         years.add(currentYear);
-        for (Loan loan : loanRepository.findByUserIdOrderByCreatedAtDesc(userId)) {
-            if (loan.getEmiDate() == null || loan.getTenure() == null) {
+        for (Loan loan : context.loans) {
+            if (!isProjectionEligibleLoan(loan, context.preClosureByLoan.get(loan.getId()))) {
                 continue;
             }
             LocalDate start = loan.getEmiDate();
-            LocalDate end = getLastDueDateForLoan(loan, getPersistedPreClosure(loan.getId()).orElse(null));
+            LocalDate end = getLastDueDateForLoan(loan, context.preClosureByLoan.get(loan.getId()));
             for (int y = start.getYear(); y <= end.getYear(); y++) {
                 years.add(y);
             }
@@ -648,7 +798,8 @@ public class LoanService {
         String placeholders = String.join(",", Collections.nCopies(loanIds.size(), "?"));
         List<LoanPreClosureDTO> rows = jdbcTemplate.query(
                 "SELECT loan_id, pre_closure_date, settlement_amount, pre_closure_type, " +
-                        "reference_number, updated_emi_amount, updated_tenure " +
+                        preClosureReferenceSelectExpr() + " AS reference_number, " +
+                        "updated_emi_amount, updated_tenure " +
                         "FROM loan_preclosures WHERE loan_id IN (" + placeholders + ")",
                 preClosureRowMapper(),
                 loanIds.toArray());
@@ -660,10 +811,21 @@ public class LoanService {
     }
 
     private double sumScheduleAmounts(ScheduleContext context, Integer year, Long loanId, boolean pendingOnly) {
+        return sumScheduleAmounts(context, year, loanId, pendingOnly, null);
+    }
+
+    private double sumScheduleAmounts(ScheduleContext context,
+                                      Integer year,
+                                      Long loanId,
+                                      boolean pendingOnly,
+                                      Set<Long> allowedLoanIds) {
         LocalDate today = LocalDate.now();
         double total = 0;
         for (Loan loan : context.loans) {
             if (loanId != null && !loan.getId().equals(loanId)) {
+                continue;
+            }
+            if (allowedLoanIds != null && !allowedLoanIds.contains(loan.getId())) {
                 continue;
             }
             for (ScheduleAmountSlice slice : buildScheduleAmountSlices(
@@ -833,37 +995,23 @@ public class LoanService {
         return emiDate.isAfter(LocalDate.now()) ? "Pending" : "Completed";
     }
 
-    private void fillProjectionComputedColumns(LoanBankEmiProjectionRowDTO row) {
-        long axisPay = (long) Math.ceil(row.getAxisAmount() + (row.getAxisAmount() * 0.05) + (row.getAxisAmount() * 0.05 * 0.12));
-        long iciciPay = row.getIciciAmount();
-        long hdfcPay = (long) Math.ceil(row.getHdfcAmount() + (row.getHdfcAmount() * 0.04) + (row.getHdfcAmount() * 0.04 * 0.12));
-        long total = row.getAxisAmount() + row.getIciciAmount() + row.getHdfcAmount();
-        long axisAndHdfc = axisPay + hdfcPay;
-        long totalPay = axisPay + iciciPay + hdfcPay;
-
-        row.setTotalAmount(total);
-        row.setAxisPayAmount(axisPay);
-        row.setIciciPayAmount(iciciPay);
-        row.setHdfcPayAmount(hdfcPay);
-        row.setAxisAndHdfcPayAmount(axisAndHdfc);
-        row.setTotalPayAmount(totalPay);
-    }
-
-    private void applyProjectionFormatting(LoanBankEmiProjectionRowDTO row) {
-        row.setFormattedAxisAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getAxisAmount()));
-        row.setFormattedIciciAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getIciciAmount()));
-        row.setFormattedHdfcAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getHdfcAmount()));
-        row.setFormattedTotalAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getTotalAmount()));
-        row.setFormattedAxisPayAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getAxisPayAmount()));
-        row.setFormattedIciciPayAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getIciciPayAmount()));
-        row.setFormattedHdfcPayAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getHdfcPayAmount()));
-        row.setFormattedAxisAndHdfcPayAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getAxisAndHdfcPayAmount()));
-        row.setFormattedTotalPayAmount(formatterUtils.formatInIndianStyleWholeNumber(row.getTotalPayAmount()));
+    private long computeForeclosurePay(String bank, long amount) {
+        if (amount <= 0) {
+            return 0L;
+        }
+        if ("AXIS".equals(bank)) {
+            return (long) Math.ceil(amount + (amount * 0.05) + (amount * 0.05 * 0.12));
+        }
+        if ("HDFC".equals(bank)) {
+            return (long) Math.ceil(amount + (amount * 0.04) + (amount * 0.04 * 0.12));
+        }
+        // ICICI and others: outstanding as-is
+        return amount;
     }
 
     private String resolveBankBucket(String bankName) {
-        if (bankName == null) {
-            return null;
+        if (bankName == null || bankName.isBlank()) {
+            return "OTHER";
         }
         String normalized = bankName.toLowerCase(Locale.ROOT);
         if (normalized.contains("axis")) {
@@ -875,7 +1023,20 @@ public class LoanService {
         if (normalized.contains("hdfc")) {
             return "HDFC";
         }
-        return null;
+        if (normalized.contains("state bank") || normalized.contains("sbi")) {
+            return "SBI";
+        }
+        if (normalized.contains("kotak")) {
+            return "KOTAK";
+        }
+        return "OTHER";
+    }
+
+    private String normalizeBankKey(String bank) {
+        if (bank == null || bank.isBlank()) {
+            return "OTHER";
+        }
+        return bank.trim().toUpperCase(Locale.ROOT);
     }
 
     private LocalDate getPreClosureDateForLoan(Long loanId) {
@@ -974,7 +1135,7 @@ public class LoanService {
         ensurePreClosureTable();
         List<LoanPreClosureDTO> rows = jdbcTemplate.query(
                 "SELECT loan_id, pre_closure_date, settlement_amount, pre_closure_type, " +
-                        "reference_number, " +
+                        preClosureReferenceSelectExpr() + " AS reference_number, " +
                         "updated_emi_amount, updated_tenure " +
                         "FROM loan_preclosures WHERE loan_id = ?",
                 preClosureRowMapper(),
@@ -985,31 +1146,103 @@ public class LoanService {
 
     private void upsertPreClosureDetails(LoanPreClosureDTO dto) {
         ensurePreClosureTable();
-        int updated = jdbcTemplate.update(
-                "UPDATE loan_preclosures SET pre_closure_date = ?, settlement_amount = ?, " +
-                        "pre_closure_type = ?, reference_number = ?, updated_emi_amount = ?, updated_tenure = ?, " +
-                        "updated_at = CURRENT_TIMESTAMP WHERE loan_id = ?",
-                dto.getPreClosureDate(),
-                dto.getSettlementAmount(),
-                safeTrim(dto.getPreClosureType()),
-                safeTrim(dto.getReferenceNumber()),
-                dto.getUpdatedEmiAmount(),
-                dto.getUpdatedTenure(),
-                dto.getLoanId()
-        );
-        if (updated == 0) {
-            jdbcTemplate.update(
-                    "INSERT INTO loan_preclosures (loan_id, pre_closure_date, settlement_amount, pre_closure_type, reference_number, updated_emi_amount, updated_tenure, created_at, updated_at) " +
-                            "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-                    dto.getLoanId(),
+        String referenceNumber = safeTrim(dto.getReferenceNumber());
+        if (referenceNumber == null || referenceNumber.isEmpty()) {
+            throw new IllegalArgumentException("NOC / Foreclosure number is required for pre-closure.");
+        }
+        int updated;
+        if (hasLegacyForeclosureRefColumn || hasLegacyNocNumberColumn) {
+            StringBuilder updateSql = new StringBuilder(
+                    "UPDATE loan_preclosures SET pre_closure_date = ?, settlement_amount = ?, " +
+                            "pre_closure_type = ?, reference_number = ?");
+            List<Object> params = new ArrayList<>();
+            params.add(dto.getPreClosureDate());
+            params.add(dto.getSettlementAmount());
+            params.add(safeTrim(dto.getPreClosureType()));
+            params.add(referenceNumber);
+            if (hasLegacyForeclosureRefColumn) {
+                updateSql.append(", foreclosure_ref_number = ?");
+                params.add(referenceNumber);
+            }
+            if (hasLegacyNocNumberColumn) {
+                updateSql.append(", noc_number = ?");
+                params.add(referenceNumber);
+            }
+            updateSql.append(", updated_emi_amount = ?, updated_tenure = ?, updated_at = CURRENT_TIMESTAMP WHERE loan_id = ?");
+            params.add(dto.getUpdatedEmiAmount());
+            params.add(dto.getUpdatedTenure());
+            params.add(dto.getLoanId());
+            updated = jdbcTemplate.update(updateSql.toString(), params.toArray());
+        } else {
+            updated = jdbcTemplate.update(
+                    "UPDATE loan_preclosures SET pre_closure_date = ?, settlement_amount = ?, " +
+                            "pre_closure_type = ?, reference_number = ?, updated_emi_amount = ?, updated_tenure = ?, " +
+                            "updated_at = CURRENT_TIMESTAMP WHERE loan_id = ?",
                     dto.getPreClosureDate(),
                     dto.getSettlementAmount(),
                     safeTrim(dto.getPreClosureType()),
-                    safeTrim(dto.getReferenceNumber()),
+                    referenceNumber,
                     dto.getUpdatedEmiAmount(),
-                    dto.getUpdatedTenure()
+                    dto.getUpdatedTenure(),
+                    dto.getLoanId()
             );
         }
+        if (updated == 0) {
+            if (hasLegacyForeclosureRefColumn || hasLegacyNocNumberColumn) {
+                StringBuilder insertCols = new StringBuilder(
+                        "INSERT INTO loan_preclosures (loan_id, pre_closure_date, settlement_amount, pre_closure_type, reference_number");
+                StringBuilder insertVals = new StringBuilder("VALUES (?, ?, ?, ?, ?");
+                List<Object> params = new ArrayList<>();
+                params.add(dto.getLoanId());
+                params.add(dto.getPreClosureDate());
+                params.add(dto.getSettlementAmount());
+                params.add(safeTrim(dto.getPreClosureType()));
+                params.add(referenceNumber);
+                if (hasLegacyForeclosureRefColumn) {
+                    insertCols.append(", foreclosure_ref_number");
+                    insertVals.append(", ?");
+                    params.add(referenceNumber);
+                }
+                if (hasLegacyNocNumberColumn) {
+                    insertCols.append(", noc_number");
+                    insertVals.append(", ?");
+                    params.add(referenceNumber);
+                }
+                insertCols.append(", updated_emi_amount, updated_tenure, created_at, updated_at) ");
+                insertVals.append(", ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)");
+                params.add(dto.getUpdatedEmiAmount());
+                params.add(dto.getUpdatedTenure());
+                jdbcTemplate.update(insertCols.append(insertVals).toString(), params.toArray());
+            } else {
+                jdbcTemplate.update(
+                        "INSERT INTO loan_preclosures (loan_id, pre_closure_date, settlement_amount, pre_closure_type, " +
+                                "reference_number, updated_emi_amount, updated_tenure, created_at, updated_at) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                        dto.getLoanId(),
+                        dto.getPreClosureDate(),
+                        dto.getSettlementAmount(),
+                        safeTrim(dto.getPreClosureType()),
+                        referenceNumber,
+                        dto.getUpdatedEmiAmount(),
+                        dto.getUpdatedTenure()
+                );
+            }
+        }
+    }
+
+    private String preClosureReferenceSelectExpr() {
+        if (hasLegacyForeclosureRefColumn || hasLegacyNocNumberColumn) {
+            StringBuilder expr = new StringBuilder("COALESCE(NULLIF(TRIM(reference_number), '')");
+            if (hasLegacyForeclosureRefColumn) {
+                expr.append(", NULLIF(TRIM(foreclosure_ref_number), '')");
+            }
+            if (hasLegacyNocNumberColumn) {
+                expr.append(", NULLIF(TRIM(noc_number), '')");
+            }
+            expr.append(")");
+            return expr.toString();
+        }
+        return "reference_number";
     }
 
     private RowMapper<LoanPreClosureDTO> preClosureRowMapper() {
@@ -1020,10 +1253,11 @@ public class LoanService {
             dto.setSettlementAmount(rs.getDouble("settlement_amount"));
             dto.setPreClosureType(rs.getString("pre_closure_type"));
             dto.setReferenceNumber(rs.getString("reference_number"));
-            Double updatedEmiAmount = rs.getObject("updated_emi_amount", Double.class);
-            Integer updatedTenure = rs.getObject("updated_tenure", Integer.class);
-            dto.setUpdatedEmiAmount(updatedEmiAmount);
-            dto.setUpdatedTenure(updatedTenure);
+            // PostgreSQL numeric cannot be read with getObject(..., Double.class)
+            java.math.BigDecimal updatedEmi = rs.getBigDecimal("updated_emi_amount");
+            dto.setUpdatedEmiAmount(updatedEmi == null ? null : updatedEmi.doubleValue());
+            int updatedTenure = rs.getInt("updated_tenure");
+            dto.setUpdatedTenure(rs.wasNull() ? null : updatedTenure);
             return dto;
         };
     }
@@ -1053,6 +1287,51 @@ public class LoanService {
             jdbcTemplate.execute("ALTER TABLE loan_preclosures ADD COLUMN IF NOT EXISTS reference_number varchar(80)");
             jdbcTemplate.execute("ALTER TABLE loan_preclosures ADD COLUMN IF NOT EXISTS updated_emi_amount numeric(12,2)");
             jdbcTemplate.execute("ALTER TABLE loan_preclosures ADD COLUMN IF NOT EXISTS updated_tenure int4");
+
+            Boolean legacyRefExists = jdbcTemplate.queryForObject(
+                    "SELECT EXISTS (" +
+                            "SELECT 1 FROM information_schema.columns " +
+                            "WHERE table_schema = current_schema() " +
+                            "AND table_name = 'loan_preclosures' " +
+                            "AND column_name = 'foreclosure_ref_number'" +
+                            ")",
+                    Boolean.class);
+            Boolean legacyNocExists = jdbcTemplate.queryForObject(
+                    "SELECT EXISTS (" +
+                            "SELECT 1 FROM information_schema.columns " +
+                            "WHERE table_schema = current_schema() " +
+                            "AND table_name = 'loan_preclosures' " +
+                            "AND column_name = 'noc_number'" +
+                            ")",
+                    Boolean.class);
+            hasLegacyForeclosureRefColumn = Boolean.TRUE.equals(legacyRefExists);
+            hasLegacyNocNumberColumn = Boolean.TRUE.equals(legacyNocExists);
+            if (hasLegacyForeclosureRefColumn) {
+                // Older schemas require foreclosure_ref_number NOT NULL; keep both columns aligned.
+                try {
+                    jdbcTemplate.execute("ALTER TABLE loan_preclosures ALTER COLUMN foreclosure_ref_number DROP NOT NULL");
+                } catch (Exception ignored) {
+                    // Column may already be nullable, or user lacks ALTER privilege — upsert still writes both columns.
+                }
+                jdbcTemplate.update(
+                        "UPDATE loan_preclosures SET reference_number = COALESCE(NULLIF(TRIM(reference_number), ''), foreclosure_ref_number) " +
+                                "WHERE COALESCE(NULLIF(TRIM(reference_number), ''), '') = '' " +
+                                "AND COALESCE(NULLIF(TRIM(foreclosure_ref_number), ''), '') <> ''");
+                jdbcTemplate.update(
+                        "UPDATE loan_preclosures SET foreclosure_ref_number = COALESCE(NULLIF(TRIM(foreclosure_ref_number), ''), reference_number) " +
+                                "WHERE COALESCE(NULLIF(TRIM(foreclosure_ref_number), ''), '') = '' " +
+                                "AND COALESCE(NULLIF(TRIM(reference_number), ''), '') <> ''");
+            }
+            if (hasLegacyNocNumberColumn) {
+                jdbcTemplate.update(
+                        "UPDATE loan_preclosures SET reference_number = COALESCE(NULLIF(TRIM(reference_number), ''), noc_number) " +
+                                "WHERE COALESCE(NULLIF(TRIM(reference_number), ''), '') = '' " +
+                                "AND COALESCE(NULLIF(TRIM(noc_number), ''), '') <> ''");
+                jdbcTemplate.update(
+                        "UPDATE loan_preclosures SET noc_number = COALESCE(NULLIF(TRIM(noc_number), ''), reference_number) " +
+                                "WHERE COALESCE(NULLIF(TRIM(noc_number), ''), '') = '' " +
+                                "AND COALESCE(NULLIF(TRIM(reference_number), ''), '') <> ''");
+            }
             preClosureTableChecked = true;
         }
     }
@@ -1093,6 +1372,9 @@ public class LoanService {
         boolean goldLoan = LoanTypeUtils.isGoldLoan(loan);
         dto.setGoldLoan(goldLoan);
         dto.setFormattedTenureLabel(loan.getTenure() + " months");
+        if (goldLoan) {
+            dto.setFormattedFullAmountToPay(formatGoldFullAmountToPay(loan));
+        }
         if (goldLoan && (loan.getEmiAmount() == null || loan.getEmiAmount() <= 0)) {
             dto.setFormattedEmiAmount("-");
         } else {
@@ -1100,12 +1382,6 @@ public class LoanService {
         }
         dto.setFirstEmiDate(loan.getEmiDate());
         dto.setFormattedFirstEmiDate(formatterUtils.formatDate(loan.getEmiDate()));
-        LocalDate lastPaidDate = overrides.values().stream()
-                .filter(p -> p.getPaidOn() != null && !p.getPaidOn().isAfter(LocalDate.now()))
-                .map(LoanEmiPayment::getPaidOn)
-                .max(LocalDate::compareTo)
-                .orElse(null);
-        dto.setFormattedLastEmiPaidDate(formatterUtils.formatDate(lastPaidDate));
 
         if (preClosure != null) {
             dto.setPreClosed(true);
@@ -1118,11 +1394,17 @@ public class LoanService {
             LocalDate lastDate = getLastDueDateForLoan(loan, preClosure);
             dto.setEndDate(lastDate);
             dto.setFormattedEndDate(formatterUtils.formatDate(lastDate));
+            // For pre-closed loans, Last EMI Paid Date is the pre-closure date.
+            dto.setFormattedLastEmiPaidDate(formatterUtils.formatDate(preClosure.getPreClosureDate()));
             dto.setLoanStatus("PARTIAL".equalsIgnoreCase(preClosure.getPreClosureType())
                     ? "Partially Closed"
                     : "Pre-Closed");
             return dto;
         }
+
+        LocalDate lastPaidDate = resolveLastEmiPaidDate(loan, overrides);
+        dto.setFormattedLastEmiPaidDate(formatterUtils.formatDate(lastPaidDate));
+
         if (loan.getEmiDate() != null && loan.getTenure() != null && loan.getTenure() > 0) {
             LocalDate endDate = getDueDateForInstallment(loan, LoanTypeUtils.getScheduleInstallmentCount(loan), null);
             dto.setEndDate(endDate);
@@ -1132,6 +1414,47 @@ public class LoanService {
             dto.setLoanStatus("Open");
         }
         return dto;
+    }
+
+    /**
+     * Last EMI paid date for open loans:
+     * 1) Latest recorded deduction date from loan_emi_payments, if any
+     * 2) Otherwise the latest installment due date that is on or before today
+     *    (EMIs treated as paid by schedule when no manual record exists)
+     */
+    private LocalDate resolveLastEmiPaidDate(Loan loan, Map<Integer, LoanEmiPayment> overrides) {
+        LocalDate recordedLastPaid = overrides.values().stream()
+                .filter(p -> p.getPaidOn() != null && p.getEmiNumber() != null && p.getEmiNumber() > 0)
+                .map(LoanEmiPayment::getPaidOn)
+                .max(LocalDate::compareTo)
+                .orElse(null);
+        if (recordedLastPaid != null) {
+            return recordedLastPaid;
+        }
+        if (loan.getEmiDate() == null || loan.getTenure() == null || loan.getTenure() < 1) {
+            return null;
+        }
+        LocalDate today = LocalDate.now();
+        LocalDate lastDueOnOrBeforeToday = null;
+        int installmentCount = LoanTypeUtils.getScheduleInstallmentCount(loan);
+        for (int i = 1; i <= installmentCount; i++) {
+            LocalDate dueDate = getDueDateForInstallment(loan, i, null);
+            if (dueDate == null) {
+                continue;
+            }
+            if (dueDate.isAfter(today)) {
+                break;
+            }
+            lastDueOnOrBeforeToday = dueDate;
+        }
+        return lastDueOnOrBeforeToday;
+    }
+
+    private String formatGoldFullAmountToPay(Loan loan) {
+        double principal = loan.getLoanAmount() == null ? 0 : loan.getLoanAmount();
+        double ratePercent = loan.getInterestRate() == null ? 0 : loan.getInterestRate();
+        double interest = principal * (ratePercent / 100.0);
+        return formatterUtils.formatInIndianStyle(principal + interest);
     }
 
     private LoanEmiPaymentDTO toEmiPaymentDto(LoanEmiPayment payment) {

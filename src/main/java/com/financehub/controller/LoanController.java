@@ -136,22 +136,32 @@ public class LoanController {
             selectedYear = Integer.valueOf(year);
         }
         LoanService.EmiScheduleReportBundle report = loanService.buildEmiScheduleReport(selectedYear, loanId);
-        model.addAttribute("loans", report.getLoanOptions());
-        model.addAttribute("selectedLoanId", loanId);
+        List<LoanSummaryDTO> loans = report.getLoanOptions();
+        final Long requestedLoanId = loanId;
+        Long effectiveLoanId = requestedLoanId;
+        if (requestedLoanId != null && loans.stream().noneMatch(loan -> loan.getId().equals(requestedLoanId))) {
+            effectiveLoanId = null;
+        }
+        model.addAttribute("loans", loans);
+        model.addAttribute("selectedLoanId", effectiveLoanId);
         model.addAttribute("scheduleGroups", report.getScheduleGroups());
         model.addAttribute("selectedYear", selectedYear);
         model.addAttribute("selectedYearLabel", selectedYear == null ? "All Years" : selectedYear.toString());
-        model.addAttribute("allowAllYears", loanId != null);
+        model.addAttribute("allowAllYears", effectiveLoanId != null);
         model.addAttribute("years",
-                loanId != null ? loanService.getScheduleYearsForLoan(loanId) : loanService.getScheduleYearsForUser());
+                effectiveLoanId != null ? loanService.getScheduleYearsForLoan(effectiveLoanId) : loanService.getScheduleYearsForUser());
         model.addAttribute("yearTotal", report.getYearTotal());
         model.addAttribute("yearPendingTotal", report.getYearPendingTotal());
         return "views/loan/loanEmiScheduleReport";
     }
 
     @GetMapping("/loanBankProjectionReport")
-    public String loanBankProjectionReport(Model model) {
-        LoanBankEmiProjectionReportDTO report = loanService.getBankNextMonthProjectionReport();
+    public String loanBankProjectionReport(
+            @RequestParam(value = "loanIds", required = false) List<Long> loanIds,
+            @RequestParam(value = "combo", required = false) List<String> comboBanks,
+            @RequestParam(value = "applied", required = false, defaultValue = "false") boolean applied,
+            Model model) {
+        LoanBankEmiProjectionReportDTO report = loanService.getBankNextMonthProjectionReport(loanIds, comboBanks, applied);
         model.addAttribute("projectionReport", report);
         return "views/loan/loanBankProjectionReport";
     }
