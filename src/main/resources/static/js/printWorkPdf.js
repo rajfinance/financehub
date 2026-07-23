@@ -108,6 +108,9 @@ function fetchReportContent(reportType) {
 }
 
 function attachReportListeners(reportContainer, reportType) {
+    if (reportType === 'salaryReport') {
+        initSalaryYearPanels(reportContainer);
+    }
     const downloadPdfButton = reportContainer.querySelector('#downloadPdf');
     const printReportButton = reportContainer.querySelector('#printReport');
    if (downloadPdfButton) {
@@ -120,9 +123,12 @@ function attachReportListeners(reportContainer, reportType) {
            printReportButton.addEventListener('click', function () {
                const rows = reportContainer.querySelectorAll('table tbody tr');
                const headers = reportContainer.querySelectorAll('table thead tr');
-               const reportButtons = document.querySelector('.report-buttons');
-               if (reportButtons) {
-                    reportButtons.style.display = 'none';
+               const reportButtons = reportContainer.querySelectorAll('.report-buttons');
+               reportButtons.forEach(btn => { btn.style.display = 'none'; });
+               if (reportType === 'salaryReport') {
+                   reportContainer.querySelectorAll('details.fh-year-panel').forEach(panel => {
+                       panel.open = true;
+                   });
                }
                var chkLength = 0;
                if(reportType == 'expReport'){
@@ -229,5 +235,20 @@ function downloadPdf(param) {
     })
     .catch(error => {
         console.error('Error downloading PDF:', error);
+    });
+}
+
+/** Keep current-year salary panel always expanded; other years stay collapsible. */
+function initSalaryYearPanels(reportContainer) {
+    if (!reportContainer) {
+        return;
+    }
+    reportContainer.querySelectorAll('details.fh-year-panel--current').forEach(panel => {
+        panel.open = true;
+        panel.addEventListener('toggle', function () {
+            if (!panel.open) {
+                panel.open = true;
+            }
+        });
     });
 }

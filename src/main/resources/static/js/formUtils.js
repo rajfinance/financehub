@@ -273,10 +273,13 @@ function calculateExpenses() {
         document.getElementById("totalExpense").value = total;
 }
 
-function loadReport(yearId,apiUrl,containerId) {
-event.preventDefault();
-const year = document.getElementById(yearId).value;
-    if (year === "") {
+function loadReport(yearId, apiUrl, containerId) {
+    if (typeof event !== 'undefined' && event && typeof event.preventDefault === 'function') {
+        event.preventDefault();
+    }
+    const yearEl = document.getElementById(yearId);
+    const year = yearEl ? yearEl.value : '';
+    if (!year) {
         alert("Please select a year.");
         return;
     }
@@ -301,16 +304,106 @@ const year = document.getElementById(yearId).value;
             return;
         }
         container.innerHTML = html;
+        if (containerId === 'ReportContainer') {
+            finalizeExpenseReportLoad(container);
+        }
+        if (typeof attachReportListeners === 'function') {
+            attachReportListeners(containerId === 'ReportContainer'
+                ? (document.getElementById('expenseReportCard') || container)
+                : container, lastValue);
+        }
     })
     .catch(error => {
         console.error("Error fetching report:", error);
         alert("Error fetching report. Please try again.");
     });
-    attachReportListeners(container,lastValue);
 }
-function setActive(button) {
-    button.closest('.form-container').querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+
+let selectedExpenseReportUrl = null;
+
+function selectExpenseReport(button) {
+    if (!button) {
+        return;
+    }
+    const page = button.closest('.fh-expense-reports-page');
+    const tabs = page ? page.querySelectorAll('.fh-expense-report-tab') : document.querySelectorAll('.fh-expense-report-tab');
+    tabs.forEach(tab => tab.classList.remove('active'));
     button.classList.add('active');
+
+    selectedExpenseReportUrl = button.getAttribute('data-report-url');
+    const title = button.getAttribute('data-report-title') || 'Expense Report';
+    const titleEl = document.getElementById('expenseReportTitle');
+    const card = document.getElementById('expenseReportCard');
+    const yearEl = document.getElementById('year');
+    const extra = document.getElementById('expenseReportExtraActions');
+
+    if (titleEl) {
+        titleEl.textContent = title;
+    }
+    if (card) {
+        card.hidden = false;
+    }
+    if (extra) {
+        extra.hidden = true;
+        extra.innerHTML = '';
+    }
+    if (yearEl && !yearEl.value && page) {
+        const currentYear = page.getAttribute('data-current-year');
+        if (currentYear) {
+            yearEl.value = currentYear;
+        }
+    }
+    reloadSelectedExpenseReport();
+}
+
+function reloadSelectedExpenseReport() {
+    if (!selectedExpenseReportUrl) {
+        return;
+    }
+    loadReport('year', selectedExpenseReportUrl, 'ReportContainer');
+}
+
+function finalizeExpenseReportLoad(container) {
+    if (!container) {
+        return;
+    }
+    const extra = document.getElementById('expenseReportExtraActions');
+    if (!extra) {
+        return;
+    }
+    const actions = container.querySelector('.fh-report-actions, .report-buttons');
+    if (actions) {
+        extra.innerHTML = '';
+        extra.appendChild(actions);
+        extra.hidden = false;
+    } else {
+        extra.hidden = true;
+        extra.innerHTML = '';
+    }
+}
+
+function setActive(button) {
+    const scope = button.closest('.fh-expense-reports__sidebar')
+        || button.closest('.fh-expense-reports-page')
+        || button.closest('.fh-expense-reports')
+        || button.closest('.form-container')
+        || button.parentElement;
+    if (scope) {
+        scope.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+    }
+    button.classList.add('active');
+}
+
+function updateCategoryFileLabel(fileInput) {
+    const label = document.getElementById('categoryFileLabel');
+    if (!label || !fileInput) {
+        return;
+    }
+    if (fileInput.files && fileInput.files.length > 0) {
+        label.textContent = fileInput.files[0].name;
+    } else {
+        label.textContent = 'No file chosen';
+    }
 }
 
 function toggleLoanDetails(loanId) {
@@ -350,6 +443,16 @@ function initAddLoanForm() {
 function initLoadedPageContent() {
     if (document.getElementById('addLoanForm')) {
         initAddLoanForm();
+    }
+    // Full-page Experience / Salary from Professional → Reports submenu
+    const pageContent = document.getElementById('page-content');
+    if (!pageContent || typeof attachReportListeners !== 'function') {
+        return;
+    }
+    if (pageContent.querySelector('.fh-exp-report #downloadPdf')) {
+        attachReportListeners(pageContent, 'expReport');
+    } else if (pageContent.querySelector('.fh-salary-report #downloadPdf')) {
+        attachReportListeners(pageContent, 'salaryReport');
     }
 }
 

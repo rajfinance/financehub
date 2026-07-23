@@ -150,8 +150,11 @@ public class ExpensesController {
     }
     @GetMapping("/yearWiseActualPlan")
     public String yearWise(Model model){
-        Set<Integer> years = expensesService.getDistinctExpenseYearsForUser(userService.getUserId());
+        int currentYear = YearMonth.now().getYear();
+        Set<Integer> years = new TreeSet<>(expensesService.getDistinctExpenseYearsForUser(userService.getUserId()));
+        years.add(currentYear);
         model.addAttribute("years", years);
+        model.addAttribute("currentYear", currentYear);
         return "views/expenses/yearWiseActualPlan";
     }
     @GetMapping("/yearWiseActualPlanReport")

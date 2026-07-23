@@ -289,11 +289,16 @@ public class WorkService {
 
         String explanation = formatterUtils.getTotalExp(companies);
 
+        document.add(new Paragraph("Total Experience")
+                .setFontSize(12)
+                .setBold()
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginTop(10));
         document.add(new Paragraph(explanation)
                 .setFontSize(14)
                 .setBold()
                 .setTextAlignment(TextAlignment.CENTER)
-                .setMarginTop(10));
+                .setMarginTop(4));
         document.close();
     }
 

@@ -4,7 +4,10 @@
 <div id="reportContent" class="loan-projection-report-content">
     <h1 class="h1report">EMI Projection</h1>
 
-    <div class="fh-projection-filters" th:if="${projectionReport != null}">
+    <div class="fh-projection-filters"
+         th:if="${projectionReport != null
+                 and projectionReport.eligibleLoans != null
+                 and projectionReport.eligibleLoans.size() > 3}">
         <div class="fh-projection-filters-layout">
             <div class="fh-projection-filter-block fh-projection-loans-panel">
                 <div class="fh-projection-filter-head">
@@ -102,8 +105,13 @@
 
     <p th:if="${projectionReport != null and (projectionReport.rows == null or projectionReport.rows.isEmpty())}"
        class="fh-projection-empty-hint">
-        No upcoming EMI schedule for the selected loans from next month.
-        Select loans and click Apply.
+        No upcoming EMI schedule from next month
+        <th:block th:if="${projectionReport.eligibleLoans != null and projectionReport.eligibleLoans.size() > 3}">
+            for the selected loans. Select loans and click Apply.
+        </th:block>
+        <th:block th:unless="${projectionReport.eligibleLoans != null and projectionReport.eligibleLoans.size() > 3}">
+            .
+        </th:block>
     </p>
 </div>
 </body>

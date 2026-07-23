@@ -4,107 +4,114 @@
     <title>Manage Categories</title>
 </head>
 <body>
-<div class="form-container">
-    <h2>Expense Categories</h2>
-
+<div class="form-container fh-expense-categories">
     <div th:if="${categoryError != null}" class="form-banner form-banner--error" th:text="${categoryError}"></div>
 
-    <form id="categoryForm" th:action="@{/api/expenses/categorySave}" method="post"
-          enctype="multipart/form-data" th:onsubmit="submitForm(event)">
-        <input type="hidden" name="categoryId" id="categoryId" value="" />
-        <input type="hidden" name="sortOrder" id="sortOrder" th:value="${nextSortOrder}" />
-        <input type="hidden" name="iconPath" id="iconPath" value="" />
+    <div class="fh-expense-categories__layout">
+        <aside class="fh-expense-categories__form-panel">
+            <h3 class="fh-expense-panel-title fh-expense-panel-title--center">Add Category</h3>
+            <form id="categoryForm" class="fh-expense-category-form"
+                  th:action="@{/api/expenses/categorySave}" method="post"
+                  enctype="multipart/form-data" th:onsubmit="submitForm(event)">
+                <input type="hidden" name="categoryId" id="categoryId" value="" />
+                <input type="hidden" name="sortOrder" id="sortOrder" th:value="${nextSortOrder}" />
+                <input type="hidden" name="iconPath" id="iconPath" value="" />
 
-        <table class="app-table category-form-table" style="width:100%;">
-            <tr class="category-form-row-top">
-                <td><label for="categoryName">Name<span class="req-mark" aria-hidden="true">*</span></label></td>
-                <td><input type="text" name="categoryName" id="categoryName" placeholder="Category name" style="width: 220px;" required /></td>
-                <td><label for="enabled">Enabled</label></td>
-                <td><input type="checkbox" name="enabled" id="enabled" checked /></td>
-            </tr>
-            <tr class="category-form-row-icon">
-                <td>
-                    <label for="iconImage" class="category-icon-file-label"
-                           title="PNG, JPEG, GIF or WebP. Max 250 KB.">Icon image</label>
-                </td>
-                <td>
-                    <input type="file" name="iconImage" id="iconImage" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
-                           onchange="previewCategoryIcon(this)"
-                           class="category-icon-file-input"
+                <div class="fh-expense-field fh-expense-field--inline">
+                    <label for="categoryName">Name<span class="req-mark" aria-hidden="true">*</span></label>
+                    <input type="text" name="categoryName" id="categoryName" placeholder="Category name" required />
+                </div>
+
+                <div class="fh-expense-field fh-expense-field--inline">
+                    <label for="enabled">Enabled</label>
+                    <input type="checkbox" name="enabled" id="enabled" checked />
+                </div>
+
+                <div class="fh-expense-field fh-expense-field--file">
+                    <div class="fh-expense-field--inline">
+                        <label for="iconImage" class="category-icon-file-label"
+                               title="PNG, JPEG, GIF or WebP. Max 250 KB.">Icon image</label>
+                        <label for="iconImage" class="fh-file-pick-btn">Choose image</label>
+                    </div>
+                    <input type="file" name="iconImage" id="iconImage"
+                           accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                           onchange="previewCategoryIcon(this); updateCategoryFileLabel(this);"
+                           class="category-icon-file-input fh-file-input-hidden"
                            title="PNG, JPEG, GIF or WebP. Max 250 KB." />
-                </td>
-                <td class="category-preview-cell-label"><span class="category-preview-label">Preview</span></td>
-                <td class="category-preview-cell-img">
-                    <img id="categoryIconPreview" class="category-icon-preview" th:src="@{/images/category-placeholder.svg}" alt="" width="48" height="48" />
-                </td>
-            </tr>
-        </table>
+                    <span id="categoryFileLabel" class="fh-file-chosen-label">No file chosen</span>
+                </div>
 
-        <div class="form-actions-footer">
-            <button type="submit" class="fh-btn">Save</button>
-        </div>
-    </form>
+                <div class="fh-expense-field fh-expense-field--inline fh-expense-field--preview">
+                    <span class="category-preview-label">Preview</span>
+                    <img id="categoryIconPreview" class="category-icon-preview"
+                         th:src="@{/images/category-placeholder.svg}" alt="" width="48" height="48" />
+                </div>
 
-    <br>
+                <div class="fh-expense-form-actions fh-expense-form-actions--center">
+                    <button type="submit" class="fh-btn">Save</button>
+                </div>
+            </form>
+        </aside>
 
-    <div id="reportContent">
-        <div th:if="${categories != null and !categories.isEmpty()}" style="width:100%;">
-            <table class="app-table category-table" width="100%">
-                <thead>
-                <tr>
-                    <th class="category-col-handle" aria-label="Reorder"></th>
-                    <th>Name</th>
-                    <th>Icon</th>
-                    <th>Enabled</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody id="categoryTable">
-                <tr th:each="category : ${categories}"
-                    th:id="'row-' + ${category.id}"
-                    th:attr="data-category-id=${category.id}"
-                    class="category-drag-row"
-                    draggable="false">
-                    <td class="category-drag-handle">
-                        <span class="category-drag-grip" draggable="true" aria-hidden="true"
-                              title="Drag up or down to reorder categories. Order saves when you release.">&#9776;</span>
-                    </td>
-                    <td th:text="${category.name}"></td>
-                    <td>
-                        <img th:with="u=${category.icon != null and category.icon != '' ? category.icon : '/images/category-placeholder.svg'}"
-                             th:src="@{${u}}"
-                             width="36" height="36" class="category-table-icon" alt=""
-                             draggable="false"
-                             onerror="this.onerror=null;this.src='/images/category-placeholder.svg';"/>
-                    </td>
-                    <td th:text="${category.enabled} ? 'Yes' : 'No'"></td>
-                    <td>
-                        <a href="javascript:void(0);" draggable="false"
-                           th:attr="data-id=${category.id},
-                                    data-name=${category.name != null ? category.name : ''},
-                                    data-icon=${category.icon != null ? category.icon : ''},
-                                    data-sort-order=${category.sortOrder != null ? category.sortOrder : ''},
-                                    data-enabled=${category.enabled}"
-                           onclick="callEditCategory(this)"
-                           style="text-decoration: none;">
-                            <img th:src="@{/images/edit-icon.png}" alt="Edit" draggable="false" style="width: 20px; height: 20px; margin-right: 20px; margin-left: 15px;" />
-                        </a>
-                        <a href="javascript:void(0);" draggable="false"
-                           class="delete-btn"
-                           th:attr="data-report-type='categoryForm', data-id=${category.id}"
-                           th:onclick="'deleteCategoryEntity(this, \'Category\', \'/api/expenses/\')'">
-                            <img th:src="@{/images/delete-icon.png}" alt="Delete" draggable="false" style="width: 20px; height: 20px;" />
-                        </a>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-        <div th:if="${categories == null or categories.isEmpty()}" style="width:100%;">
-            <h2 style="text-align: center; color: #333; padding-bottom: 10px;">No Categories Available.</h2>
-        </div>
+        <section class="fh-expense-categories__list-panel" id="reportContent">
+            <h2 class="fh-expense-page-title fh-expense-page-title--panel fh-expense-page-title--center">Expense Categories</h2>
+            <div th:if="${categories != null and !categories.isEmpty()}" class="fh-expense-categories__table-wrap">
+                <table class="app-table category-table" width="100%">
+                    <thead>
+                    <tr>
+                        <th class="category-col-handle" aria-label="Reorder"></th>
+                        <th>Name</th>
+                        <th>Icon</th>
+                        <th>Enabled</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="categoryTable">
+                    <tr th:each="category : ${categories}"
+                        th:id="'row-' + ${category.id}"
+                        th:attr="data-category-id=${category.id}"
+                        class="category-drag-row"
+                        draggable="false">
+                        <td class="category-drag-handle">
+                            <span class="category-drag-grip" draggable="true" aria-hidden="true"
+                                  title="Drag up or down to reorder categories. Order saves when you release.">&#9776;</span>
+                        </td>
+                        <td th:text="${category.name}"></td>
+                        <td>
+                            <img th:with="u=${category.icon != null and category.icon != '' ? category.icon : '/images/category-placeholder.svg'}"
+                                 th:src="@{${u}}"
+                                 width="36" height="36" class="category-table-icon" alt=""
+                                 draggable="false"
+                                 onerror="this.onerror=null;this.src='/images/category-placeholder.svg';"/>
+                        </td>
+                        <td th:text="${category.enabled} ? 'Yes' : 'No'"></td>
+                        <td>
+                            <a href="javascript:void(0);" draggable="false"
+                               th:attr="data-id=${category.id},
+                                        data-name=${category.name != null ? category.name : ''},
+                                        data-icon=${category.icon != null ? category.icon : ''},
+                                        data-sort-order=${category.sortOrder != null ? category.sortOrder : ''},
+                                        data-enabled=${category.enabled}"
+                               onclick="callEditCategory(this)"
+                               style="text-decoration: none;">
+                                <img th:src="@{/images/edit-icon.png}" alt="Edit" draggable="false" style="width: 20px; height: 20px; margin-right: 20px; margin-left: 15px;" />
+                            </a>
+                            <a href="javascript:void(0);" draggable="false"
+                               class="delete-btn"
+                               th:attr="data-report-type='categoryForm', data-id=${category.id}"
+                               th:onclick="'deleteCategoryEntity(this, \'Category\', \'/api/expenses/\')'">
+                                <img th:src="@{/images/delete-icon.png}" alt="Delete" draggable="false" style="width: 20px; height: 20px;" />
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:if="${categories == null or categories.isEmpty()}" class="fh-expense-empty">
+                No categories available.
+            </div>
+        </section>
     </div>
-
 </div>
 </body>
 </html>

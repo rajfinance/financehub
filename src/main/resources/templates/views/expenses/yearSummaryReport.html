@@ -6,19 +6,22 @@
 <body>
 <div class="container">
     <div id="yearwise">
-        <h1 class="h1report">
-            <span th:text="'YEARLY EXPENSE SUMMARY - ' + ${year}"></span>
-            <div class="report-buttons">
+        <div class="fh-report-toolbar">
+            <h1 class="h1report fh-report-title-plain"
+                th:text="'YEARLY EXPENSE SUMMARY - ' + ${year}"></h1>
+            <div class="report-buttons fh-report-actions">
                 <button id="downloadPdf" class="pdf-btn"
-                        th:onclick="'downloadPdf(\'yearSummary|' + ${year} + '\')'">
+                        th:onclick="'downloadPdf(\'yearSummary|' + ${year} + '\')'"
+                        title="Download PDF" aria-label="Download PDF">
                     <img th:src="@{/images/pdf.png}" alt="PDF" />
                 </button>
                 <button id="printReport" class="print-btn"
-                        th:onclick="'printReport()'">
+                        th:onclick="'printReport()'"
+                        title="Print" aria-label="Print">
                     <img th:src="@{/images/print.png}" alt="Print" />
                 </button>
             </div>
-        </h1>
+        </div>
         <table class="summaryTable">
             <thead>
             <tr>

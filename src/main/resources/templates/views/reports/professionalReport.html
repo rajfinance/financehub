@@ -3,15 +3,29 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
 <th:block sec:authorize="isAuthenticated()">
-    <div class="content">
-        <h1>Professional Reports</h1>
-        <div class="tabs">
-            <button class="tab-button active" onclick="showReport('expReport')">Experience Report</button>
-            <button class="tab-button" onclick="showReport('salaryReport')">Salary Report</button>
+    <div class="fh-pro-reports">
+        <aside class="fh-pro-reports__sidebar" aria-label="Professional report menu">
+            <div class="fh-pro-reports__brand">
+                <h1 class="fh-pro-reports__title">Professional</h1>
+            </div>
+            <nav class="fh-pro-reports__menu">
+                <button type="button"
+                        class="tab-button fh-pro-nav-item active"
+                        onclick="showReport('expReport')">
+                    Experience
+                </button>
+                <button type="button"
+                        class="tab-button fh-pro-nav-item"
+                        onclick="showReport('salaryReport')">
+                    Salary
+                </button>
+            </nav>
+        </aside>
+        <div class="fh-pro-reports__content">
+            <div class="tab-content fh-pro-reports__panel" id="expReport" style="display:none;"></div>
+            <div class="tab-content fh-pro-reports__panel" id="salaryReport" style="display:none;"></div>
         </div>
     </div>
-    <div class="tab-content" id="expReport" style="display:none;"></div>
-    <div class="tab-content" id="salaryReport" style="display:none;"></div>
 </th:block>
 <th:block sec:authorize="!isAuthenticated()">
     <p>Please log in to access this page.</p>

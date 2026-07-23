@@ -4,17 +4,37 @@
 <body>
 <th:block sec:authorize="isAuthenticated()">
     <th:block th:if="${companies != null and not companies.isEmpty()}">
-        <div id="reportContent">
-            <h1 class="h1report">Total Experience
-                <div class="report-buttons">
-                    <button id="downloadPdf" class="pdf-btn" data-report="exp">
+        <div id="reportContent" class="fh-exp-report">
+            <div class="fh-report-toolbar">
+                <h1 class="h1report fh-report-title-plain">Experience Report</h1>
+                <div class="report-buttons fh-report-actions">
+                    <button id="downloadPdf" class="pdf-btn" data-report="exp" title="Download PDF" aria-label="Download PDF">
                         <img th:src="@{/images/pdf.png}" src="/images/pdf.png" alt="PDF" />
                     </button>
-                    <button id="printReport" class="print-btn" data-report="exp">
+                    <button id="printReport" class="print-btn" data-report="exp" title="Print" aria-label="Print">
                         <img th:src="@{/images/print.png}" src="/images/print.png" alt="Print" />
                     </button>
                 </div>
-            </h1>
+            </div>
+
+            <div class="fh-exp-total-card">
+                <div class="fh-exp-total-card__label">Total Experience</div>
+                <div class="fh-exp-total-stats">
+                    <div class="fh-exp-stat fh-exp-stat--years">
+                        <strong th:text="${expYears}">0</strong>
+                        <span>Years</span>
+                    </div>
+                    <div class="fh-exp-stat fh-exp-stat--months">
+                        <strong th:text="${expMonths}">0</strong>
+                        <span>Months</span>
+                    </div>
+                    <div class="fh-exp-stat fh-exp-stat--days">
+                        <strong th:text="${expDays}">0</strong>
+                        <span>Days</span>
+                    </div>
+                </div>
+            </div>
+
             <table>
                 <thead>
                 <tr>
@@ -55,7 +75,6 @@
                 </th:block>
                 </tbody>
             </table>
-            <h2 class="fh-report-summary-line" th:text="${totalExp}"></h2>
         </div>
     </th:block>
     <th:block th:if="${companies == null or companies.isEmpty()}">

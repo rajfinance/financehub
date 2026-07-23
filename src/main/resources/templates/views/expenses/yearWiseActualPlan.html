@@ -1,39 +1,56 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>YearWise Plan Expenses</title>
+    <title>Expense Reports</title>
 </head>
 <body>
-<div class="container fh-year-wise-shell">
-    <div class="form-container">
-        <h2>Year Wise Expenses</h2>
-        <form method="get">
-            <div class="input-group">
-                <label for="year">Select Year<span class="mandatory">*</span>:</label>
-                <select id="year" name="year" required>
-                    <option value="">--Select Year--</option>
-                    <option th:each="yr : ${years}"
-                            th:value="${yr}"
-                            th:text="${yr}"></option>
-                </select>
-            </div>
-            <div class="button-group fh-btn-group">
-                <button type="button" class="fh-btn"
-                        th:onclick="'setActive(this); loadReport(\'year\', \'/api/expenses/manageReport\', \'ReportContainer\')'">
-                    Manage
-                </button>
-                <button type="button" class="fh-btn"
-                        th:onclick="'setActive(this); loadReport(\'year\', \'/api/expenses/yearWiseActualPlanReport\', \'ReportContainer\')'">
-                    Plan vs Actual
-                </button>
-                <button type="button" class="fh-btn"
-                        th:onclick="'setActive(this); loadReport(\'year\', \'/api/expenses/yearSummaryReport\', \'ReportContainer\')'">
-                    Summary
-                </button>
-            </div>
-        </form>
+<div class="fh-expense-reports-page"
+     th:attr="data-current-year=${currentYear}">
+    <div class="fh-expense-reports-chooser">
+        <h2 class="fh-expense-page-title fh-expense-page-title--center">Expense Reports</h2>
+        <div class="fh-expense-report-tabs" role="tablist" aria-label="Expense report types">
+            <button type="button"
+                    class="fh-btn fh-expense-report-tab"
+                    data-report-url="/api/expenses/manageReport"
+                    data-report-title="Manage Expenses"
+                    onclick="selectExpenseReport(this)">
+                Manage
+            </button>
+            <button type="button"
+                    class="fh-btn fh-expense-report-tab"
+                    data-report-url="/api/expenses/yearWiseActualPlanReport"
+                    data-report-title="Plan vs Actual"
+                    onclick="selectExpenseReport(this)">
+                Plan vs Actual
+            </button>
+            <button type="button"
+                    class="fh-btn fh-expense-report-tab"
+                    data-report-url="/api/expenses/yearSummaryReport"
+                    data-report-title="Yearly Summary"
+                    onclick="selectExpenseReport(this)">
+                Summary
+            </button>
+        </div>
     </div>
-    <div id="ReportContainer"></div>
+
+    <div id="expenseReportCard" class="fh-expense-report-card" hidden>
+        <div class="fh-expense-report-card__header">
+            <h3 id="expenseReportTitle" class="fh-expense-report-card__title"></h3>
+            <div class="fh-expense-report-card__header-right">
+                <div class="fh-expense-report-card__year">
+                    <label for="year">Year</label>
+                    <select id="year" name="year" onchange="reloadSelectedExpenseReport()">
+                        <option th:each="yr : ${years}"
+                                th:value="${yr}"
+                                th:text="${yr}"
+                                th:selected="${yr == currentYear}"></option>
+                    </select>
+                </div>
+                <div id="expenseReportExtraActions" class="fh-expense-report-card__actions" hidden></div>
+            </div>
+        </div>
+        <div id="ReportContainer" class="fh-expense-report-card__body"></div>
+    </div>
 </div>
 </body>
 </html>

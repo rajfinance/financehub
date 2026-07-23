@@ -501,6 +501,7 @@ header.app-header .userinfo .userinfo-name {
     top: 0;
     padding-top: 0.35rem;
 }
+
 /* Main content area (post-login shell — matches auth page background) */
 .main-content {
     display: flex;
@@ -1803,7 +1804,7 @@ button.fh-btn:active,
 }
 
 #yearwise > h2.fh-plan-actual-title {
-    text-align: center;
+    text-align: left;
 }
 
 #yearwise h1,
@@ -2315,6 +2316,376 @@ button.fh-btn:active,
     text-align: center;
 }
 
+/* Report toolbar: title left, compact PDF/Print right */
+.fh-report-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    margin: 0 0 1rem;
+    flex-wrap: wrap;
+}
+
+.fh-report-toolbar .h1report.fh-report-title-plain,
+#reportContent .fh-report-toolbar .h1report.fh-report-title-plain {
+    display: block;
+    flex: 1 1 auto;
+    width: auto;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    font-size: 1.25rem;
+}
+
+.fh-report-actions.report-buttons {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.45rem;
+    margin-left: auto;
+}
+
+.fh-report-actions .pdf-btn,
+.fh-report-actions .print-btn {
+    margin: 0;
+    padding: 0;
+    width: auto;
+    height: auto;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.fh-report-actions .pdf-btn:hover,
+.fh-report-actions .print-btn:hover {
+    transform: scale(1.08);
+    border-color: transparent;
+    box-shadow: none;
+    opacity: 0.9;
+}
+
+.fh-report-actions .pdf-btn img,
+.fh-report-actions .print-btn img {
+    width: 30px;
+    height: 30px;
+}
+
+/* Experience total highlight card */
+.fh-exp-total-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin: 0 auto 1.15rem;
+    padding: 1rem 1.25rem 1.1rem;
+    width: 550px;
+    max-width: 100%;
+    box-sizing: border-box;
+    border-radius: 12px;
+    border: 1px solid #99d5c0;
+    background: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%);
+    box-shadow: 0 2px 8px rgba(6, 95, 70, 0.08);
+    text-align: center;
+}
+
+.fh-exp-total-card__label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #047857;
+}
+
+.fh-exp-total-stats {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0.65rem;
+    width: 100%;
+}
+
+.fh-exp-stat {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    padding: 0.55rem 0.4rem;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.fh-exp-stat strong {
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.fh-exp-stat span {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.fh-exp-stat--years {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(5, 150, 105, 0.35);
+}
+
+.fh-exp-stat--years strong {
+    color: #047857;
+}
+
+.fh-exp-stat--years span {
+    color: #059669;
+}
+
+.fh-exp-stat--months {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(37, 99, 235, 0.35);
+}
+
+.fh-exp-stat--months strong {
+    color: #1d4ed8;
+}
+
+.fh-exp-stat--months span {
+    color: #2563eb;
+}
+
+.fh-exp-stat--days {
+    background: rgba(245, 158, 11, 0.14);
+    border-color: rgba(217, 119, 6, 0.35);
+}
+
+.fh-exp-stat--days strong {
+    color: #b45309;
+}
+
+.fh-exp-stat--days span {
+    color: #d97706;
+}
+
+/* Salary year expand / collapse */
+.fh-year-panel {
+    margin: 0.75rem 0 1rem;
+    border: 1px solid var(--fh-border);
+    border-radius: 12px;
+    background: var(--fh-surface);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    overflow: hidden;
+}
+
+.fh-year-panel__summary {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.55rem 0.85rem;
+    list-style: none;
+    cursor: pointer;
+    padding: 0.7rem 1rem;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+    border-bottom: 1px solid transparent;
+    user-select: none;
+    text-align: left;
+}
+
+.fh-year-panel[open] > .fh-year-panel__summary {
+    border-bottom-color: var(--fh-border);
+}
+
+.fh-year-panel__summary::-webkit-details-marker {
+    display: none;
+}
+
+.fh-year-panel__title {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--fh-text);
+}
+
+.fh-year-panel__total {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--fh-text-muted);
+}
+
+.fh-year-panel__chevron {
+    margin-left: auto;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-right: 2px solid #64748b;
+    border-bottom: 2px solid #64748b;
+    transform: rotate(45deg);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.fh-year-panel[open] > .fh-year-panel__summary .fh-year-panel__chevron {
+    transform: rotate(-135deg);
+    margin-top: 0.2rem;
+}
+
+.fh-year-panel__body {
+    padding: 0.65rem 0.5rem 0.75rem;
+}
+
+.fh-year-panel--current > .fh-year-panel__summary {
+    cursor: default;
+    pointer-events: none;
+    background: linear-gradient(180deg, #ecfeff 0%, #cffafe 100%);
+}
+
+.fh-year-panel--current > .fh-year-panel__summary .fh-year-panel__chevron {
+    display: none;
+}
+
+/* Professional reports: full-height left sidebar + right content */
+.fh-pro-reports {
+    display: flex;
+    align-items: stretch;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    min-height: calc(100vh - 8.5rem);
+}
+
+.fh-pro-reports__sidebar {
+    width: 200px;
+    flex: 0 0 200px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding: 0.85rem 0.75rem 1rem;
+    border: 1px solid var(--fh-border);
+    border-radius: 12px;
+    background: var(--fh-surface);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.fh-pro-reports__brand {
+    margin: 0 0 0.85rem;
+    padding: 0 0.15rem 0.75rem;
+    border-bottom: 1px solid var(--fh-border);
+}
+
+.fh-pro-reports__title {
+    margin: 0;
+    padding: 0;
+    width: auto;
+    max-width: none;
+    text-align: left;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--fh-text);
+    line-height: 1.3;
+}
+
+.fh-pro-reports__menu {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+    max-width: none;
+    flex: 1 1 auto;
+}
+
+.fh-pro-reports .tab-button.fh-pro-nav-item {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0.65rem 0.75rem;
+    text-align: left;
+    border-radius: 8px;
+    border: 1px solid var(--fh-border);
+    background: #f8fafc;
+    box-shadow: none;
+    color: #0f172a;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.fh-pro-reports .tab-button.fh-pro-nav-item:hover {
+    background: rgba(0, 100, 148, 0.08);
+    border-color: rgba(0, 100, 148, 0.28);
+    color: #0f172a;
+}
+
+.fh-pro-reports .tab-button.fh-pro-nav-item.active {
+    background: rgba(0, 100, 148, 0.12);
+    border-color: var(--fh-brand);
+    color: #0f172a;
+    box-shadow: inset 3px 0 0 var(--fh-brand);
+}
+
+.fh-pro-reports__content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+.fh-pro-reports__panel {
+    margin-top: 0;
+    flex: 1 1 auto;
+    min-height: 100%;
+    border: 1px solid var(--fh-border);
+    border-radius: 12px;
+    background: var(--fh-surface);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    padding: 0.75rem;
+    box-sizing: border-box;
+}
+
+@media (max-width: 800px) {
+    .fh-pro-reports {
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .fh-pro-reports__sidebar {
+        width: 100%;
+        flex: 0 0 auto;
+        min-height: 0;
+    }
+
+    .fh-pro-reports__menu {
+        flex: 0 0 auto;
+    }
+}
+
+@media print {
+    .fh-report-actions {
+        display: none !important;
+    }
+
+    .fh-year-panel {
+        break-inside: avoid;
+    }
+
+    .fh-year-panel:not([open]) > .fh-year-panel__body {
+        display: block !important;
+    }
+
+    .fh-year-panel__summary {
+        pointer-events: none;
+    }
+}
+
 .tab-buttons {
     display: flex;
     flex-wrap: wrap;
@@ -2501,6 +2872,501 @@ button.fh-btn:active,
     display: block;
 }
 
+/* ----- Expense screens: left/right layouts ----- */
+.fh-expense-page-title {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 0 1rem 0 !important;
+    padding: 0 0 0.75rem 0 !important;
+    text-align: left !important;
+    font-size: 1.25rem !important;
+    font-weight: 800 !important;
+    color: var(--fh-text) !important;
+    border-bottom: 1px solid var(--fh-border);
+}
+
+.fh-expense-panel-title {
+    margin: 0 0 0.85rem;
+    padding: 0;
+    width: auto;
+    max-width: none;
+    text-align: left;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--fh-text);
+}
+
+.fh-expense-field {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    margin: 0 0 0.85rem;
+    width: 100%;
+}
+
+.fh-expense-field label,
+.fh-expense-field .expenses-type-label,
+.fh-expense-field .category-preview-label {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--fh-text);
+    text-align: left;
+}
+
+.fh-expense-field input[type="text"],
+.fh-expense-field input[type="month"],
+.fh-expense-field input[type="number"],
+.fh-expense-field input[type="file"],
+.fh-expense-field select {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+}
+
+.fh-expense-field--inline {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.fh-expense-field--inline > label,
+.fh-expense-field--inline > .expenses-type-label,
+.fh-expense-field--inline > .category-preview-label {
+    flex: 0 0 5.5rem;
+    min-width: 5.5rem;
+}
+
+.fh-expense-field--inline > input[type="text"],
+.fh-expense-field--inline > input[type="month"],
+.fh-expense-field--inline > input[type="number"],
+.fh-expense-field--inline > select,
+.fh-expense-field--inline > .expenses-type-radios {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+}
+
+.fh-expense-field--inline > input[type="checkbox"] {
+    width: auto;
+    flex: 0 0 auto;
+}
+
+.fh-expense-field--file {
+    gap: 0.35rem;
+}
+
+.fh-file-input-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.fh-file-pick-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--fh-border);
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+}
+
+.fh-file-pick-btn:hover {
+    background: rgba(0, 100, 148, 0.08);
+    border-color: rgba(0, 100, 148, 0.28);
+}
+
+.fh-file-chosen-label {
+    display: block;
+    margin-left: calc(5.5rem + 0.65rem + 0.85rem);
+    font-size: 0.78rem;
+    color: var(--fh-text-muted);
+}
+
+.fh-expense-field--file .fh-expense-field--inline {
+    gap: 0.85rem;
+}
+
+.fh-expense-field--file .fh-file-pick-btn {
+    margin-left: 1.35rem;
+}
+
+.fh-expense-field--row {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.fh-expense-field--row input[type="checkbox"] {
+    width: auto;
+}
+
+.fh-expense-field--preview {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.fh-expense-form-actions {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 0.35rem;
+}
+
+.fh-expense-form-actions--center {
+    justify-content: center;
+}
+
+.fh-expense-form-actions .fh-btn {
+    width: auto;
+    min-width: 7rem;
+    margin: 0;
+}
+
+.fh-expense-empty {
+    margin: 0.5rem 0 0;
+    padding: 0.75rem 0;
+    text-align: left;
+    color: var(--fh-text-muted);
+    font-style: italic;
+}
+
+.fh-expense-panel-title--center {
+    text-align: center;
+}
+
+.fh-expense-page-title--panel {
+    margin-bottom: 0.85rem !important;
+    font-size: 1.05rem !important;
+}
+
+.fh-expense-page-title--center {
+    text-align: center !important;
+}
+
+/* Categories: form left, list right */
+.fh-expense-categories {
+    max-width: none;
+    width: 100%;
+}
+
+.fh-expense-categories__layout {
+    display: flex;
+    align-items: stretch;
+    gap: 1rem;
+    width: 100%;
+}
+
+.fh-expense-categories__form-panel {
+    flex: 0 0 320px;
+    width: 320px;
+    box-sizing: border-box;
+    padding: 0.9rem 0.85rem;
+    border: 1px solid var(--fh-border);
+    border-radius: 12px;
+    background: var(--fh-surface);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.fh-expense-categories__list-panel {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0.9rem 0.85rem;
+    border: 1px solid var(--fh-border);
+    border-radius: 12px;
+    background: var(--fh-surface);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.fh-expense-categories__table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* Monthly expenses: controls left, categories right (one card) */
+.expenses.fh-monthly-expenses {
+    max-width: none;
+    width: 100%;
+}
+
+.expenses.fh-monthly-expenses h2.fh-expense-page-title {
+    border-bottom: 1px solid var(--fh-border);
+}
+
+.fh-monthly-expenses__layout {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 1.25rem;
+    width: 100%;
+}
+
+.fh-monthly-expenses__controls {
+    flex: 0 0 360px;
+    width: 360px;
+    box-sizing: border-box;
+}
+
+.fh-monthly-expenses__controls .fh-expense-field--inline > input[type="month"],
+.fh-monthly-expenses__controls .fh-expense-field--inline > input[type="number"] {
+    flex: 1 1 auto;
+    width: auto;
+    max-width: 14rem;
+    padding: 0.65rem 0.75rem;
+    margin: 0;
+    border: 1px solid var(--fh-border);
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    box-sizing: border-box;
+    background: #fafbfc;
+    color: var(--fh-text);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.fh-monthly-expenses__controls .fh-expense-field--inline > input[type="month"]:focus,
+.fh-monthly-expenses__controls .fh-expense-field--inline > input[type="number"]:focus {
+    outline: none;
+    border-color: var(--fh-brand);
+    background: var(--fh-surface);
+    box-shadow: 0 0 0 3px rgba(0, 100, 148, 0.15);
+}
+
+.fh-monthly-expenses__controls .expenses-type-radios {
+    width: auto;
+    flex: 1 1 auto;
+    gap: 0.45rem;
+    flex-wrap: nowrap;
+}
+
+.fh-monthly-expenses__controls .expenses-type-radios input[type="radio"] {
+    display: none;
+}
+
+.fh-monthly-expenses__controls .expenses-type-radios input[type="radio"] + label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    padding: 0.4rem 0.65rem;
+    border: 1px solid var(--fh-border);
+    border-radius: 10px;
+    background: var(--fh-surface);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--fh-text);
+    box-shadow: none;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.fh-monthly-expenses__controls .expenses-type-radios input[type="radio"] + label::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--fh-brand-muted);
+    display: inline-block;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+.fh-monthly-expenses__controls .expenses-type-radios input[type="radio"]:checked + label {
+    background: rgba(0, 100, 148, 0.1);
+    color: var(--fh-text);
+    border-color: var(--fh-brand);
+}
+
+.fh-monthly-expenses__controls .expenses-type-radios input[type="radio"]:checked + label::before {
+    background-color: var(--fh-brand);
+    border-color: var(--fh-brand);
+}
+
+.fh-monthly-expenses__controls #totalExpense {
+    width: auto;
+    max-width: 10rem;
+}
+
+.fh-monthly-expenses__controls .fh-expense-field--inline > label,
+.fh-monthly-expenses__controls .fh-expense-field--inline > .expenses-type-label {
+    flex: 0 0 6.5rem;
+    min-width: 6.5rem;
+}
+
+.fh-monthly-expenses__categories {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.fh-monthly-expenses__categories .expenses-category-grid {
+    margin: 0;
+}
+
+.fh-monthly-expenses .fh-expense-form-actions .fh-btn {
+    width: auto;
+    min-width: 7rem;
+    max-width: none;
+}
+
+/* Expense reports: chooser card + full-width report card */
+.fh-expense-reports-page {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.fh-expense-reports-chooser {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 1rem;
+    padding: 1rem 1.1rem 1.15rem;
+    border: 1px solid var(--fh-border);
+    border-radius: 12px;
+    background: var(--fh-surface);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.fh-expense-reports-chooser .fh-expense-page-title {
+    margin-bottom: 0.85rem !important;
+    border-bottom: none;
+    padding-bottom: 0 !important;
+}
+
+.fh-expense-report-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.65rem;
+    margin: 0;
+}
+
+.fh-expense-report-tab.fh-btn {
+    margin: 0;
+    min-width: 8.5rem;
+}
+
+.fh-expense-report-tab.active {
+    background: rgba(0, 100, 148, 0.12);
+    border-color: var(--fh-brand);
+    box-shadow: 0 0 0 1px rgba(0, 100, 148, 0.12);
+}
+
+.fh-expense-report-card {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.85rem 1rem 1rem;
+    border: 1px solid var(--fh-border);
+    border-radius: 12px;
+    background: var(--fh-surface);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.fh-expense-report-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: nowrap;
+    margin: 0 0 0.75rem;
+    padding: 0 0 0.65rem;
+    border-bottom: 1px solid var(--fh-border);
+}
+
+.fh-expense-report-card__title {
+    margin: 0;
+    padding: 0;
+    width: auto;
+    max-width: none;
+    text-align: left;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--fh-text);
+}
+
+.fh-expense-report-card__header-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.65rem;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.fh-expense-report-card__year {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 0;
+    flex-shrink: 0;
+}
+
+.fh-expense-report-card__year label {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 700;
+}
+
+.fh-expense-report-card__year select {
+    min-width: 6.5rem;
+}
+
+.fh-expense-report-card__actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+}
+
+.fh-expense-report-card__body {
+    width: 100%;
+    overflow-x: auto;
+    box-sizing: border-box;
+}
+
+.fh-expense-report-card__body .myTable thead th,
+.fh-expense-report-card__body .summaryTable thead th {
+    white-space: nowrap;
+}
+
+.fh-expense-report-card__body #reportContent > h2.fh-expense-page-title,
+.fh-expense-report-card__body #yearwise > h2.fh-plan-actual-title {
+    display: none;
+}
+
+.fh-expense-report-card__body #yearwise > .fh-report-toolbar {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .fh-expense-categories__layout,
+    .fh-monthly-expenses__layout {
+        flex-direction: column;
+    }
+
+    .fh-expense-categories__form-panel,
+    .fh-monthly-expenses__controls {
+        width: 100%;
+        flex: 0 0 auto;
+    }
+
+    .fh-expense-report-card__header {
+        flex-wrap: wrap;
+    }
+}
+
 .form-group {
     margin-bottom: 1rem;
     display: flex;
@@ -2634,7 +3500,7 @@ button.fh-btn:active,
     border-collapse: collapse;
     width: 100%;
     max-width: 100%;
-    table-layout: fixed;
+    table-layout: auto;
     font-size: clamp(0.66rem, 0.88vw, 0.82rem);
 }
 
@@ -2642,22 +3508,25 @@ button.fh-btn:active,
 #yearwise .myTable tbody td:first-child,
 #yearwise .myTable tr.fh-report-footer-row td:first-child {
     width: 10%;
-    min-width: 0;
+    min-width: 4.5rem;
     box-sizing: border-box;
+    white-space: nowrap;
 }
 
 #yearwise .myTable thead tr:nth-child(2) th {
-    padding-left: 0.08rem;
-    padding-right: 0.08rem;
+    padding-left: 0.12rem;
+    padding-right: 0.12rem;
+    white-space: nowrap;
 }
 
 #yearwise .myTable th,
 #yearwise .myTable td {
     border: 1px solid var(--fh-border);
-    padding: 0.18rem 0.1rem;
+    padding: 0.2rem 0.2rem;
     box-sizing: border-box;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    white-space: nowrap;
+    overflow-wrap: normal;
+    word-break: keep-all;
 }
 
 #yearwise .myTable thead th {
@@ -2763,6 +3632,7 @@ button.fh-btn:active,
     padding: 0.7rem 0.65rem;
     box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
     min-width: 0;
+    text-align: center;
 }
 
 .fh-kpi-card h3 {
@@ -2771,6 +3641,7 @@ button.fh-btn:active,
     color: var(--fh-text-muted);
     font-weight: 700;
     line-height: 1.25;
+    text-align: center;
 }
 
 .fh-kpi-card p {
@@ -2778,6 +3649,7 @@ button.fh-btn:active,
     font-size: 0.95rem;
     font-weight: 700;
     color: var(--fh-text);
+    text-align: center;
 }
 
 .fh-kpi-card--salary {

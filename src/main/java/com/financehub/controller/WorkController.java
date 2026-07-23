@@ -118,8 +118,12 @@ public class WorkController {
             }
         }
         String totExperience = formatterUtils.getTotalExp(companies);
+        int[] expParts = formatterUtils.getTotalExpParts(companies);
         model.addAttribute("companies", companies);
-        model.addAttribute("totalExp",totExperience);
+        model.addAttribute("totalExp", totExperience);
+        model.addAttribute("expYears", expParts[0]);
+        model.addAttribute("expMonths", expParts[1]);
+        model.addAttribute("expDays", expParts[2]);
         return "views/reports/experienceReport";
     }
 @GetMapping("/salaryReport")
@@ -173,6 +177,7 @@ public String getSalaryReport(Model model) {
     model.addAttribute("subtotals", subtotals);
     model.addAttribute("totalSum", formattedGrandTotal);
     model.addAttribute("maxRows", maxRows);
+    model.addAttribute("currentYear", LocalDate.now().getYear());
     return "views/reports/salaryReport";
 }
 @DeleteMapping("/deleteExperience")

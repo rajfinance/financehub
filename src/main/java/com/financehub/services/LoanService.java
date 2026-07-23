@@ -47,6 +47,15 @@ public class LoanService {
                                        Long overrideId) {
     }
 
+    /** One row of reducing-balance amortization (matches bank schedule Closing Principal). */
+    private record AmortizationInstallment(int emiNumber,
+                                           LocalDate dueDate,
+                                           double installmentAmount,
+                                           double principalComponent,
+                                           double interestComponent,
+                                           double closingPrincipal) {
+    }
+
     private static final class ScheduleContext {
         private final List<Loan> loans;
         private final Map<Long, Map<Integer, LoanEmiPayment>> overridesByLoan;
@@ -169,12 +178,17 @@ public class LoanService {
         if (loan == null || loan.getLoanStatus() == null) {
             return 3;
         }
-        return switch (loan.getLoanStatus()) {
-            case "Open" -> 0;
-            case "Partially Closed" -> 1;
-            case "Pre-Closed", "Closed" -> 2;
-            default -> 3;
-        };
+        String status = loan.getLoanStatus();
+        if ("Open".equals(status)) {
+            return 0;
+        }
+        if ("Partially Closed".equals(status)) {
+            return 1;
+        }
+        if ("Pre-Closed".equals(status) || "Closed".equals(status)) {
+            return 2;
+        }
+        return 3;
     }
 
     public LoanSummaryDTO getLoanSummaryById(Long loanId) {
@@ -484,49 +498,57 @@ public class LoanService {
         }
 
         LocalDate nextMonthStart = LocalDate.now().plusMonths(1).withDayOfMonth(1);
-        TreeMap<YearMonth, Map<String, Long>> monthlyEmiByBank = new TreeMap<>();
-        Map<String, Long> pendingTotalByBank = new LinkedHashMap<>();
+
+        // Build amortization (outstanding principal) per loan — same basis as bank foreclosure schedules.
+        Map<Long, List<AmortizationInstallment>> amortByLoan = new HashMap<>();
+        Map<Long, Double> outstandingByLoan = new HashMap<>();
+        TreeSet<YearMonth> projectionMonths = new TreeSet<>();
+        Map<String, Long> headerEmiByBank = new LinkedHashMap<>();
         for (String bank : banks) {
-            pendingTotalByBank.put(bank, 0L);
+            headerEmiByBank.put(bank, 0L);
         }
+        Map<String, YearMonth> firstHeaderMonthByBank = new HashMap<>();
 
         for (Loan loan : selectedLoans) {
-            if (loan.getEmiDate() == null || loan.getTenure() == null) {
-                continue;
-            }
-            // Gold loans have no monthly EMI; still include their annual due in the due month.
-            LoanPreClosureDTO preClosure = context.preClosureByLoan.get(loan.getId());
-            Map<Integer, LoanEmiPayment> overrides = context.overridesByLoan.getOrDefault(loan.getId(), Map.of());
-            String bucket = resolveBankBucket(loan.getBankName());
-            for (ScheduleAmountSlice slice : buildScheduleAmountSlices(loan, null, preClosure, overrides)) {
-                if (slice.dueDate() == null || slice.dueDate().isBefore(nextMonthStart)) {
+            List<AmortizationInstallment> amort = buildAmortizationSchedule(loan);
+            amortByLoan.put(loan.getId(), amort);
+
+            double outstandingBeforeWindow = loan.getLoanAmount() == null ? 0 : loan.getLoanAmount();
+            for (AmortizationInstallment row : amort) {
+                if (row.dueDate() == null) {
                     continue;
                 }
-                long amount = Math.round(slice.amount());
-                if (amount <= 0) {
-                    continue;
+                if (row.dueDate().isBefore(nextMonthStart)) {
+                    outstandingBeforeWindow = row.closingPrincipal();
+                } else {
+                    projectionMonths.add(YearMonth.from(row.dueDate()));
+                    String bucket = resolveBankBucket(loan.getBankName());
+                    YearMonth ym = YearMonth.from(row.dueDate());
+                    YearMonth first = firstHeaderMonthByBank.get(bucket);
+                    if (first == null || ym.isBefore(first)) {
+                        firstHeaderMonthByBank.put(bucket, ym);
+                        headerEmiByBank.put(bucket, Math.round(row.installmentAmount()));
+                    } else if (ym.equals(first)) {
+                        headerEmiByBank.merge(bucket, Math.round(row.installmentAmount()), Long::sum);
+                    }
                 }
-                YearMonth installmentMonth = YearMonth.from(slice.dueDate());
-                monthlyEmiByBank
-                        .computeIfAbsent(installmentMonth, ym -> {
-                            Map<String, Long> bankMap = new LinkedHashMap<>();
-                            for (String bank : banks) {
-                                bankMap.put(bank, 0L);
-                            }
-                            return bankMap;
-                        })
-                        .merge(bucket, amount, Long::sum);
-                pendingTotalByBank.merge(bucket, amount, Long::sum);
             }
+            outstandingByLoan.put(loan.getId(), Math.max(0, outstandingBeforeWindow));
         }
 
-        Map<String, Long> runningPending = new LinkedHashMap<>(pendingTotalByBank);
+        // Each month shows outstanding AFTER the previous EMI (opening balance for that month),
+        // not after the current month's EMI. Example: Feb row = closing principal after Jan EMI.
+        Map<Long, Double> runningOutstanding = new HashMap<>(outstandingByLoan);
         List<LoanBankEmiProjectionRowDTO> rows = new ArrayList<>();
-        for (Map.Entry<YearMonth, Map<String, Long>> entry : monthlyEmiByBank.entrySet()) {
-            Map<String, Long> monthEmi = entry.getValue();
+        for (YearMonth ym : projectionMonths) {
+            Map<String, Long> amountByBank = new LinkedHashMap<>();
             for (String bank : banks) {
-                long monthAmount = monthEmi.getOrDefault(bank, 0L);
-                runningPending.put(bank, Math.max(0L, runningPending.getOrDefault(bank, 0L) - monthAmount));
+                amountByBank.put(bank, 0L);
+            }
+            for (Loan loan : selectedLoans) {
+                String bucket = resolveBankBucket(loan.getBankName());
+                long os = Math.round(runningOutstanding.getOrDefault(loan.getId(), 0.0));
+                amountByBank.merge(bucket, os, Long::sum);
             }
 
             List<Long> amounts = new ArrayList<>();
@@ -535,7 +557,7 @@ public class LoanService {
             long totalPay = 0;
             long comboPay = 0;
             for (String bank : banks) {
-                long amount = runningPending.getOrDefault(bank, 0L);
+                long amount = amountByBank.getOrDefault(bank, 0L);
                 long pay = computeForeclosurePay(bank, amount);
                 amounts.add(amount);
                 pays.add(pay);
@@ -547,7 +569,7 @@ public class LoanService {
             }
 
             LoanBankEmiProjectionRowDTO row = new LoanBankEmiProjectionRowDTO();
-            row.setDate(formatterUtils.formatDate(entry.getKey().atDay(7)));
+            row.setDate(formatterUtils.formatDate(ym.atDay(7)));
             row.setFormattedAmounts(amounts.stream()
                     .map(formatterUtils::formatInIndianStyleWholeNumber)
                     .toList());
@@ -558,10 +580,19 @@ public class LoanService {
             row.setFormattedComboPayAmount(formatterUtils.formatInIndianStyleWholeNumber(comboPay));
             row.setFormattedTotalPayAmount(formatterUtils.formatInIndianStyleWholeNumber(totalPay));
             rows.add(row);
-        }
 
-        // Header EMI: use each bank's own next monthly EMI (not only values present in the first shared month).
-        Map<String, Long> headerEmiByBank = resolveHeaderMonthlyEmiByBank(selectedLoans, banks, context, nextMonthStart);
+            // After rendering this month, apply this month's EMI so the next row gets the new opening OS.
+            for (Loan loan : selectedLoans) {
+                List<AmortizationInstallment> amort = amortByLoan.getOrDefault(loan.getId(), List.of());
+                for (AmortizationInstallment installment : amort) {
+                    if (installment.dueDate() != null
+                            && YearMonth.from(installment.dueDate()).equals(ym)
+                            && !installment.dueDate().isBefore(nextMonthStart)) {
+                        runningOutstanding.put(loan.getId(), Math.max(0, installment.closingPrincipal()));
+                    }
+                }
+            }
+        }
 
         LoanBankEmiProjectionReportDTO report = new LoanBankEmiProjectionReportDTO();
         report.setEligibleLoans(eligibleLoans.stream().map(loan -> {
@@ -583,49 +614,126 @@ public class LoanService {
     }
 
     /**
-     * Next upcoming monthly EMI total per bank (from next month onward), so each bank header
-     * shows its EMI even when the earliest shared projection month has no installment for that bank.
+     * Bank-style outstanding schedule for projection / foreclosure PAY.
+     * <p>
+     * Closing principal after installment {@code i} is the present value of the remaining EMIs
+     * at the contractual monthly rate — the same basis HDFC/ICICI use for O/s Principal mid-loan.
+     * This avoids drift from ICICI broken first-period interest (extra days before EMI 1).
      */
-    private Map<String, Long> resolveHeaderMonthlyEmiByBank(List<Loan> selectedLoans,
-                                                            List<String> banks,
-                                                            ScheduleContext context,
-                                                            LocalDate nextMonthStart) {
-        Map<String, Long> headerEmiByBank = new LinkedHashMap<>();
-        for (String bank : banks) {
-            headerEmiByBank.put(bank, 0L);
+    private List<AmortizationInstallment> buildAmortizationSchedule(Loan loan) {
+        if (loan.getLoanAmount() == null || loan.getLoanAmount() <= 0
+                || loan.getEmiAmount() == null || loan.getEmiAmount() <= 0
+                || loan.getTenure() == null || loan.getTenure() < 1
+                || loan.getEmiDate() == null) {
+            return List.of();
         }
-        Map<String, YearMonth> firstMonthByBank = new HashMap<>();
-        Map<String, Long> firstMonthAmountByBank = new HashMap<>();
+        double monthlyRate = resolveMonthlyInterestRate(loan);
+        double regularEmi = loan.getEmiAmount();
+        int tenure = loan.getTenure();
+        boolean wholeRupee = isWholeRupeeAmortizationBank(loan);
+        List<AmortizationInstallment> rows = new ArrayList<>(tenure);
 
-        for (Loan loan : selectedLoans) {
-            if (loan.getEmiDate() == null || loan.getTenure() == null) {
-                continue;
+        for (int i = 1; i <= tenure; i++) {
+            int remainingIncludingCurrent = tenure - i + 1;
+            int remainingAfter = tenure - i;
+
+            double opening;
+            if (i == 1) {
+                opening = loan.getLoanAmount();
+            } else {
+                opening = roundAmortMoney(
+                        presentValueOfAnnuity(regularEmi, monthlyRate, remainingIncludingCurrent),
+                        wholeRupee);
             }
-            String bucket = resolveBankBucket(loan.getBankName());
-            LoanPreClosureDTO preClosure = context.preClosureByLoan.get(loan.getId());
-            Map<Integer, LoanEmiPayment> overrides = context.overridesByLoan.getOrDefault(loan.getId(), Map.of());
-            for (ScheduleAmountSlice slice : buildScheduleAmountSlices(loan, null, preClosure, overrides)) {
-                if (slice.dueDate() == null || slice.dueDate().isBefore(nextMonthStart)) {
-                    continue;
+
+            double interest = roundAmortMoney(opening * monthlyRate, wholeRupee);
+            double installment = regularEmi;
+            double principal;
+            double closing;
+
+            if (i == tenure || remainingAfter <= 0) {
+                principal = roundAmortMoney(opening, wholeRupee);
+                installment = roundAmortMoney(principal + interest, wholeRupee);
+                closing = 0;
+            } else {
+                closing = roundAmortMoney(
+                        presentValueOfAnnuity(regularEmi, monthlyRate, remainingAfter),
+                        wholeRupee);
+                principal = roundAmortMoney(Math.max(0, opening - closing), wholeRupee);
+                // Keep contractual EMI on the schedule; interest is the residual split.
+                interest = roundAmortMoney(installment - principal, wholeRupee);
+                if (interest < 0) {
+                    interest = 0;
+                    principal = installment;
+                    closing = roundAmortMoney(Math.max(0, opening - principal), wholeRupee);
                 }
-                long amount = Math.round(slice.amount());
-                if (amount <= 0) {
-                    continue;
-                }
-                YearMonth ym = YearMonth.from(slice.dueDate());
-                YearMonth currentFirst = firstMonthByBank.get(bucket);
-                if (currentFirst == null || ym.isBefore(currentFirst)) {
-                    firstMonthByBank.put(bucket, ym);
-                    firstMonthAmountByBank.put(bucket, amount);
-                } else if (ym.equals(currentFirst)) {
-                    firstMonthAmountByBank.merge(bucket, amount, Long::sum);
-                }
+            }
+
+            rows.add(new AmortizationInstallment(
+                    i,
+                    loan.getEmiDate().plusMonths(i - 1L),
+                    installment,
+                    principal,
+                    interest,
+                    closing));
+        }
+        return rows;
+    }
+
+    private boolean isWholeRupeeAmortizationBank(Loan loan) {
+        return "ICICI".equals(resolveBankBucket(loan.getBankName()));
+    }
+
+    /** PV of {@code n} equal EMIs one period apart at monthly rate {@code r}. */
+    private double presentValueOfAnnuity(double emi, double monthlyRate, int n) {
+        if (n <= 0 || emi <= 0) {
+            return 0;
+        }
+        if (monthlyRate <= 0) {
+            return emi * n;
+        }
+        return emi * (1 - Math.pow(1 + monthlyRate, -n)) / monthlyRate;
+    }
+
+    private double resolveMonthlyInterestRate(Loan loan) {
+        // Prefer contractual rate from loan master (needed for ICICI where EMI is rounded above formula EMI).
+        if (loan.getInterestRate() != null && loan.getInterestRate() > 0) {
+            return loan.getInterestRate() / 100.0 / 12.0;
+        }
+        return deriveMonthlyRateFromEmi(loan.getLoanAmount(), loan.getEmiAmount(), loan.getTenure());
+    }
+
+    /** Solve EMI equation for monthly rate when interest rate is not stored. */
+    private double deriveMonthlyRateFromEmi(double principal, double emi, int tenure) {
+        if (principal <= 0 || emi <= 0 || tenure < 1) {
+            return 0;
+        }
+        if (emi * tenure <= principal) {
+            return 0;
+        }
+        double lo = 0.000001;
+        double hi = 1.0;
+        for (int i = 0; i < 80; i++) {
+            double mid = (lo + hi) / 2.0;
+            double calcEmi = principal * mid * Math.pow(1 + mid, tenure) / (Math.pow(1 + mid, tenure) - 1);
+            if (calcEmi > emi) {
+                hi = mid;
+            } else {
+                lo = mid;
             }
         }
-        for (String bank : banks) {
-            headerEmiByBank.put(bank, firstMonthAmountByBank.getOrDefault(bank, 0L));
+        return (lo + hi) / 2.0;
+    }
+
+    private double roundAmortMoney(double value, boolean wholeRupee) {
+        if (wholeRupee) {
+            return Math.round(value);
         }
-        return headerEmiByBank;
+        return roundMoney(value);
+    }
+
+    private double roundMoney(double value) {
+        return Math.round(value * 100.0) / 100.0;
     }
 
     private boolean isProjectionEligibleLoan(Loan loan, LoanPreClosureDTO preClosure) {

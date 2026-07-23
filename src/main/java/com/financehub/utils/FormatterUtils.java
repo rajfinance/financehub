@@ -75,7 +75,11 @@ public class FormatterUtils {
 
     /** Indian grouping without decimal suffix (e.g. 1,00,000). */
     public String formatInIndianStyleWholeNumber(double amount) {
-        return groupIndianDigits(String.valueOf(Math.round(amount)));
+        long rounded = Math.round(amount);
+        if (rounded < 0) {
+            return "-" + groupIndianDigits(String.valueOf(Math.abs(rounded)));
+        }
+        return groupIndianDigits(String.valueOf(rounded));
     }
 
     private String applyIndianNumberingSystem(String number) {
@@ -165,7 +169,7 @@ public class FormatterUtils {
         return "0|0|0";
     }
 
-    public String getTotalExp(List<CompanyDTO> companies) {
+    public int[] getTotalExpParts(List<CompanyDTO> companies) {
         int totalYears = 0;
         int totalMonths = 0;
         int totalDays = 0;
@@ -178,13 +182,9 @@ public class FormatterUtils {
             );
 
             String[] parts = duration.split("\\|");
-            int years = Integer.parseInt(parts[0]);
-            int months = Integer.parseInt(parts[1]);
-            int days = Integer.parseInt(parts[2]);
-
-            totalYears += years;
-            totalMonths += months;
-            totalDays += days;
+            totalYears += Integer.parseInt(parts[0]);
+            totalMonths += Integer.parseInt(parts[1]);
+            totalDays += Integer.parseInt(parts[2]);
         }
 
         if (totalDays >= 30) {
@@ -197,8 +197,12 @@ public class FormatterUtils {
             totalMonths = totalMonths % 12;
         }
 
-        String explanation = String.format("Total experience %d years %d months %d days", totalYears, totalMonths, totalDays);
-        return explanation;
+        return new int[]{totalYears, totalMonths, totalDays};
+    }
+
+    public String getTotalExp(List<CompanyDTO> companies) {
+        int[] parts = getTotalExpParts(companies);
+        return String.format("%d years %d months %d days", parts[0], parts[1], parts[2]);
     }
 
     public String getTotalAdvance(List<OwnerDTO> owners) {

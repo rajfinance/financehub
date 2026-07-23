@@ -4,58 +4,68 @@
 <body>
 <th:block sec:authorize="isAuthenticated()">
     <th:block th:if="${salaries != null and not salaries.isEmpty()}">
-        <div id="reportContent">
-            <h1 class="h1report">Salary Report
-                <div class="report-buttons">
-                    <button id="downloadPdf" class="pdf-btn" data-report="sal">
+        <div id="reportContent" class="fh-salary-report">
+            <div class="fh-report-toolbar">
+                <h1 class="h1report fh-report-title-plain">Salary Report</h1>
+                <div class="report-buttons fh-report-actions">
+                    <button id="downloadPdf" class="pdf-btn" data-report="sal" title="Download PDF" aria-label="Download PDF">
                         <img th:src="@{/images/pdf.png}" src="/images/pdf.png" alt="PDF" />
                     </button>
-                    <button id="printReport" class="print-btn" data-report="sal">
+                    <button id="printReport" class="print-btn" data-report="sal" title="Print" aria-label="Print">
                         <img th:src="@{/images/print.png}" src="/images/print.png" alt="Print" />
                     </button>
                 </div>
-            </h1>
+            </div>
 
             <th:block th:each="entry : ${salaries}">
-                <div class="year-header" th:text="'YEAR - ' + ${entry.key}"></div>
-
-                <table>
-                    <thead>
-                    <tr>
-                        <th class="second">Company</th>
-                        <th class="second">Month</th>
-                        <th class="second">Date Credited</th>
-                        <th class="second">Salary Amount</th>
-                        <th class="second" rowspan="2">Action</th>
-                    </tr>
-                    </thead>
-                    <tbody style="text-align: -webkit-center; text-transform: capitalize;">
-                    <th:block th:each="salary : ${entry.value}">
-                        <tr>
-                            <td th:text="${salary.companyName}"></td>
-                            <td style="text-align: left; padding-left: 60px;" th:text="${salary.monthName}"></td>
-                            <td th:text="${salary.formattedDateCredited}"></td>
-                            <td style="text-align: right; padding-right: 5px;" th:text="${salary.formattedSalaryAmount}"></td>
-                            <td>
-                                <a href="javascript:void(0);"
-                                   th:onclick="'loadEditPageContent(\'/api/work/addSalary?action=edit&id=' + ${salary.salaryId} + '\', \'#page-content\')'"
-                                   style="text-decoration: none;">
-                                    <img th:src="@{/images/edit-icon.png}" src="/images/edit-icon.png" alt="Edit" style="width: 20px; height: 20px; margin-right: 20px; margin-left: 15px;" />
-                                </a>
-                                <a href="javascript:void(0);" class="delete-btn" th:attr="data-report-type='salaryReport', data-id=${salary.salaryId}" th:onclick="'deleteEntity(this, \'salary\', \'/api/work/deleteSalary\')'">
-                                    <img th:src="@{/images/delete-icon.png}" src="/images/delete-icon.png" alt="Delete" style="width: 20px; height: 20px;" />
-                                </a>
-                            </td>
-                        </tr>
-                    </th:block>
-                    <tr class="fh-report-footer-row">
-                        <td colspan="3" style="text-align: right;">Total for Year:</td>
-                        <td style="text-align: right; padding-right: 5px;" th:text="${yearWiseTotals[entry.key]}"></td>
-                        <td></td>
-                    </tr>
-                    </tbody>
-                </table>
-                <br>
+                <details class="fh-year-panel"
+                         th:classappend="${entry.key == currentYear} ? ' fh-year-panel--current'"
+                         th:open="${entry.key == currentYear} ? 'open' : null">
+                    <summary class="fh-year-panel__summary">
+                        <span class="fh-year-panel__title" th:text="'YEAR - ' + ${entry.key}"></span>
+                        <span class="fh-year-panel__total"
+                              th:text="'Total: ' + ${yearWiseTotals[entry.key]}"></span>
+                        <span class="fh-year-panel__chevron" th:unless="${entry.key == currentYear}" aria-hidden="true"></span>
+                    </summary>
+                    <div class="fh-year-panel__body">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th class="second">Company</th>
+                                <th class="second">Month</th>
+                                <th class="second">Date Credited</th>
+                                <th class="second">Salary Amount</th>
+                                <th class="second" rowspan="2">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody style="text-align: -webkit-center; text-transform: capitalize;">
+                            <th:block th:each="salary : ${entry.value}">
+                                <tr>
+                                    <td th:text="${salary.companyName}"></td>
+                                    <td style="text-align: left; padding-left: 60px;" th:text="${salary.monthName}"></td>
+                                    <td th:text="${salary.formattedDateCredited}"></td>
+                                    <td style="text-align: right; padding-right: 5px;" th:text="${salary.formattedSalaryAmount}"></td>
+                                    <td>
+                                        <a href="javascript:void(0);"
+                                           th:onclick="'loadEditPageContent(\'/api/work/addSalary?action=edit&id=' + ${salary.salaryId} + '\', \'#page-content\')'"
+                                           style="text-decoration: none;">
+                                            <img th:src="@{/images/edit-icon.png}" src="/images/edit-icon.png" alt="Edit" style="width: 20px; height: 20px; margin-right: 20px; margin-left: 15px;" />
+                                        </a>
+                                        <a href="javascript:void(0);" class="delete-btn" th:attr="data-report-type='salaryReport', data-id=${salary.salaryId}" th:onclick="'deleteEntity(this, \'salary\', \'/api/work/deleteSalary\')'">
+                                            <img th:src="@{/images/delete-icon.png}" src="/images/delete-icon.png" alt="Delete" style="width: 20px; height: 20px;" />
+                                        </a>
+                                    </td>
+                                </tr>
+                            </th:block>
+                            <tr class="fh-report-footer-row">
+                                <td colspan="3" style="text-align: right;">Total for Year:</td>
+                                <td style="text-align: right; padding-right: 5px;" th:text="${yearWiseTotals[entry.key]}"></td>
+                                <td></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
             </th:block>
 
             <br>

@@ -28,7 +28,7 @@
 
                         <h3>Current Year Salary</h3>
 
-                        <p th:text="${#numbers.formatInteger(currentYearSalary, 0)}">0</p>
+                        <p th:text="${@formatterUtils.formatInIndianStyleWholeNumber(currentYearSalary)}">0</p>
 
                     </div>
 
@@ -36,7 +36,7 @@
 
                         <h3>Current Year Expenses</h3>
 
-                        <p th:text="${#numbers.formatInteger(currentYearExpense, 0)}">0</p>
+                        <p th:text="${@formatterUtils.formatInIndianStyleWholeNumber(currentYearExpense)}">0</p>
 
                     </div>
 
@@ -44,7 +44,7 @@
 
                         <h3>Net Balance</h3>
 
-                        <p th:text="${#numbers.formatInteger(currentYearNetBalance, 0)}">0</p>
+                        <p th:text="${@formatterUtils.formatInIndianStyleWholeNumber(currentYearNetBalance)}">0</p>
 
                     </div>
 
@@ -52,7 +52,7 @@
 
                         <h3>Current Year Rent</h3>
 
-                        <p th:text="${#numbers.formatInteger(currentYearRent, 0)}">0</p>
+                        <p th:text="${@formatterUtils.formatInIndianStyleWholeNumber(currentYearRent)}">0</p>
 
                     </div>
 
