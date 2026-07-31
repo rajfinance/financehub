@@ -136,6 +136,10 @@ function validForm(formId){
     else if(formId=="preCloseLoanForm"){
         return true;
     }
+    else if(formId=="changePasswordForm" || formId=="updateProfileForm"){
+        return true;
+    }
+    return true;
 }
 function validateCategories(){
     const categoryName = document.getElementById("categoryName").value.trim();

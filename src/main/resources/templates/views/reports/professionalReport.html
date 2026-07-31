@@ -3,27 +3,42 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
 <th:block sec:authorize="isAuthenticated()">
-    <div class="fh-pro-reports">
-        <aside class="fh-pro-reports__sidebar" aria-label="Professional report menu">
-            <div class="fh-pro-reports__brand">
-                <h1 class="fh-pro-reports__title">Professional</h1>
+    <div class="fh-section-hub">
+        <aside class="fh-section-hub__sidebar" aria-label="Professional menu">
+            <div class="fh-section-hub__brand">
+                <h1 class="fh-section-hub__title">Professional</h1>
             </div>
-            <nav class="fh-pro-reports__menu">
+            <nav class="fh-section-hub__menu">
                 <button type="button"
-                        class="tab-button fh-pro-nav-item active"
-                        onclick="showReport('expReport')">
+                        class="tab-button fh-hub-nav-item"
+                        data-url="/api/work/addExperience?action=add"
+                        onclick="showHubPage(this)">
+                    Add Experience
+                </button>
+                <button type="button"
+                        class="tab-button fh-hub-nav-item"
+                        data-url="/api/work/addSalary?action=add"
+                        onclick="showHubPage(this)">
+                    Add Salary
+                </button>
+                <div class="fh-hub-nav-label">Reports</div>
+                <div class="fh-hub-nav-divider" role="separator"></div>
+                <button type="button"
+                        class="tab-button fh-hub-nav-item"
+                        data-report="expReport"
+                        onclick="showHubReport(this)">
                     Experience
                 </button>
                 <button type="button"
-                        class="tab-button fh-pro-nav-item"
-                        onclick="showReport('salaryReport')">
+                        class="tab-button fh-hub-nav-item"
+                        data-report="salaryReport"
+                        onclick="showHubReport(this)">
                     Salary
                 </button>
             </nav>
         </aside>
-        <div class="fh-pro-reports__content">
-            <div class="tab-content fh-pro-reports__panel" id="expReport" style="display:none;"></div>
-            <div class="tab-content fh-pro-reports__panel" id="salaryReport" style="display:none;"></div>
+        <div class="fh-section-hub__content">
+            <div id="fhHubPanel" class="fh-section-hub__panel"></div>
         </div>
     </div>
 </th:block>

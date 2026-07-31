@@ -11,12 +11,12 @@
                 th:text="'YEARLY EXPENSE SUMMARY - ' + ${year}"></h1>
             <div class="report-buttons fh-report-actions">
                 <button id="downloadPdf" class="pdf-btn"
-                        th:onclick="'downloadPdf(\'yearSummary|' + ${year} + '\')'"
+                        type="button"
                         title="Download PDF" aria-label="Download PDF">
                     <img th:src="@{/images/pdf.png}" alt="PDF" />
                 </button>
                 <button id="printReport" class="print-btn"
-                        th:onclick="'printReport()'"
+                        type="button"
                         title="Print" aria-label="Print">
                     <img th:src="@{/images/print.png}" alt="Print" />
                 </button>

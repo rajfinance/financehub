@@ -97,7 +97,7 @@
             <div class="button-group fh-btn-group">
                 <button type="submit" class="btn btn-primary" th:text="${isEdit} ? 'Update Loan' : 'Add Loan'"></button>
                 <button type="button" class="btn btn-secondary" th:if="${isEdit}"
-                        th:onclick="'loadContent(\'/api/loan/reports\')'">
+                        th:onclick="'openHubOrLoad(\'/api/loan/reports\', \'[data-report=loansReport]\')'">
                     Cancel
                 </button>
             </div>

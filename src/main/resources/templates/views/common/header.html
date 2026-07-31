@@ -88,7 +88,10 @@
 
                         <span class="userinfo-name fh-display-username" th:text="${displayFullName}">User</span>
 
-                        <a th:href="@{/account/profile}" class="header-profile-link" title="Profile">
+                        <a href="javascript:void(0);"
+                           class="header-profile-link"
+                           title="Profile"
+                           th:onclick="'loadContent(\'/api/account\')'">
 
                             <img th:with="pv=${profileAvatarVersion != null ? profileAvatarVersion : 0}"
 

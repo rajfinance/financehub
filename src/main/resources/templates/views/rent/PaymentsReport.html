@@ -36,7 +36,7 @@
                     <td style="text-align: right; padding-right: 5px;" th:text="${payment.formattedAmount}"></td>
                     <td>
                         <a href="javascript:void(0);"
-                           th:onclick="'loadEditPageContent(\'/api/rent/payments/add?id=' + ${payment.id} + '\', \'#page-content\')'"
+                           th:onclick="'loadEditPageContent(\'/api/rent/payments/add?id=' + ${payment.id} + '\')'"
                            style="text-decoration: none;">
                             <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width: 20px; height: 20px; margin-right: 20px; margin-left: 15px;" />
                         </a>

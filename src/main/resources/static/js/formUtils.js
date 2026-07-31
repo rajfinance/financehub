@@ -1,5 +1,5 @@
 function getCsrfHeaders() {
-    const h = {};
+    const h = { 'X-Requested-With': 'XMLHttpRequest' };
     if (typeof window.__csrfHeaderName !== 'undefined' && window.__csrfToken) {
         h[window.__csrfHeaderName] = window.__csrfToken;
     }
@@ -49,20 +49,138 @@ function loadContent(apiUrl) {
     if (mainContent) {
         mainContent.style.display = 'block';
     }
-    fetch(apiUrl, {
-        credentials: 'same-origin',
-        headers: getCsrfHeaders()
-    })
-        .then(response => response.text())
-        .then(html => {
+    fetchHtml(apiUrl)
+        .then(function (html) {
             pageContent.innerHTML = html;
             initLoadedPageContent();
         })
-        .catch(error => {
+        .catch(function (error) {
             console.error('Error loading content:', error);
-            pageContent.innerHTML = "<p>There was an error loading the page.</p>";
+            pageContent.innerHTML = '<p>There was an error loading the page.</p>';
         });
 }
+
+function fetchHtml(url) {
+    return fetch(url, {
+        credentials: 'same-origin',
+        headers: getCsrfHeaders()
+    }).then(function (response) {
+        if (!response.ok) {
+            throw new Error('Request failed: ' + response.status);
+        }
+        return response.text();
+    });
+}
+
+function getHubRoot() {
+    return document.querySelector('#page-content .fh-section-hub');
+}
+
+function getHubPanel() {
+    const hub = getHubRoot();
+    return hub ? hub.querySelector('#fhHubPanel') : null;
+}
+
+function setHubNavActive(button) {
+    const hub = button ? button.closest('.fh-section-hub') : getHubRoot();
+    if (!hub) {
+        return;
+    }
+    hub.querySelectorAll('.fh-hub-nav-item').forEach(function (item) {
+        item.classList.remove('active');
+    });
+    if (button) {
+        button.classList.add('active');
+    }
+}
+
+function showHubPanelMode(showPagePanel) {
+    const panel = getHubPanel();
+    const reportCard = document.getElementById('expenseReportCard');
+    if (panel) {
+        panel.hidden = !showPagePanel;
+    }
+    if (reportCard) {
+        reportCard.hidden = !!showPagePanel;
+    }
+}
+
+function injectHubHtml(html) {
+    const panel = getHubPanel();
+    if (!panel) {
+        return false;
+    }
+    showHubPanelMode(true);
+    panel.innerHTML = html;
+    initLoadedPageContent();
+    return true;
+}
+
+function loadIntoHubPanel(url, options) {
+    const opts = options || {};
+    const panel = getHubPanel();
+    if (!panel) {
+        if (opts.fallbackLoadContent) {
+            loadContent(url);
+        }
+        return;
+    }
+    showHubPanelMode(true);
+    panel.innerHTML = '<p class="fh-hub-loading">Loading…</p>';
+    fetchHtml(url)
+        .then(function (html) {
+            panel.innerHTML = html;
+            if (opts.reportType && typeof attachReportListeners === 'function') {
+                attachReportListeners(panel, opts.reportType);
+            }
+            if (!opts.skipInit) {
+                initLoadedPageContent();
+            }
+        })
+        .catch(function (error) {
+            console.error(opts.errorLabel || 'Error loading hub content:', error);
+            panel.innerHTML = '<p>' + (opts.errorMessage || 'There was an error loading the page.') + '</p>';
+        });
+}
+
+function showHubPage(button) {
+    if (!button) {
+        return;
+    }
+    const url = button.getAttribute('data-url');
+    if (!url) {
+        return;
+    }
+    setHubNavActive(button);
+    loadIntoHubPanel(url, { fallbackLoadContent: true });
+}
+
+function showHubReport(button) {
+    if (!button) {
+        return;
+    }
+    const reportType = button.getAttribute('data-report');
+    if (!reportType || typeof prepareUrl !== 'function') {
+        return;
+    }
+    setHubNavActive(button);
+    loadIntoHubPanel(prepareUrl(reportType), {
+        reportType: reportType,
+        skipInit: true,
+        errorLabel: 'Error loading hub report',
+        errorMessage: 'Error loading report. Please try again.'
+    });
+}
+
+function showHubExpenseReport(button) {
+    if (!button) {
+        return;
+    }
+    setHubNavActive(button);
+    showHubPanelMode(false);
+    selectExpenseReport(button);
+}
+
 function submitForm(event) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -88,71 +206,154 @@ function submitForm(event) {
         headers: headers,
         credentials: 'same-origin'
     })
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('page-content').innerHTML = html;
-            initLoadedPageContent();
-        })
-        .catch(error => {
-            console.error('Error submitting form:', error);
-            document.getElementById('page-content').innerHTML = "<p>There was an error submitting the form. Please try again.</p>";
-        });
-}
-function loadEditPageContent(url) {
-    fetch(url, {
-        credentials: 'same-origin',
-        headers: getCsrfHeaders()
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to fetch content');
+        .then(function (response) { return response.text(); })
+        .then(function (html) {
+            if (injectHubHtml(html)) {
+                return;
             }
-            return response.text();
+            const pageContent = document.getElementById('page-content');
+            if (pageContent) {
+                pageContent.innerHTML = html;
+                initLoadedPageContent();
+            }
         })
-        .then(html => {
-            document.getElementById('page-content').innerHTML = html;
-            initLoadedPageContent();
-        })
-        .catch(error => {
+        .catch(function (error) {
             console.error('Error submitting form:', error);
-            document.getElementById('page-content').innerHTML = "<p>There was an error submitting the form. Please try again.</p>";
+            const pageContent = document.getElementById('page-content');
+            if (pageContent) {
+                pageContent.innerHTML = '<p>There was an error submitting the form. Please try again.</p>';
+            }
         });
 }
+
+function loadEditPageContent(url) {
+    if (getHubPanel()) {
+        activateHubNavForUrl(url);
+        loadIntoHubPanel(url, {
+            errorLabel: 'Error loading edit page',
+            errorMessage: 'There was an error loading the form. Please try again.'
+        });
+        return;
+    }
+    fetchHtml(url)
+        .then(function (html) {
+            const pageContent = document.getElementById('page-content');
+            if (pageContent) {
+                pageContent.innerHTML = html;
+                initLoadedPageContent();
+            }
+        })
+        .catch(function (error) {
+            console.error('Error loading edit page:', error);
+            const pageContent = document.getElementById('page-content');
+            if (pageContent) {
+                pageContent.innerHTML = '<p>There was an error loading the form. Please try again.</p>';
+            }
+        });
+}
+
+function activateHubNavForUrl(url) {
+    const hub = getHubRoot();
+    if (!hub || !url) {
+        return;
+    }
+    let path = url.split('?')[0];
+    if (path === '/api/loan/editLoan') {
+        path = '/api/loan/addLoan';
+    } else if (path.indexOf('/api/loan/recordEmi') === 0 || path.indexOf('/api/loan/preCloseLoan') === 0) {
+        const emiBtn = hub.querySelector('.fh-hub-nav-item[data-report="loanEmiReport"]');
+        if (emiBtn) {
+            setHubNavActive(emiBtn);
+        }
+        return;
+    }
+    const match = Array.from(hub.querySelectorAll('.fh-hub-nav-item[data-url]')).find(function (btn) {
+        const dataUrl = btn.getAttribute('data-url') || '';
+        return dataUrl.split('?')[0] === path;
+    });
+    if (match) {
+        setHubNavActive(match);
+    }
+}
+
+function openHubOrLoad(fallbackUrl, navSelector) {
+    const hub = getHubRoot();
+    if (hub && navSelector) {
+        const btn = hub.querySelector(navSelector);
+        if (btn) {
+            btn.click();
+            return;
+        }
+    }
+    loadContent(fallbackUrl);
+}
+
+function submitAccountForm(event) {
+    if (getHubPanel()) {
+        submitForm(event);
+        return false;
+    }
+    return true;
+}
+
+function refreshReportAfterDelete(reportType) {
+    if (!reportType) {
+        return;
+    }
+    if (reportType.indexOf('ReportContainer') !== -1 || reportType.indexOf('manageReport') === 0) {
+        reloadSelectedExpenseReport();
+        return;
+    }
+    const hub = getHubRoot();
+    if (hub) {
+        const active = hub.querySelector('.fh-hub-nav-item.active[data-report]')
+            || hub.querySelector('.fh-hub-nav-item[data-report="' + reportType + '"]');
+        if (active) {
+            showHubReport(active);
+            return;
+        }
+    }
+    if (typeof fetchReportContent === 'function') {
+        fetchReportContent(reportType);
+    }
+}
+
 function deleteEntity(anchor, entityType, apiEndpoint) {
     var entityId = anchor.getAttribute('data-id');
     var reportType = anchor.getAttribute('data-report-type');
-    if (confirm(`Are you sure you want to delete this ${entityType}?`)) {
-        let apiUrl = `${apiEndpoint}?id=${entityId}`;
-       if (entityType.toLowerCase().includes("plan")) {
-            apiUrl += `&type=plan`;
-       } else if (entityType.toLowerCase().includes("actual")) {
-            apiUrl += `&type=actual`;
-       }
-        fetch(apiUrl, {
-            method: 'DELETE',
-            headers: getCsrfHeaders(),
-            credentials: 'same-origin'
-        })
-        .then(response => {
-            return response.text().then(data => {
+    if (!confirm('Are you sure you want to delete this ' + entityType + '?')) {
+        return;
+    }
+    let apiUrl = apiEndpoint + '?id=' + entityId;
+    if (entityType.toLowerCase().includes('plan')) {
+        apiUrl += '&type=plan';
+    } else if (entityType.toLowerCase().includes('actual')) {
+        apiUrl += '&type=actual';
+    }
+    fetch(apiUrl, {
+        method: 'DELETE',
+        headers: getCsrfHeaders(),
+        credentials: 'same-origin'
+    })
+        .then(function (response) {
+            return response.text().then(function (data) {
                 if (response.status === 409) {
                     alert(data);
                 } else if (response.ok) {
-                    if (data === "success") {
-                        alert(`${entityType.charAt(0).toUpperCase() + entityType.slice(1)} deleted successfully`);
-                        fetchReportContent(reportType);
+                    if (data === 'success') {
+                        alert(entityType.charAt(0).toUpperCase() + entityType.slice(1) + ' deleted successfully');
+                        refreshReportAfterDelete(reportType);
                     } else {
-                        alert(`Error deleting ${entityType}`);
+                        alert('Error deleting ' + entityType);
                     }
                 } else {
-                    alert(`Error: ${data}`);
+                    alert('Error: ' + data);
                 }
             });
         })
-        .catch(error => {
+        .catch(function (error) {
             alert('Error: ' + error.message);
         });
-    }
 }
 function callEditCategory(element) {
         const id = element.getAttribute('data-id') || '';
@@ -260,7 +461,14 @@ function deleteCategoryEntity(element, entityName, apiUrl) {
     .then(response => response.text())
     .then(html => {
         alert("Category Deleted Successfully!");
-        document.getElementById('page-content').innerHTML = html;
+        if (injectHubHtml(html)) {
+            return;
+        }
+        const pageContent = document.getElementById('page-content');
+        if (pageContent) {
+            pageContent.innerHTML = html;
+            initLoadedPageContent();
+        }
     })
     .catch(error => console.error("Error deleting category:", error));
 }
@@ -308,9 +516,14 @@ function loadReport(yearId, apiUrl, containerId) {
             finalizeExpenseReportLoad(container);
         }
         if (typeof attachReportListeners === 'function') {
+            let listenerType = lastValue;
+            if (lastValue === 'yearSummaryReport') {
+                const year = yearEl ? yearEl.value : '';
+                listenerType = year ? ('yearSummary|' + year) : 'yearSummary';
+            }
             attachReportListeners(containerId === 'ReportContainer'
                 ? (document.getElementById('expenseReportCard') || container)
-                : container, lastValue);
+                : container, listenerType);
         }
     })
     .catch(error => {
@@ -325,9 +538,12 @@ function selectExpenseReport(button) {
     if (!button) {
         return;
     }
-    const page = button.closest('.fh-expense-reports-page');
-    const tabs = page ? page.querySelectorAll('.fh-expense-report-tab') : document.querySelectorAll('.fh-expense-report-tab');
-    tabs.forEach(tab => tab.classList.remove('active'));
+    const page = button.closest('.fh-expense-hub, .fh-section-hub');
+    if (page) {
+        page.querySelectorAll('.fh-hub-nav-item[data-report-url]').forEach(function (tab) {
+            tab.classList.remove('active');
+        });
+    }
     button.classList.add('active');
 
     selectedExpenseReportUrl = button.getAttribute('data-report-url');
@@ -340,6 +556,7 @@ function selectExpenseReport(button) {
     if (titleEl) {
         titleEl.textContent = title;
     }
+    showHubPanelMode(false);
     if (card) {
         card.hidden = false;
     }
@@ -380,18 +597,6 @@ function finalizeExpenseReportLoad(container) {
         extra.hidden = true;
         extra.innerHTML = '';
     }
-}
-
-function setActive(button) {
-    const scope = button.closest('.fh-expense-reports__sidebar')
-        || button.closest('.fh-expense-reports-page')
-        || button.closest('.fh-expense-reports')
-        || button.closest('.form-container')
-        || button.parentElement;
-    if (scope) {
-        scope.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-    }
-    button.classList.add('active');
 }
 
 function updateCategoryFileLabel(fileInput) {
@@ -444,15 +649,18 @@ function initLoadedPageContent() {
     if (document.getElementById('addLoanForm')) {
         initAddLoanForm();
     }
-    // Full-page Experience / Salary from Professional → Reports submenu
     const pageContent = document.getElementById('page-content');
-    if (!pageContent || typeof attachReportListeners !== 'function') {
+    if (!pageContent) {
         return;
     }
-    if (pageContent.querySelector('.fh-exp-report #downloadPdf')) {
-        attachReportListeners(pageContent, 'expReport');
-    } else if (pageContent.querySelector('.fh-salary-report #downloadPdf')) {
-        attachReportListeners(pageContent, 'salaryReport');
+    const hub = getHubRoot();
+    const panel = getHubPanel();
+    if (hub && panel && panel.dataset.hubReady !== '1') {
+        panel.dataset.hubReady = '1';
+        const firstNav = hub.querySelector('.fh-hub-nav-item');
+        if (firstNav) {
+            firstNav.click();
+        }
     }
 }
 
@@ -646,8 +854,17 @@ function persistCategoryOrder(tbody) {
             if (!r.ok) {
                 throw new Error("Reorder failed");
             }
-            if (typeof loadContent === "function") {
-                loadContent("/api/expenses/categories");
+            if (typeof showHubPage === 'function') {
+                const categoriesBtn = document.querySelector(
+                    '#page-content .fh-section-hub .fh-hub-nav-item[data-url="/api/expenses/categories"]'
+                );
+                if (categoriesBtn) {
+                    showHubPage(categoriesBtn);
+                    return;
+                }
+            }
+            if (typeof loadContent === 'function') {
+                loadContent('/api/expenses/categories');
             }
         })
         .catch((err) => console.error(err));

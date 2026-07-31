@@ -26,25 +26,24 @@
                 <td th:text="${category}"></td>
 
                 <th:block th:each="monthIndex : ${#numbers.sequence(1, 12)}">
-                    <td>
-            <span th:text="${#numbers.formatInteger(
-                (reportData.?[category == '__${category}__' and month == __${monthIndex}__].![planAmount].size() > 0)
-                ? reportData.?[category == '__${category}__' and month == __${monthIndex}__].![planAmount].get(0)
-                : 0, 0)}" th:remove="tag"></span>
-                    </td>
-                    <td>
-            <span th:text="${#numbers.formatInteger(
-                (reportData.?[category == '__${category}__' and month == __${monthIndex}__].![actualAmount].size() > 0)
-                ? reportData.?[category == '__${category}__' and month == __${monthIndex}__].![actualAmount].get(0)
-                : 0, 0)}" th:remove="tag"></span>
-                    </td>
+                    <th:block th:with="
+                        matches=${reportData.?[category == '__${category}__' and month == __${monthIndex}__]},
+                        planAmt=${matches.size() > 0 ? matches.get(0).planAmount : 0},
+                        actualAmt=${matches.size() > 0 ? matches.get(0).actualAmount : 0}">
+                        <td th:text="${#numbers.formatInteger(planAmt, 0)}"></td>
+                        <td th:classappend="${actualAmt > planAmt} ? ' fh-actual-over-budget' : ''"
+                            th:text="${#numbers.formatInteger(actualAmt, 0)}"></td>
+                    </th:block>
                 </th:block>
             </tr>
             <tr class="fh-report-footer-row">
                 <td>Total</td>
                 <th:block th:each="monthIndex : ${#numbers.sequence(1, 12)}">
                     <td th:text="${monthlyPlanTotalMap[monthIndex.toString()] ?: '0'}"></td>
-                    <td th:text="${monthlyActualTotalMap[monthIndex.toString()] ?: '0'}"></td>
+                    <td th:with="planRaw=${monthlyPlanTotals[monthIndex.toString()] ?: 0},
+                                 actualRaw=${monthlyActualTotals[monthIndex.toString()] ?: 0}"
+                        th:classappend="${actualRaw > planRaw} ? ' fh-actual-over-budget' : ''"
+                        th:text="${monthlyActualTotalMap[monthIndex.toString()] ?: '0'}"></td>
                 </th:block>
             </tr>
 

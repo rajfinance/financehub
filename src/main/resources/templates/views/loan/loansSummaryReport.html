@@ -83,7 +83,7 @@
     </div>
 </div>
 <p th:if="${loans == null or loans.isEmpty()}" style="text-align: center; color: var(--fh-text-muted); font-style: italic;">
-    No loans added yet. Use <a href="javascript:void(0);" th:onclick="'loadContent(\'/api/loan/addLoan\')'">Add Loan</a> to register a loan.
+    No loans added yet. Use <a href="javascript:void(0);" onclick="openHubOrLoad('/api/loan/reports', '.fh-hub-nav-item[data-url=&quot;/api/loan/addLoan&quot;]')">Add Loan</a> to register a loan.
 </p>
 </body>
 </html>

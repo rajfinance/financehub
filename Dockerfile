@@ -12,7 +12,7 @@ RUN mvn -B -DskipTests clean package \
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
-# Always copy fixed name (pom version may be 2.26.6 etc.; do not hardcode FinanceHub-1.0.jar)
+# Always copy fixed name from pom <finalName>FinanceHub</finalName> (version is in pom only; do not hardcode FinanceHub-x.y.z.jar)
 COPY --from=build /app/target/FinanceHub.jar app.jar
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

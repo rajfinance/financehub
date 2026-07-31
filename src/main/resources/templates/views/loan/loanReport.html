@@ -3,17 +3,44 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
 <th:block sec:authorize="isAuthenticated()">
-    <div class="content">
-        <h1>Loan Reports</h1>
-        <div class="tabs">
-            <button type="button" class="tab-button active" th:onclick="'showReport(\'loansReport\')'">My Loans</button>
-            <button type="button" class="tab-button" th:onclick="'showReport(\'loanEmiReport\')'">EMI Schedule</button>
-            <button type="button" class="tab-button" th:onclick="'showReport(\'loanBankProjectionReport\')'">EMI Projection</button>
+    <div class="fh-section-hub">
+        <aside class="fh-section-hub__sidebar" aria-label="Loans menu">
+            <div class="fh-section-hub__brand">
+                <h1 class="fh-section-hub__title">Loans</h1>
+            </div>
+            <nav class="fh-section-hub__menu">
+                <button type="button"
+                        class="tab-button fh-hub-nav-item"
+                        data-url="/api/loan/addLoan"
+                        onclick="showHubPage(this)">
+                    Add Loan
+                </button>
+                <div class="fh-hub-nav-label">Reports</div>
+                <div class="fh-hub-nav-divider" role="separator"></div>
+                <button type="button"
+                        class="tab-button fh-hub-nav-item"
+                        data-report="loansReport"
+                        onclick="showHubReport(this)">
+                    My Loans
+                </button>
+                <button type="button"
+                        class="tab-button fh-hub-nav-item"
+                        data-report="loanEmiReport"
+                        onclick="showHubReport(this)">
+                    EMI Schedule
+                </button>
+                <button type="button"
+                        class="tab-button fh-hub-nav-item"
+                        data-report="loanBankProjectionReport"
+                        onclick="showHubReport(this)">
+                    EMI Projection
+                </button>
+            </nav>
+        </aside>
+        <div class="fh-section-hub__content">
+            <div id="fhHubPanel" class="fh-section-hub__panel"></div>
         </div>
     </div>
-    <div class="tab-content" id="loansReport" style="display:none;"></div>
-    <div class="tab-content" id="loanEmiReport" style="display:none;"></div>
-    <div class="tab-content" id="loanBankProjectionReport" style="display:none;"></div>
 </th:block>
 <th:block sec:authorize="!isAuthenticated()">
     <p>Please log in to access this page.</p>

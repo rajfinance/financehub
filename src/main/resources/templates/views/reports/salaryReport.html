@@ -47,7 +47,7 @@
                                     <td style="text-align: right; padding-right: 5px;" th:text="${salary.formattedSalaryAmount}"></td>
                                     <td>
                                         <a href="javascript:void(0);"
-                                           th:onclick="'loadEditPageContent(\'/api/work/addSalary?action=edit&id=' + ${salary.salaryId} + '\', \'#page-content\')'"
+                                           th:onclick="'loadEditPageContent(\'/api/work/addSalary?action=edit&id=' + ${salary.salaryId} + '\')'"
                                            style="text-decoration: none;">
                                             <img th:src="@{/images/edit-icon.png}" src="/images/edit-icon.png" alt="Edit" style="width: 20px; height: 20px; margin-right: 20px; margin-left: 15px;" />
                                         </a>

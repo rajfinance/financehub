@@ -10,7 +10,7 @@
 
         <div th:if="${error != null}" class="form-banner form-banner--error">
             <span th:text="${error}"></span>
-            <a href="javascript:void(0);" th:onclick="'loadContent(\'/api/work/workReport\')'">View Experience</a>
+            <a href="javascript:void(0);" th:onclick="'openHubOrLoad(\'/api/work/workReport\', \'[data-report=expReport]\')'">View Experience</a>
         </div>
 
         <form id="addExperience" th:action="@{/api/work/addExperience}" method="post" onsubmit="submitForm(event)">

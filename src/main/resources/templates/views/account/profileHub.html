@@ -4,36 +4,22 @@
 <body>
 <th:block sec:authorize="isAuthenticated()">
     <div class="fh-section-hub">
-        <aside class="fh-section-hub__sidebar" aria-label="Rentals menu">
+        <aside class="fh-section-hub__sidebar" aria-label="Profile menu">
             <div class="fh-section-hub__brand">
-                <h1 class="fh-section-hub__title">Rentals</h1>
+                <h1 class="fh-section-hub__title">Profile</h1>
             </div>
             <nav class="fh-section-hub__menu">
                 <button type="button"
                         class="tab-button fh-hub-nav-item"
-                        data-url="/api/rent/owners/add"
+                        data-url="/api/account/profile"
                         onclick="showHubPage(this)">
-                    Add Owner
+                    Update Profile
                 </button>
                 <button type="button"
                         class="tab-button fh-hub-nav-item"
-                        data-url="/api/rent/payments/add"
+                        data-url="/api/account/change-password"
                         onclick="showHubPage(this)">
-                    Add Rent
-                </button>
-                <div class="fh-hub-nav-label">Reports</div>
-                <div class="fh-hub-nav-divider" role="separator"></div>
-                <button type="button"
-                        class="tab-button fh-hub-nav-item"
-                        data-report="ownersReport"
-                        onclick="showHubReport(this)">
-                    Owners
-                </button>
-                <button type="button"
-                        class="tab-button fh-hub-nav-item"
-                        data-report="rentPaymentReport"
-                        onclick="showHubReport(this)">
-                    Rent Payments
+                    Change Password
                 </button>
             </nav>
         </aside>

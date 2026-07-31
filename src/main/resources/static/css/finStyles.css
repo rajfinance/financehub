@@ -79,6 +79,21 @@ h2 {
 .container {
             max-width: 1250px;
         }
+
+/* Dashboard: full-width white surface (no right-side gap); keep bottom spacing */
+#dashboardContent.container {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#dashboardContent .content-box {
+    margin: 10px 0 1.5rem;
+    border-radius: 0;
+    box-sizing: border-box;
+}
 .content-box {
             background-color: #ffffff;
             padding: 10px;
@@ -523,47 +538,11 @@ header.app-header .userinfo .userinfo-name {
     text-align: left;
 }
 
-.sidebar {
-    display: none;
+/* Give section hubs (esp. Plan vs Actual) a bit more horizontal room */
+#page-content:has(.fh-section-hub) {
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
 }
-
-li.submenu {
-    position: relative;
-}
-
-li.submenu ul.dropdown {
-    display: none;
-    position: absolute;
-    top: 0; /* directly below the parent */
-    left: 70%;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    background-color: #006494;
-    border-radius: 4px;
-    min-width: 190px;
-    z-index: 1000;
-}
-
-li.submenu:hover > ul.dropdown {
-    display: block;
-}
-
-li.submenu ul.dropdown li {
-    display: block;
-    padding: 0px;
-}
-
-li.submenu ul.dropdown li a {
-    display: block;
-    text-decoration: none;
-}
-
-li.submenu ul.dropdown li a:hover {
-    background-color: #4682b4;
-    color: white;
-}
-
 
 /* Main Content Area */
 
@@ -2549,52 +2528,55 @@ button.fh-btn:active,
     display: none;
 }
 
-/* Professional reports: full-height left sidebar + right content */
-.fh-pro-reports {
+/* Section hubs: left sidebar + right content (Professional / Expenses / Rentals) */
+.fh-section-hub {
     display: flex;
     align-items: stretch;
-    gap: 1rem;
+    gap: 0.85rem;
     margin: 0;
     padding: 0;
     border: none;
     background: transparent;
     box-shadow: none;
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
     min-height: calc(100vh - 8.5rem);
 }
 
-.fh-pro-reports__sidebar {
-    width: 200px;
-    flex: 0 0 200px;
+.fh-section-hub__sidebar {
+    width: 180px;
+    flex: 0 0 180px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     min-height: 100%;
-    padding: 0.85rem 0.75rem 1rem;
+    padding: 0.85rem 0.65rem 1rem;
     border: 1px solid var(--fh-border);
     border-radius: 12px;
     background: var(--fh-surface);
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
 }
 
-.fh-pro-reports__brand {
+.fh-section-hub__brand {
     margin: 0 0 0.85rem;
     padding: 0 0.15rem 0.75rem;
     border-bottom: 1px solid var(--fh-border);
 }
 
-.fh-pro-reports__title {
+.fh-section-hub__title {
     margin: 0;
     padding: 0;
     width: auto;
     max-width: none;
-    text-align: left;
+    text-align: center;
     font-size: 0.95rem;
     font-weight: 800;
     color: var(--fh-text);
     line-height: 1.3;
 }
 
-.fh-pro-reports__menu {
+.fh-section-hub__menu {
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -2603,35 +2585,61 @@ button.fh-btn:active,
     flex: 1 1 auto;
 }
 
-.fh-pro-reports .tab-button.fh-pro-nav-item {
+.fh-hub-nav-label {
+    margin: 0.15rem 0 0;
+    padding: 0.45rem 0.65rem 0.15rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #64748b;
+    text-align: left;
+}
+
+.fh-hub-nav-divider {
+    height: 0;
+    margin: 0.15rem 0.15rem 0.35rem;
+    border: none;
+    border-top: 1px solid var(--fh-border);
+}
+
+.fh-hub-loading {
+    margin: 1rem;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.fh-section-hub .tab-button.fh-hub-nav-item {
     display: block;
     width: 100%;
     margin: 0;
-    padding: 0.65rem 0.75rem;
+    padding: 0.6rem 0.65rem;
     text-align: left;
     border-radius: 8px;
     border: 1px solid var(--fh-border);
     background: #f8fafc;
     box-shadow: none;
     color: #0f172a;
-    font-size: 0.9rem;
+    font-size: 0.84rem;
     font-weight: 700;
+    cursor: pointer;
+    box-sizing: border-box;
 }
 
-.fh-pro-reports .tab-button.fh-pro-nav-item:hover {
+.fh-section-hub .tab-button.fh-hub-nav-item:hover {
     background: rgba(0, 100, 148, 0.08);
     border-color: rgba(0, 100, 148, 0.28);
     color: #0f172a;
 }
 
-.fh-pro-reports .tab-button.fh-pro-nav-item.active {
+.fh-section-hub .tab-button.fh-hub-nav-item.active {
     background: rgba(0, 100, 148, 0.12);
     border-color: var(--fh-brand);
     color: #0f172a;
     box-shadow: inset 3px 0 0 var(--fh-brand);
 }
 
-.fh-pro-reports__content {
+.fh-section-hub__content {
     flex: 1 1 auto;
     min-width: 0;
     display: flex;
@@ -2639,9 +2647,10 @@ button.fh-btn:active,
     min-height: 100%;
 }
 
-.fh-pro-reports__panel {
+.fh-section-hub__panel {
     margin-top: 0;
     flex: 1 1 auto;
+    min-width: 0;
     min-height: 100%;
     border: 1px solid var(--fh-border);
     border-radius: 12px;
@@ -2649,21 +2658,67 @@ button.fh-btn:active,
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
     padding: 0.75rem;
     box-sizing: border-box;
+    overflow-x: auto;
+}
+
+.fh-section-hub__panel .form-container {
+    max-width: none;
+    margin: 0;
+    box-shadow: none;
+    border: none;
+    padding: 0.35rem 0.25rem 0.75rem;
+}
+
+.fh-section-hub__panel .fh-profile-update-shell,
+.fh-section-hub__panel .account-auth-page {
+    max-width: none;
+    margin: 0;
+    padding: 0.25rem 0.15rem;
+}
+
+.fh-section-hub__panel .fh-profile-update-panel {
+    max-width: none;
+    margin: 0;
+    box-shadow: none;
+}
+
+.fh-section-hub__panel .login-container,
+.fh-section-hub__panel .profile-account-form {
+    max-width: 32rem;
+    margin: 0 auto;
+}
+
+.fh-expense-hub .fh-expense-report-card {
+    margin: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.fh-expense-hub .fh-expense-report-card__body {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.fh-expense-hub #yearwise .myTable {
+    width: max-content;
+    min-width: 100%;
 }
 
 @media (max-width: 800px) {
-    .fh-pro-reports {
+    .fh-section-hub {
         flex-direction: column;
         min-height: 0;
     }
 
-    .fh-pro-reports__sidebar {
+    .fh-section-hub__sidebar {
         width: 100%;
         flex: 0 0 auto;
         min-height: 0;
     }
 
-    .fh-pro-reports__menu {
+    .fh-section-hub__menu {
         flex: 0 0 auto;
     }
 }
@@ -2684,20 +2739,6 @@ button.fh-btn:active,
     .fh-year-panel__summary {
         pointer-events: none;
     }
-}
-
-.tab-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    border-bottom: 1px solid var(--fh-border);
-    margin-bottom: 1.25rem;
-    padding-bottom: 0.5rem;
-}
-
-.tab-buttons button {
-    flex: 1;
-    min-width: 120px;
 }
 
 /* Grid layout for monthly expenses */
@@ -3221,48 +3262,7 @@ button.fh-btn:active,
     max-width: none;
 }
 
-/* Expense reports: chooser card + full-width report card */
-.fh-expense-reports-page {
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.fh-expense-reports-chooser {
-    width: 100%;
-    box-sizing: border-box;
-    margin: 0 0 1rem;
-    padding: 1rem 1.1rem 1.15rem;
-    border: 1px solid var(--fh-border);
-    border-radius: 12px;
-    background: var(--fh-surface);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
-}
-
-.fh-expense-reports-chooser .fh-expense-page-title {
-    margin-bottom: 0.85rem !important;
-    border-bottom: none;
-    padding-bottom: 0 !important;
-}
-
-.fh-expense-report-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.65rem;
-    margin: 0;
-}
-
-.fh-expense-report-tab.fh-btn {
-    margin: 0;
-    min-width: 8.5rem;
-}
-
-.fh-expense-report-tab.active {
-    background: rgba(0, 100, 148, 0.12);
-    border-color: var(--fh-brand);
-    box-shadow: 0 0 0 1px rgba(0, 100, 148, 0.12);
-}
-
+/* Expense report card (loaded inside Expenses hub) */
 .fh-expense-report-card {
     width: 100%;
     box-sizing: border-box;
@@ -3552,6 +3552,11 @@ button.fh-btn:active,
 }
 
 #yearwise .myTable tr.fh-report-footer-row td {
+    font-weight: 700;
+}
+
+#yearwise .myTable td.fh-actual-over-budget {
+    color: #b91c1c;
     font-weight: 700;
 }
 

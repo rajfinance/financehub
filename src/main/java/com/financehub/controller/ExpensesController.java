@@ -135,12 +135,6 @@ public class ExpensesController {
         return dto;
     }
 
-    @GetMapping("/manageExpenses")
-    public String manageExpenses(Model model){
-        Set<Integer> years = expensesService.getDistinctExpenseYearsForUser(userService.getUserId());
-        model.addAttribute("years", years);
-        return "views/expenses/manageExpenses";
-    }
     @GetMapping("/manageReport")
     public String getManageExpenseReport(@RequestParam("year") int year, Model model) {
         List<ExpenseReportDTO> reports = expensesService.getExpenseReport(year);
@@ -163,10 +157,15 @@ public class ExpensesController {
 
         Map<String, String> monthlyPlanTotalMap = new HashMap<>();
         Map<String, String> monthlyActualTotalMap = new HashMap<>();
+        Map<String, Integer> monthlyPlanTotals = new HashMap<>();
+        Map<String, Integer> monthlyActualTotals = new HashMap<>();
         DecimalFormat df = new DecimalFormat("#,##0");
         for (int i = 1; i <= 12; i++) {
-            monthlyPlanTotalMap.put(String.valueOf(i), "0");
-            monthlyActualTotalMap.put(String.valueOf(i), "0");
+            String key = String.valueOf(i);
+            monthlyPlanTotalMap.put(key, "0");
+            monthlyActualTotalMap.put(key, "0");
+            monthlyPlanTotals.put(key, 0);
+            monthlyActualTotals.put(key, 0);
         }
 
         for (ExpenseReportDTO data : reportData) {
@@ -174,18 +173,20 @@ public class ExpensesController {
             int planAmount = (int) Math.floor(data.getPlanAmount());
             int actualAmount = (int) Math.floor(data.getActualAmount());
 
-            int currentPlanTotal = monthlyPlanTotalMap.containsKey(month)
-                    ? Integer.parseInt(monthlyPlanTotalMap.get(month).replace(",", ""))
-                    : 0;
-            int currentActualTotal = monthlyActualTotalMap.containsKey(month)
-                    ? Integer.parseInt(monthlyActualTotalMap.get(month).replace(",", ""))
-                    : 0;
+            int currentPlanTotal = monthlyPlanTotals.getOrDefault(month, 0);
+            int currentActualTotal = monthlyActualTotals.getOrDefault(month, 0);
+            int newPlanTotal = currentPlanTotal + planAmount;
+            int newActualTotal = currentActualTotal + actualAmount;
 
-            monthlyPlanTotalMap.put(month, df.format(currentPlanTotal + planAmount));
-            monthlyActualTotalMap.put(month, df.format(currentActualTotal + actualAmount));
+            monthlyPlanTotals.put(month, newPlanTotal);
+            monthlyActualTotals.put(month, newActualTotal);
+            monthlyPlanTotalMap.put(month, df.format(newPlanTotal));
+            monthlyActualTotalMap.put(month, df.format(newActualTotal));
         }
         model.addAttribute("monthlyPlanTotalMap", monthlyPlanTotalMap);
         model.addAttribute("monthlyActualTotalMap", monthlyActualTotalMap);
+        model.addAttribute("monthlyPlanTotals", monthlyPlanTotals);
+        model.addAttribute("monthlyActualTotals", monthlyActualTotals);
         model.addAttribute("reportData", reportData);
         model.addAttribute("year", year);
         return "views/expenses/yearWiseActualPlanReport";
