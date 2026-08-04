@@ -1,5 +1,6 @@
 package com.financehub.services;
 
+import com.financehub.dtos.CategoryYearAmountRow;
 import com.financehub.dtos.ExpenseReportDTO;
 import com.financehub.dtos.ExpenseRequest;
 import com.financehub.dtos.ExpensesCategoriesDTO;
@@ -22,6 +23,10 @@ import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.VerticalAlignment;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,6 +37,7 @@ import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -56,24 +62,45 @@ public class ExpensesService {
                 .collect(Collectors.toList());
     }
 
+    public ResponseEntity<byte[]> getCategoryIcon(int id) {
+        Long userId = userService.getUserId();
+        if (userId == null || userId <= 0) {
+            return ResponseEntity.status(401).build();
+        }
+        return expensesCategoriesRepository.findByIdAndUserId(id, userId)
+                .filter(c -> c.getIconData() != null && c.getIconData().length > 0)
+                .map(c -> {
+                    MediaType mediaType = MediaType.IMAGE_JPEG;
+                    try {
+                        if (c.getIconContentType() != null && !c.getIconContentType().isBlank()) {
+                            mediaType = MediaType.parseMediaType(c.getIconContentType());
+                        }
+                    } catch (Exception ignored) {
+                        mediaType = MediaType.IMAGE_JPEG;
+                    }
+                    return ResponseEntity.ok()
+                            .cacheControl(CacheControl.maxAge(1, TimeUnit.DAYS).cachePrivate())
+                            .header(HttpHeaders.CONTENT_LENGTH, Integer.toString(c.getIconData().length))
+                            .contentType(mediaType)
+                            .body(c.getIconData());
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @Transactional
     public void saveCategory(ExpensesCategoriesDTO expensesCategoriesDTO) {
         ExpenseCategories entity = mapDtoToEntity(expensesCategoriesDTO);
         MultipartFile iconFile = expensesCategoriesDTO.getIconImage();
-        Long userId = userService.getUserId();
         if (iconFile != null && !iconFile.isEmpty()) {
-            if (expensesCategoriesDTO.getCategoryId() != null && expensesCategoriesDTO.getCategoryId() > 0) {
-                expensesCategoriesRepository
-                        .findByIdAndUserId(Math.toIntExact(expensesCategoriesDTO.getCategoryId()), userId)
-                        .ifPresent(old -> expenseCategoryImageStorage.deleteIfStored(old.getIcon(), userId));
-            }
             try {
-                entity.setIcon(expenseCategoryImageStorage.store(iconFile, userId));
+                ExpenseCategoryImageStorage.StoredIcon stored = expenseCategoryImageStorage.readValidated(iconFile);
+                if (stored != null) {
+                    entity.setIconData(stored.data());
+                    entity.setIconContentType(stored.contentType());
+                }
             } catch (IOException e) {
                 throw new IllegalStateException("Could not save category image", e);
             }
-        } else if (entity.getIcon() == null || entity.getIcon().isBlank()) {
-            entity.setIcon("/images/category-placeholder.svg");
         }
         expensesCategoriesRepository.save(entity);
     }
@@ -98,34 +125,29 @@ public class ExpensesService {
     private ExpenseCategories mapDtoToEntity(ExpensesCategoriesDTO dto) {
         ExpenseCategories entity = new ExpenseCategories();
 
-        if(dto.getCategoryId() == null || dto.getCategoryId() == 0){
+        if (dto.getCategoryId() == null || dto.getCategoryId() == 0) {
             entity.setName(dto.getCategoryName());
-            entity.setIcon(dto.getIconPath());
             entity.setSortOrder(dto.getSortOrder());
             entity.setUserId(userService.getUserId());
             entity.setEnabled(dto.isEnabled());
             entity.setCreatedAt(LocalDateTime.now());
             entity.setUpdatedAt(LocalDateTime.now());
-        }
-        else {
+        } else {
             entity = expensesCategoriesRepository
                     .findByIdAndUserId(Math.toIntExact(dto.getCategoryId()), userService.getUserId())
                     .orElseThrow(() -> new IllegalArgumentException("Category not found"));
             entity.setName(dto.getCategoryName());
-            entity.setIcon(dto.getIconPath());
             entity.setSortOrder(dto.getSortOrder());
             entity.setEnabled(dto.isEnabled());
             entity.setUpdatedAt(LocalDateTime.now());
+            // Keep existing iconData unless a new file is uploaded in saveCategory
         }
         return entity;
     }
 
     public void deleteCategoryByID(int id) {
         Long userId = userService.getUserId();
-        expensesCategoriesRepository.findByIdAndUserId(id, userId).ifPresent(cat -> {
-            expenseCategoryImageStorage.deleteIfStored(cat.getIcon(), userId);
-            expensesCategoriesRepository.delete(cat);
-        });
+        expensesCategoriesRepository.findByIdAndUserId(id, userId).ifPresent(expensesCategoriesRepository::delete);
     }
 
     @Transactional
@@ -452,6 +474,175 @@ public class ExpensesService {
 
         return data;
     }
+
+    /**
+     * Category rows × year columns (actual amounts), for all years that have expense data.
+     */
+    public Map<String, Object> getCategoryYearWiseExpenseData() {
+        Long userId = userService.getUserId();
+        List<Expenses> expenses = expensesRepository.findByUserId(userId);
+        DecimalFormat decimalFormat = new DecimalFormat("#,###");
+
+        Map<Integer, Map<Integer, Double>> categoryYearAmounts = new HashMap<>();
+        TreeSet<Integer> years = new TreeSet<>();
+
+        for (Expenses expense : expenses) {
+            if (expense.getActualExpenses() == null || expense.getActualExpenses().isEmpty()) {
+                continue;
+            }
+            int year = expense.getExpenseYear();
+            years.add(year);
+            for (Map.Entry<Integer, Double> entry : expense.getActualExpenses().entrySet()) {
+                if (entry.getKey() == null || entry.getValue() == null) {
+                    continue;
+                }
+                categoryYearAmounts
+                        .computeIfAbsent(entry.getKey(), id -> new HashMap<>())
+                        .merge(year, entry.getValue(), Double::sum);
+            }
+        }
+
+        Map<String, Object> empty = new HashMap<>();
+        empty.put("years", List.of());
+        empty.put("rows", List.of());
+        empty.put("yearTotals", Map.of());
+        empty.put("grandTotal", "0");
+        if (years.isEmpty() || categoryYearAmounts.isEmpty()) {
+            return empty;
+        }
+
+        List<Object[]> categoryData = (List<Object[]>) expensesCategoriesRepository
+                .findCategoryNamesByIds(new ArrayList<>(categoryYearAmounts.keySet()));
+        LinkedHashMap<Integer, String> categoryNamesById = categoryData.stream()
+                .sorted(Comparator.comparing(row -> (Integer) row[2]))
+                .collect(Collectors.toMap(
+                        row -> (Integer) row[0],
+                        row -> (String) row[1],
+                        (a, b) -> a,
+                        LinkedHashMap::new));
+
+        Map<Integer, Double> yearTotalsRaw = new TreeMap<>();
+        for (Integer year : years) {
+            yearTotalsRaw.put(year, 0.0);
+        }
+
+        List<CategoryYearAmountRow> rows = new ArrayList<>();
+        double grandTotal = 0.0;
+        for (Map.Entry<Integer, String> catEntry : categoryNamesById.entrySet()) {
+            Integer categoryId = catEntry.getKey();
+            Map<Integer, Double> byYear = categoryYearAmounts.getOrDefault(categoryId, Map.of());
+            CategoryYearAmountRow row = new CategoryYearAmountRow();
+            row.setCategory(catEntry.getValue());
+            Map<Integer, String> formatted = new LinkedHashMap<>();
+            double rowTotal = 0.0;
+            for (Integer year : years) {
+                double amount = byYear.getOrDefault(year, 0.0);
+                formatted.put(year, amount > 0 ? decimalFormat.format(Math.floor(amount)) : "0");
+                rowTotal += amount;
+                yearTotalsRaw.merge(year, amount, Double::sum);
+            }
+            row.setAmountsByYear(formatted);
+            row.setTotal(decimalFormat.format(Math.floor(rowTotal)));
+            rows.add(row);
+            grandTotal += rowTotal;
+        }
+
+        Map<Integer, String> yearTotals = new LinkedHashMap<>();
+        for (Integer year : years) {
+            yearTotals.put(year, decimalFormat.format(Math.floor(yearTotalsRaw.getOrDefault(year, 0.0))));
+        }
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("years", new ArrayList<>(years));
+        data.put("rows", rows);
+        data.put("yearTotals", yearTotals);
+        data.put("grandTotal", decimalFormat.format(Math.floor(grandTotal)));
+        return data;
+    }
+
+    public void generateCategoryYearExpensePdf(OutputStream outputStream, Map<String, Object> data) {
+        try {
+            PdfWriter writer = new PdfWriter(outputStream);
+            PdfDocument pdfDoc = new PdfDocument(writer);
+            pdfDoc.setDefaultPageSize(PageSize.A4.rotate());
+            Document document = new Document(pdfDoc);
+
+            document.add(new Paragraph("CATEGORY-WISE YEAR AMOUNTS")
+                    .setFontSize(20)
+                    .setBold()
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(10));
+
+            @SuppressWarnings("unchecked")
+            List<Integer> years = (List<Integer>) data.get("years");
+            @SuppressWarnings("unchecked")
+            List<CategoryYearAmountRow> rows = (List<CategoryYearAmountRow>) data.get("rows");
+            @SuppressWarnings("unchecked")
+            Map<Integer, String> yearTotals = (Map<Integer, String>) data.get("yearTotals");
+            String grandTotal = (String) data.get("grandTotal");
+
+            if (years == null || years.isEmpty() || rows == null || rows.isEmpty()) {
+                document.add(new Paragraph("No expense data available.")
+                        .setTextAlignment(TextAlignment.CENTER));
+                document.close();
+                return;
+            }
+
+            int cols = years.size() + 2;
+            Table table = new Table(cols).useAllAvailableWidth();
+            table.setHorizontalAlignment(HorizontalAlignment.CENTER);
+
+            table.addHeaderCell(headerCell("CATEGORY"));
+            for (Integer year : years) {
+                table.addHeaderCell(headerCell(String.valueOf(year)));
+            }
+            table.addHeaderCell(headerCell("TOTAL"));
+
+            for (CategoryYearAmountRow row : rows) {
+                table.addCell(new Cell().add(new Paragraph(row.getCategory() != null ? row.getCategory() : ""))
+                        .setBold().setPaddingLeft(5));
+                for (Integer year : years) {
+                    String value = row.getAmountsByYear() != null
+                            ? row.getAmountsByYear().getOrDefault(year, "0")
+                            : "0";
+                    table.addCell(new Cell().add(new Paragraph(value)).setTextAlignment(TextAlignment.RIGHT));
+                }
+                table.addCell(new Cell().add(new Paragraph(row.getTotal() != null ? row.getTotal() : "0"))
+                        .setTextAlignment(TextAlignment.RIGHT).setBold());
+            }
+
+            DeviceRgb footerBg = new DeviceRgb(241, 248, 233);
+            table.addCell(new Cell().add(new Paragraph("Total")).setBold().setBackgroundColor(footerBg));
+            for (Integer year : years) {
+                table.addCell(new Cell()
+                        .add(new Paragraph(yearTotals.getOrDefault(year, "0")))
+                        .setBold()
+                        .setTextAlignment(TextAlignment.RIGHT)
+                        .setBackgroundColor(footerBg));
+            }
+            table.addCell(new Cell()
+                    .add(new Paragraph(grandTotal != null ? grandTotal : "0"))
+                    .setBold()
+                    .setTextAlignment(TextAlignment.RIGHT)
+                    .setBackgroundColor(footerBg));
+
+            document.add(table);
+            document.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static Cell headerCell(String text) {
+        return new Cell()
+                .add(new Paragraph(text))
+                .setBold()
+                .setTextAlignment(TextAlignment.CENTER)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setFontColor(new DeviceRgb(255, 255, 255))
+                .setBackgroundColor(new DeviceRgb(0, 100, 148));
+    }
+
 public void generateYearlyExpensePdf(OutputStream outputStream, Map<String, Object> data) {
     try {
         PdfWriter writer = new PdfWriter(outputStream);

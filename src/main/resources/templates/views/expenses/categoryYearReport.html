@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Category-wise Year Amounts</title>
+</head>
+<body>
+<div class="container">
+    <div id="yearwise" class="fh-category-year-report">
+        <div class="fh-report-toolbar">
+            <h1 class="h1report fh-report-title-plain">Category-wise Year Amounts</h1>
+            <div class="report-buttons fh-report-actions">
+                <button id="downloadPdf" class="pdf-btn"
+                        type="button"
+                        title="Download PDF" aria-label="Download PDF">
+                    <img th:src="@{/images/pdf.png}" alt="PDF" />
+                </button>
+                <button id="printReport" class="print-btn"
+                        type="button"
+                        title="Print" aria-label="Print">
+                    <img th:src="@{/images/print.png}" alt="Print" />
+                </button>
+            </div>
+        </div>
+
+        <th:block th:if="${years != null and !years.isEmpty() and rows != null and !rows.isEmpty()}">
+            <div class="fh-category-year-scroll">
+                <table class="summaryTable fh-category-year-table">
+                    <thead>
+                    <tr>
+                        <th class="fh-sticky-col">Category</th>
+                        <th th:each="yr : ${years}" th:text="${yr}"></th>
+                        <th class="fh-summary-total-col">TOTAL</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="row : ${rows}">
+                        <td class="fh-sticky-col" th:text="${row.category}"></td>
+                        <td th:each="yr : ${years}"
+                            th:text="${row.amountsByYear != null and row.amountsByYear.containsKey(yr) ? row.amountsByYear.get(yr) : '0'}"></td>
+                        <td class="fh-summary-total-col">
+                            <strong th:text="${row.total}"></strong>
+                        </td>
+                    </tr>
+                    <tr class="fh-report-footer-row">
+                        <td class="fh-sticky-col"><strong>Total</strong></td>
+                        <td th:each="yr : ${years}">
+                            <strong th:text="${yearTotals != null and yearTotals.containsKey(yr) ? yearTotals.get(yr) : '0'}"></strong>
+                        </td>
+                        <td class="fh-summary-total-col">
+                            <strong th:text="${grandTotal}"></strong>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </th:block>
+
+        <p th:if="${years == null or years.isEmpty() or rows == null or rows.isEmpty()}"
+           class="fh-report-empty">No expense data available.</p>
+    </div>
+</div>
+</body>
+</html>

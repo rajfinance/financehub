@@ -15,9 +15,8 @@
                   enctype="multipart/form-data" th:onsubmit="submitForm(event)">
                 <input type="hidden" name="categoryId" id="categoryId" value="" />
                 <input type="hidden" name="sortOrder" id="sortOrder" th:value="${nextSortOrder}" />
-                <input type="hidden" name="iconPath" id="iconPath" value="" />
 
-                <div class="fh-expense-field fh-expense-field--inline">
+                <div class="input-group fh-expense-category-name">
                     <label for="categoryName">Name<span class="req-mark" aria-hidden="true">*</span></label>
                     <input type="text" name="categoryName" id="categoryName" placeholder="Category name" required />
                 </div>
@@ -78,8 +77,7 @@
                         </td>
                         <td th:text="${category.name}"></td>
                         <td>
-                            <img th:with="u=${category.icon != null and category.icon != '' ? category.icon : '/images/category-placeholder.svg'}"
-                                 th:src="@{${u}}"
+                            <img th:src="${category.iconSrc}"
                                  width="36" height="36" class="category-table-icon" alt=""
                                  draggable="false"
                                  onerror="this.onerror=null;this.src='/images/category-placeholder.svg';"/>
@@ -89,7 +87,7 @@
                             <a href="javascript:void(0);" draggable="false"
                                th:attr="data-id=${category.id},
                                         data-name=${category.name != null ? category.name : ''},
-                                        data-icon=${category.icon != null ? category.icon : ''},
+                                        data-icon=${category.iconSrc},
                                         data-sort-order=${category.sortOrder != null ? category.sortOrder : ''},
                                         data-enabled=${category.enabled}"
                                onclick="callEditCategory(this)"

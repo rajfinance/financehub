@@ -2,63 +2,73 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
 <div th:if="${payments != null and !payments.isEmpty()}">
-    <div id="reportContent">
-        <h1 class="h1report">Rent Payments Report
-            <div class="report-buttons">
-                <button id="downloadPdf" class="pdf-btn" data-report="sal">
+    <div id="reportContent" class="fh-rent-payment-report">
+        <div class="fh-report-toolbar">
+            <h1 class="h1report fh-report-title-plain">Rent Payments Report</h1>
+            <div class="report-buttons fh-report-actions">
+                <button id="downloadPdf" class="pdf-btn" type="button"
+                        title="Download PDF" aria-label="Download PDF">
                     <img th:src="@{/images/pdf.png}" alt="PDF" />
                 </button>
-                <button id="printReport" class="print-btn" data-report="sal">
+                <button id="printReport" class="print-btn" type="button"
+                        title="Print" aria-label="Print">
                     <img th:src="@{/images/print.png}" alt="Print" />
                 </button>
             </div>
-        </h1>
-
-        <div th:each="owner : ${payments}">
-            <table>
-                <thead>
-                <tr>
-                    <th colspan="5" th:text="'Owner Name : ' + ${owner.key.name} + '    Phone Number : ' + ${owner.key.phoneNumber}"></th>
-                </tr>
-                <tr>
-                    <th class="second">S.No</th>
-                    <th class="second">Rent Period</th>
-                    <th class="second">PaidOn</th>
-                    <th class="second">Amount</th>
-                    <th class="second">Action</th>
-                </tr>
-                </thead>
-                <tbody style="text-align: -webkit-center; text-transform: capitalize;">
-                <tr th:each="payment, status : ${owner.value.payments}">
-                    <td th:text="${status.count}"></td>
-                    <td th:text="${payment.formattedRentPeriodStart} + ' - ' + ${payment.formattedRentPeriodEnd}"></td>
-                    <td th:text="${payment.formattedPaidOn}"></td>
-                    <td style="text-align: right; padding-right: 5px;" th:text="${payment.formattedAmount}"></td>
-                    <td>
-                        <a href="javascript:void(0);"
-                           th:onclick="'loadEditPageContent(\'/api/rent/payments/add?id=' + ${payment.id} + '\')'"
-                           style="text-decoration: none;">
-                            <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width: 20px; height: 20px; margin-right: 20px; margin-left: 15px;" />
-                        </a>
-                        <a href="javascript:void(0);"
-                           class="delete-btn"
-                           th:attr="data-report-type='rentPaymentReport', data-id=${payment.id}"
-                           th:onclick="'deleteEntity(this, \'Payment\', \'/api/rent/deleteRentPayment\')'">
-                            <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width: 20px; height: 20px;" />
-                        </a>
-                    </td>
-                </tr>
-                <tr class="fh-report-footer-row">
-                    <td style="text-align: right;">Total Period :</td>
-                    <td style="text-align: center;" th:text="${owner.value.totalPeriod}"></td>
-                    <td style="text-align: right;">Total Paid :</td>
-                    <td style="text-align: right; padding-right: 5px;" th:text="${owner.value.totalAmount}"></td>
-                    <td></td>
-                </tr>
-                </tbody>
-            </table>
-            <br>
         </div>
+
+        <details class="fh-year-panel" th:each="owner : ${payments}">
+            <summary class="fh-year-panel__summary">
+                <span class="fh-year-panel__title"
+                      th:text="${owner.key.name}"></span>
+                <span class="fh-year-panel__total"
+                      th:text="'Phone: ' + ${owner.key.phoneNumber}"></span>
+                <span class="fh-year-panel__total"
+                      th:text="'Total: ' + ${owner.value.totalAmount}"></span>
+                <span class="fh-year-panel__chevron" aria-hidden="true"></span>
+            </summary>
+            <div class="fh-year-panel__body">
+                <table>
+                    <thead>
+                    <tr>
+                        <th class="second">S.No</th>
+                        <th class="second">Rent Period</th>
+                        <th class="second">PaidOn</th>
+                        <th class="second">Amount</th>
+                        <th class="second">Action</th>
+                    </tr>
+                    </thead>
+                    <tbody style="text-align: -webkit-center; text-transform: capitalize;">
+                    <tr th:each="payment, status : ${owner.value.payments}">
+                        <td th:text="${status.count}"></td>
+                        <td th:text="${payment.formattedRentPeriodStart} + ' - ' + ${payment.formattedRentPeriodEnd}"></td>
+                        <td th:text="${payment.formattedPaidOn}"></td>
+                        <td style="text-align: right; padding-right: 5px;" th:text="${payment.formattedAmount}"></td>
+                        <td>
+                            <a href="javascript:void(0);"
+                               th:onclick="'loadEditPageContent(\'/api/rent/payments/add?id=' + ${payment.id} + '\')'"
+                               style="text-decoration: none;">
+                                <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width: 20px; height: 20px; margin-right: 20px; margin-left: 15px;" />
+                            </a>
+                            <a href="javascript:void(0);"
+                               class="delete-btn"
+                               th:attr="data-report-type='rentPaymentReport', data-id=${payment.id}"
+                               th:onclick="'deleteEntity(this, \'Payment\', \'/api/rent/deleteRentPayment\')'">
+                                <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width: 20px; height: 20px;" />
+                            </a>
+                        </td>
+                    </tr>
+                    <tr class="fh-report-footer-row">
+                        <td style="text-align: right;">Total Period :</td>
+                        <td style="text-align: center;" th:text="${owner.value.totalPeriod}"></td>
+                        <td style="text-align: right;">Total Paid :</td>
+                        <td style="text-align: right; padding-right: 5px;" th:text="${owner.value.totalAmount}"></td>
+                        <td></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </details>
 
         <div class="summary">
             <h2 class="year-header" style="width: 60%; margin: auto;">Owner Wise Totals</h2>

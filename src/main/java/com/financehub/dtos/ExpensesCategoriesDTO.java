@@ -7,9 +7,8 @@ import org.springframework.web.multipart.MultipartFile;
 public class ExpensesCategoriesDTO {
     Long categoryId;
     String categoryName;
-    String iconPath;
     int sortOrder;
     boolean enabled;
-    /** Optional upload; when empty, {@code iconPath} is kept (or default for new categories). */
+    /** Optional upload; when empty on update, existing icon_data is kept. */
     MultipartFile iconImage;
 }

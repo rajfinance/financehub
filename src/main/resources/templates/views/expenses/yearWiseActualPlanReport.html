@@ -7,10 +7,11 @@
 <div class="container">
     <div id="yearwise">
         <h2 class="fh-plan-actual-title" th:text="'Budget & Actual Expenses For Year - ' + ${year}"></h2>
+        <div class="fh-plan-actual-scroll">
         <table class="myTable">
             <thead>
             <tr>
-                <th rowspan="2">Category</th>
+                <th rowspan="2" class="fh-sticky-col">Category</th>
                 <th th:each="monthName : ${#arrays.toStringArray('JAN,FEB,MAR,APR,MAY,JUN,JUL,AUG,SEP,OCT,NOV,DEC'.split(','))}"
                     th:text="${monthName}" colspan="2"></th>
             </tr>
@@ -23,7 +24,7 @@
             </thead>
             <tbody>
             <tr th:each="category : ${#sets.toSet(reportData.![category])}">
-                <td th:text="${category}"></td>
+                <td class="fh-sticky-col" th:text="${category}"></td>
 
                 <th:block th:each="monthIndex : ${#numbers.sequence(1, 12)}">
                     <th:block th:with="
@@ -37,7 +38,7 @@
                 </th:block>
             </tr>
             <tr class="fh-report-footer-row">
-                <td>Total</td>
+                <td class="fh-sticky-col">Total</td>
                 <th:block th:each="monthIndex : ${#numbers.sequence(1, 12)}">
                     <td th:text="${monthlyPlanTotalMap[monthIndex.toString()] ?: '0'}"></td>
                     <td th:with="planRaw=${monthlyPlanTotals[monthIndex.toString()] ?: 0},
@@ -49,6 +50,7 @@
 
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 </body>

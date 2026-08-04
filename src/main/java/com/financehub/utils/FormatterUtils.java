@@ -202,7 +202,28 @@ public class FormatterUtils {
 
     public String getTotalExp(List<CompanyDTO> companies) {
         int[] parts = getTotalExpParts(companies);
-        return String.format("%d years %d months %d days", parts[0], parts[1], parts[2]);
+        return formatExpLabel(parts[0], parts[1], parts[2]);
+    }
+
+    /** Human-readable experience, e.g. "2 years 5 months" (omits zero parts). */
+    public String formatExpLabel(int years, int months, int days) {
+        StringBuilder label = new StringBuilder();
+        if (years > 0) {
+            label.append(years).append(years == 1 ? " year" : " years");
+        }
+        if (months > 0) {
+            if (label.length() > 0) {
+                label.append(" ");
+            }
+            label.append(months).append(months == 1 ? " month" : " months");
+        }
+        if (days > 0 || label.length() == 0) {
+            if (label.length() > 0) {
+                label.append(" ");
+            }
+            label.append(days).append(days == 1 ? " day" : " days");
+        }
+        return label.toString();
     }
 
     public String getTotalAdvance(List<OwnerDTO> owners) {

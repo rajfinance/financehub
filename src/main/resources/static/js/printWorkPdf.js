@@ -31,7 +31,7 @@ function prepareUrl(reportType) {
         year = parts[1];
     }
     let baseUrl = '';
-    if (type === 'expReport' || type === 'salaryReport') {
+    if (type === 'expReport' || type === 'salaryReport' || type === 'companySalaryReport') {
         baseUrl = '/api/work/' + type;
     } else if (type === 'ownersReport' || type === 'rentPaymentReport') {
         baseUrl = '/api/rent/' + type;
@@ -157,14 +157,20 @@ function attachReportListeners(reportContainer, reportType) {
             const headers = reportContainer.querySelectorAll('table thead tr');
             const reportButtons = reportContainer.querySelectorAll('.report-buttons, .fh-report-actions');
             reportButtons.forEach(function (btn) { btn.style.display = 'none'; });
-            if (reportType === 'salaryReport') {
+            if (reportType === 'salaryReport' || reportType === 'rentPaymentReport'
+                    || reportType === 'loanEmiReport' || reportType === 'companySalaryReport') {
                 reportContainer.querySelectorAll('details.fh-year-panel').forEach(function (panel) {
                     panel.open = true;
                 });
             }
+            if (reportType === 'expReport') {
+                reportContainer.querySelectorAll('tr.fh-exp-detail-row').forEach(function (row) {
+                    row.style.display = 'table-row';
+                });
+            }
             var chkLength = 0;
             if (reportType === 'expReport') {
-                chkLength = 5;
+                chkLength = 4;
             } else if (reportType === 'salaryReport' || reportType === 'rentPaymentReport') {
                 chkLength = 4;
             } else if (reportType === 'ownersReport') {

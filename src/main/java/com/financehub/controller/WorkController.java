@@ -1,6 +1,8 @@
 package com.financehub.controller;
 
 import com.financehub.dtos.CompanyDTO;
+import com.financehub.dtos.CompanySalarySummaryDTO;
+import com.financehub.dtos.ExperienceCompanyGroupDTO;
 import com.financehub.dtos.SalaryDTO;
 import com.financehub.services.WorkService;
 import com.financehub.utils.FormatterUtils;
@@ -108,6 +110,7 @@ public class WorkController {
     @GetMapping("/expReport")
     public String getCompanyReport(Model model) {
         List<CompanyDTO> companies = workService.getCompaniesByUserName();
+        List<ExperienceCompanyGroupDTO> experienceGroups = workService.getExperienceGroupedByCompany();
 
         for (CompanyDTO company : companies) {
             if (company.getFromDate() != null) {
@@ -120,6 +123,7 @@ public class WorkController {
         String totExperience = formatterUtils.getTotalExp(companies);
         int[] expParts = formatterUtils.getTotalExpParts(companies);
         model.addAttribute("companies", companies);
+        model.addAttribute("experienceGroups", experienceGroups);
         model.addAttribute("totalExp", totExperience);
         model.addAttribute("expYears", expParts[0]);
         model.addAttribute("expMonths", expParts[1]);
@@ -180,6 +184,16 @@ public String getSalaryReport(Model model) {
     model.addAttribute("currentYear", LocalDate.now().getYear());
     return "views/reports/salaryReport";
 }
+
+@GetMapping("/companySalaryReport")
+public String getCompanySalaryReport(Model model) {
+    List<CompanySalarySummaryDTO> companies = workService.getCompanySalarySummaries();
+    double grandTotal = companies.stream().mapToDouble(CompanySalarySummaryDTO::getTotalAmount).sum();
+    model.addAttribute("companies", companies);
+    model.addAttribute("grandTotal", formatterUtils.formatInIndianStyle(grandTotal));
+    return "views/reports/companySalaryReport";
+}
+
 @DeleteMapping("/deleteExperience")
 public ResponseEntity<String> deleteCompany(@RequestParam("id") Long id) {
     CompanyDTO company = workService.getExperienceById(id);

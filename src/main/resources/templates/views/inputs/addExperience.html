@@ -20,7 +20,11 @@
                 <div class="form-column">
                     <div class="input-group">
                         <label for="companyName">Company Name<span class="mandatory">*</span>:</label>
-                        <input type="text" id="companyName" name="companyName" th:value="${company != null ? company.companyName : ''}" required="required" />
+                        <input type="text" id="companyName" name="companyName"
+                               th:value="${company != null ? company.companyName : ''}"
+                               th:readonly="${action == 'edit'}"
+                               th:classappend="${action == 'edit'} ? ' fh-input-readonly'"
+                               required="required" />
                     </div>
                 </div>
                 <div class="form-column">

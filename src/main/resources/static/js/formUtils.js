@@ -188,6 +188,15 @@ function submitForm(event) {
     if (!validForm(formId)) {
         return;
     }
+    const disabledEmptyExpenseInputs = [];
+    if (formId === 'expensesForm') {
+        form.querySelectorAll('input.expenses').forEach(function (inp) {
+            if (!(inp.value || '').trim()) {
+                inp.disabled = true;
+                disabledEmptyExpenseInputs.push(inp);
+            }
+        });
+    }
     const headers = getCsrfHeaders();
     let body;
     if (formHasFileInput(form)) {
@@ -208,6 +217,7 @@ function submitForm(event) {
     })
         .then(function (response) { return response.text(); })
         .then(function (html) {
+            disabledEmptyExpenseInputs.forEach(function (inp) { inp.disabled = false; });
             if (injectHubHtml(html)) {
                 return;
             }
@@ -218,6 +228,7 @@ function submitForm(event) {
             }
         })
         .catch(function (error) {
+            disabledEmptyExpenseInputs.forEach(function (inp) { inp.disabled = false; });
             console.error('Error submitting form:', error);
             const pageContent = document.getElementById('page-content');
             if (pageContent) {
@@ -423,10 +434,6 @@ function previewCategoryIcon(fileInput) {
 function editCategory(id, name, icon, sortOrder, enabled) {
     document.getElementById("categoryId").value = id;
     document.getElementById("categoryName").value = name;
-    const hiddenIcon = document.getElementById("iconPath");
-    if (hiddenIcon) {
-        hiddenIcon.value = icon || "";
-    }
     document.getElementById("sortOrder").value = sortOrder;
     document.getElementById("enabled").checked = enabled;
 
@@ -476,9 +483,15 @@ function deleteCategoryEntity(element, entityName, apiUrl) {
 function calculateExpenses() {
         let total = 0;
         document.querySelectorAll(".expenses").forEach(input => {
-            total += parseFloat(input.value) || 0;
+            const raw = (input.value || "").trim();
+            if (raw !== "") {
+                total += parseFloat(raw) || 0;
+            }
         });
-        document.getElementById("totalExpense").value = total;
+        const totalEl = document.getElementById("totalExpense");
+        if (totalEl) {
+            totalEl.value = total > 0 ? String(total) : "";
+        }
 }
 
 function loadReport(yearId, apiUrl, containerId) {
@@ -487,13 +500,16 @@ function loadReport(yearId, apiUrl, containerId) {
     }
     const yearEl = document.getElementById(yearId);
     const year = yearEl ? yearEl.value : '';
-    if (!year) {
+    const skipYear = !!selectedExpenseSkipYear;
+    if (!skipYear && !year) {
         alert("Please select a year.");
         return;
     }
     let lastValue = apiUrl.split("/").pop();
 
-    const url = `${apiUrl}?year=${encodeURIComponent(year)}`;
+    const url = skipYear
+        ? apiUrl
+        : `${apiUrl}?year=${encodeURIComponent(year)}`;
     const container = document.getElementById(containerId);
     fetch(url, {
         method: 'GET',
@@ -518,8 +534,8 @@ function loadReport(yearId, apiUrl, containerId) {
         if (typeof attachReportListeners === 'function') {
             let listenerType = lastValue;
             if (lastValue === 'yearSummaryReport') {
-                const year = yearEl ? yearEl.value : '';
-                listenerType = year ? ('yearSummary|' + year) : 'yearSummary';
+                const y = yearEl ? yearEl.value : '';
+                listenerType = y ? ('yearSummary|' + y) : 'yearSummary';
             }
             attachReportListeners(containerId === 'ReportContainer'
                 ? (document.getElementById('expenseReportCard') || container)
@@ -533,6 +549,7 @@ function loadReport(yearId, apiUrl, containerId) {
 }
 
 let selectedExpenseReportUrl = null;
+let selectedExpenseSkipYear = false;
 
 function selectExpenseReport(button) {
     if (!button) {
@@ -547,10 +564,12 @@ function selectExpenseReport(button) {
     button.classList.add('active');
 
     selectedExpenseReportUrl = button.getAttribute('data-report-url');
+    selectedExpenseSkipYear = button.getAttribute('data-no-year') === 'true';
     const title = button.getAttribute('data-report-title') || 'Expense Report';
     const titleEl = document.getElementById('expenseReportTitle');
     const card = document.getElementById('expenseReportCard');
     const yearEl = document.getElementById('year');
+    const yearWrap = yearEl ? yearEl.closest('.fh-expense-report-card__year') : null;
     const extra = document.getElementById('expenseReportExtraActions');
 
     if (titleEl) {
@@ -560,11 +579,14 @@ function selectExpenseReport(button) {
     if (card) {
         card.hidden = false;
     }
+    if (yearWrap) {
+        yearWrap.hidden = selectedExpenseSkipYear;
+    }
     if (extra) {
         extra.hidden = true;
         extra.innerHTML = '';
     }
-    if (yearEl && !yearEl.value && page) {
+    if (!selectedExpenseSkipYear && yearEl && !yearEl.value && page) {
         const currentYear = page.getAttribute('data-current-year');
         if (currentYear) {
             yearEl.value = currentYear;
@@ -613,6 +635,14 @@ function updateCategoryFileLabel(fileInput) {
 
 function toggleLoanDetails(loanId) {
     const detailRow = document.getElementById(`loan-detail-${loanId}`);
+    if (!detailRow) {
+        return;
+    }
+    detailRow.style.display = detailRow.style.display === 'none' || detailRow.style.display === '' ? 'table-row' : 'none';
+}
+
+function toggleCompanyExpDetails(groupKey) {
+    const detailRow = document.getElementById('exp-detail-' + groupKey);
     if (!detailRow) {
         return;
     }

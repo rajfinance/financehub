@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
 import java.time.YearMonth;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -34,6 +35,13 @@ public class ExpensesController {
         addCategoryListToModel(model);
         return "views/expenses/manageExpenseCategories";
     }
+
+    @GetMapping("/category-icon/{id}")
+    @ResponseBody
+    public ResponseEntity<byte[]> categoryIcon(@PathVariable("id") int id) {
+        return expensesService.getCategoryIcon(id);
+    }
+
     @PostMapping("/categorySave")
     public String addCategory(@ModelAttribute ExpensesCategoriesDTO expensesCategoriesDTO, Model model) {
         try {
@@ -98,7 +106,10 @@ public class ExpensesController {
             dto = buildDtoFromSubmitted(submitted);
         }
 
+        Map<Integer, Double> categoryAmounts = new HashMap<>();
         if (dto == null) {
+            model.addAttribute("categoryAmounts", categoryAmounts);
+            model.addAttribute("monthValue", "");
             return;
         }
 
@@ -107,10 +118,13 @@ public class ExpensesController {
         Map<Integer, Double> amounts = "plan".equalsIgnoreCase(type)
                 ? dto.getPlannedExpenses()
                 : dto.getActualExpenses();
-        double totalExpense = amounts != null
-                ? amounts.values().stream().mapToDouble(Double::doubleValue).sum()
-                : 0.0;
-        model.addAttribute("totalExpense", totalExpense);
+        if (amounts != null) {
+            categoryAmounts.putAll(amounts);
+        }
+        double totalExpense = categoryAmounts.values().stream().mapToDouble(Double::doubleValue).sum();
+        model.addAttribute("categoryAmounts", categoryAmounts);
+        model.addAttribute("totalExpense", totalExpense > 0 ? totalExpense : null);
+        model.addAttribute("monthValue", String.format("%d-%02d", dto.getExpenseYear(), dto.getMonth()));
     }
 
     private ExpenseReportDTO buildDtoFromSubmitted(ExpenseRequest submitted) {
@@ -197,6 +211,13 @@ public class ExpensesController {
         model.addAllAttributes(data);
         return "views/expenses/yearSummaryReport";
     }
+
+    @GetMapping("/categoryYearReport")
+    public String getCategoryYearReport(Model model) {
+        model.addAllAttributes(expensesService.getCategoryYearWiseExpenseData());
+        return "views/expenses/categoryYearReport";
+    }
+
     @DeleteMapping("/deleteAmount")
     public ResponseEntity<String> deleteExpense(@RequestParam Long id, @RequestParam String type) {
         expensesService.deleteExpense(id, type);

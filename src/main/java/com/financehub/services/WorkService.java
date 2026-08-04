@@ -1,6 +1,8 @@
 package com.financehub.services;
 
 import com.financehub.dtos.CompanyDTO;
+import com.financehub.dtos.CompanySalarySummaryDTO;
+import com.financehub.dtos.ExperienceCompanyGroupDTO;
 import com.financehub.dtos.SalaryDTO;
 import com.financehub.entities.ClientUser;
 import com.financehub.entities.Company;
@@ -71,6 +73,72 @@ public class WorkService {
                     .toList();
         }
         return companyDTOs;
+    }
+
+    /**
+     * Group experience rows by company name for the report.
+     * Parent: company, earliest start, latest end, total exp.
+     * Children: each client/project entry (even when only one).
+     */
+    public List<ExperienceCompanyGroupDTO> getExperienceGroupedByCompany() {
+        List<CompanyDTO> companies = getCompaniesByUserName();
+        if (companies == null || companies.isEmpty()) {
+            return List.of();
+        }
+        for (CompanyDTO company : companies) {
+            if (company.getFromDate() != null) {
+                company.setFormattedFromDate(formatterUtils.formatDate(company.getFromDate()));
+            }
+            if (company.getToDate() != null) {
+                company.setFormattedToDate(formatterUtils.formatDate(company.getToDate()));
+            }
+        }
+
+        Map<String, List<CompanyDTO>> byName = new LinkedHashMap<>();
+        for (CompanyDTO company : companies) {
+            String key = company.getCompanyName() != null
+                    ? company.getCompanyName().trim().toLowerCase(Locale.ROOT)
+                    : "";
+            byName.computeIfAbsent(key, k -> new ArrayList<>()).add(company);
+        }
+
+        List<ExperienceCompanyGroupDTO> groups = new ArrayList<>();
+        int index = 0;
+        for (List<CompanyDTO> entries : byName.values()) {
+            entries.sort(Comparator.comparing(CompanyDTO::getFromDate, Comparator.nullsLast(Comparator.naturalOrder())));
+            CompanyDTO first = entries.get(0);
+            LocalDate start = entries.stream()
+                    .map(CompanyDTO::getFromDate)
+                    .filter(Objects::nonNull)
+                    .min(LocalDate::compareTo)
+                    .orElse(null);
+            boolean currentlyEmployed = entries.stream().anyMatch(CompanyDTO::isCurrentlyEmployed);
+            LocalDate end = currentlyEmployed ? null : entries.stream()
+                    .map(CompanyDTO::getToDate)
+                    .filter(Objects::nonNull)
+                    .max(LocalDate::compareTo)
+                    .orElse(null);
+
+            ExperienceCompanyGroupDTO group = new ExperienceCompanyGroupDTO();
+            group.setGroupKey("g" + (index++));
+            group.setCompanyName(first.getCompanyName());
+            group.setStartDate(start);
+            group.setEndDate(end);
+            group.setCurrentlyEmployed(currentlyEmployed);
+            group.setFormattedStartDate(start != null ? formatterUtils.formatDate(start) : "");
+            group.setFormattedEndDate(currentlyEmployed
+                    ? "Currently Employed"
+                    : (end != null ? formatterUtils.formatDate(end) : ""));
+            int[] parts = formatterUtils.getTotalExpParts(entries);
+            group.setExperienceLabel(formatterUtils.formatExpLabel(parts[0], parts[1], parts[2]));
+            group.setEntries(entries);
+            groups.add(group);
+        }
+
+        groups.sort(Comparator.comparing(
+                ExperienceCompanyGroupDTO::getStartDate,
+                Comparator.nullsLast(Comparator.naturalOrder())));
+        return groups;
     }
     public CompanyDTO getExperienceById(Long id) {
         int uid = Math.toIntExact(userService.getUserId());
@@ -167,6 +235,127 @@ public class WorkService {
                                         .toList())));
     }
 
+    /** Aggregate salary totals by company (ordered by experience-from date). */
+    public List<CompanySalarySummaryDTO> getCompanySalarySummaries() {
+        Map<Long, LocalDate> experienceFromByCompany = new HashMap<>();
+        if (userService.getUserId() != 0) {
+            for (Company company : companyRepository.findCompaniesByUserId(userService.getUserId())) {
+                experienceFromByCompany.put(company.getId(), company.getExperienceFrom());
+            }
+        }
+
+        Map<Long, CompanySalarySummaryDTO> byCompany = new LinkedHashMap<>();
+        for (List<SalaryDTO> yearList : getAllSalaries().values()) {
+            for (SalaryDTO salary : yearList) {
+                if (salary.getCompanyId() == null) {
+                    continue;
+                }
+                CompanySalarySummaryDTO summary = byCompany.computeIfAbsent(salary.getCompanyId(), id -> {
+                    CompanySalarySummaryDTO dto = new CompanySalarySummaryDTO();
+                    dto.setCompanyId(id);
+                    dto.setCompanyName(salary.getCompanyName() != null ? salary.getCompanyName() : "");
+                    dto.setYearTotals(new TreeMap<>());
+                    dto.setYearWiseTotals(new LinkedHashMap<>());
+                    return dto;
+                });
+                double amount = salary.getSalaryAmount() != null ? salary.getSalaryAmount() : 0.0;
+                summary.setTotalAmount(summary.getTotalAmount() + amount);
+                summary.setEntryCount(summary.getEntryCount() + 1);
+                summary.getYearTotals().merge(salary.getYear(), amount, Double::sum);
+            }
+        }
+        List<CompanySalarySummaryDTO> result = new ArrayList<>(byCompany.values());
+        result.sort(Comparator.comparing(
+                (CompanySalarySummaryDTO s) -> experienceFromByCompany.get(s.getCompanyId()),
+                Comparator.nullsLast(Comparator.naturalOrder())));
+        for (CompanySalarySummaryDTO summary : result) {
+            summary.setFormattedTotal(formatterUtils.formatInIndianStyle(summary.getTotalAmount()));
+            Map<Integer, String> formattedYears = new LinkedHashMap<>();
+            for (Map.Entry<Integer, Double> yearEntry : summary.getYearTotals().entrySet()) {
+                formattedYears.put(yearEntry.getKey(), formatterUtils.formatInIndianStyle(yearEntry.getValue()));
+            }
+            summary.setYearWiseTotals(formattedYears);
+        }
+        return result;
+    }
+
+    public void generateCompanySalaryPdf(OutputStream outputStream, List<CompanySalarySummaryDTO> companies) throws Exception {
+        PdfWriter writer = new PdfWriter(outputStream);
+        PdfDocument pdf = new PdfDocument(writer);
+        Document document = new Document(pdf);
+
+        document.add(new Paragraph("COMPANY-WISE SALARIES")
+                .setBold()
+                .setFontSize(20)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginBottom(15));
+
+        double grandTotal = 0;
+        for (CompanySalarySummaryDTO company : companies) {
+            String name = company.getCompanyName() != null && !company.getCompanyName().isBlank()
+                    ? Character.toUpperCase(company.getCompanyName().charAt(0))
+                    + company.getCompanyName().substring(1).toLowerCase(Locale.ROOT)
+                    : "Unknown";
+            document.add(new Paragraph(name)
+                    .setBold()
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setHorizontalAlignment(HorizontalAlignment.CENTER)
+                    .setWidth(UnitValue.createPercentValue(90))
+                    .setFontColor(new DeviceRgb(255, 255, 255))
+                    .setBackgroundColor(new DeviceRgb(0, 100, 148))
+                    .setFontSize(16)
+                    .setMarginBottom(0));
+
+            Table table = new Table(2);
+            table.setWidth(UnitValue.createPercentValue(90));
+            table.setHorizontalAlignment(HorizontalAlignment.CENTER);
+            table.addHeaderCell(formatterUtils.createStyledCell("Year", 0));
+            table.addHeaderCell(formatterUtils.createStyledCell("Total Salary", 0));
+
+            for (Map.Entry<Integer, Double> yearEntry : company.getYearTotals().entrySet()) {
+                table.addCell(formatterUtils.createStyledCell(String.valueOf(yearEntry.getKey()), 1));
+                table.addCell(formatterUtils.createStyledCell(formatterUtils.formatInIndianStyle(yearEntry.getValue()), 2));
+            }
+
+            table.addCell(new Cell()
+                    .add(new Paragraph("Company Total"))
+                    .setBackgroundColor(new DeviceRgb(241, 248, 233))
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setBold());
+            table.addCell(formatterUtils.createStyledCell(formatterUtils.formatInIndianStyle(company.getTotalAmount()), 3));
+            document.add(table);
+            document.add(new Paragraph("\n"));
+            grandTotal += company.getTotalAmount();
+        }
+
+        Table summaryTable = new Table(2);
+        summaryTable.setWidth(UnitValue.createPercentValue(70));
+        summaryTable.setHorizontalAlignment(HorizontalAlignment.CENTER);
+        Cell titleCell = new Cell(1, 2);
+        titleCell.add(new Paragraph("COMPANY-WISE TOTALS").setTextAlignment(TextAlignment.CENTER).setBold());
+        titleCell.setBackgroundColor(new DeviceRgb(0, 100, 148));
+        titleCell.setFontColor(new DeviceRgb(255, 255, 255));
+        titleCell.setPadding(5);
+        summaryTable.addHeaderCell(titleCell);
+        summaryTable.addHeaderCell(formatterUtils.createStyledCell("Company", 0));
+        summaryTable.addHeaderCell(formatterUtils.createStyledCell("Total Salary", 0));
+
+        for (CompanySalarySummaryDTO company : companies) {
+            String name = company.getCompanyName() != null ? company.getCompanyName() : "";
+            summaryTable.addCell(formatterUtils.createStyledCell(name, 1));
+            summaryTable.addCell(formatterUtils.createStyledCell(formatterUtils.formatInIndianStyle(company.getTotalAmount()), 2));
+        }
+        summaryTable.addCell(new Cell()
+                .add(new Paragraph("Grand Total"))
+                .setBackgroundColor(new DeviceRgb(241, 248, 233))
+                .setTextAlignment(TextAlignment.CENTER)
+                .setBold());
+        summaryTable.addCell(formatterUtils.createStyledCell(formatterUtils.formatInIndianStyle(grandTotal), 3));
+
+        document.add(summaryTable);
+        document.close();
+    }
+
     public void generateSalaryPdf(OutputStream outputStream, Map<Integer, List<SalaryDTO>> yearMonthData) throws Exception {
 
         PdfWriter writer = new PdfWriter(outputStream);
@@ -256,7 +445,7 @@ public class WorkService {
         document.close();
     }
 
-    public void generateExperiencePdf(OutputStream outputStream, List<CompanyDTO> companies) {
+    public void generateExperiencePdf(OutputStream outputStream, List<ExperienceCompanyGroupDTO> groups) {
         PdfWriter writer = new PdfWriter(outputStream);
         PdfDocument pdf = new PdfDocument(writer);
         Document document = new Document(pdf);
@@ -267,28 +456,64 @@ public class WorkService {
                 .setTextAlignment(TextAlignment.CENTER)
                 .setMarginBottom(15));
 
-        Table table = new Table(5);
-        table.setWidth(UnitValue.createPercentValue(100));
-        table.setHorizontalAlignment(HorizontalAlignment.CENTER);
+        Table summary = new Table(4);
+        summary.setWidth(UnitValue.createPercentValue(100));
+        summary.setHorizontalAlignment(HorizontalAlignment.CENTER);
+        summary.addHeaderCell(formatterUtils.createStyledCell("Company", 0));
+        summary.addHeaderCell(formatterUtils.createStyledCell("Start Date", 0));
+        summary.addHeaderCell(formatterUtils.createStyledCell("End Date", 0));
+        summary.addHeaderCell(formatterUtils.createStyledCell("Experience", 0));
 
-        table.addHeaderCell(formatterUtils.createStyledCell("Company", 0));
-        table.addHeaderCell(formatterUtils.createStyledCell("Client", 0));
-        table.addHeaderCell(formatterUtils.createStyledCell("Project", 0));
-        table.addHeaderCell(formatterUtils.createStyledCell("From Date", 0));
-        table.addHeaderCell(formatterUtils.createStyledCell("To Date", 0));
-
-        for (CompanyDTO company : companies) {
-            table.addCell(formatterUtils.createStyledCell(Character.toUpperCase(company.getCompanyName().charAt(0)) + company.getCompanyName().substring(1).toLowerCase(), 1));
-            table.addCell(formatterUtils.createStyledCell(Character.toUpperCase(company.getClientName().charAt(0)) + company.getClientName().substring(1).toLowerCase(), 1));
-            table.addCell(formatterUtils.createStyledCell(Character.toUpperCase(company.getProjectName().charAt(0)) + company.getProjectName().substring(1).toLowerCase(), 1));
-            table.addCell(formatterUtils.createStyledCell(formatterUtils.formatDate(company.getFromDate()), 1));
-            table.addCell(formatterUtils.createStyledCell(company.isCurrentlyEmployed() ? "Currently Employed" : formatterUtils.formatDate(company.getToDate()), 1));
+        List<CompanyDTO> flat = new ArrayList<>();
+        for (ExperienceCompanyGroupDTO group : groups) {
+            String name = group.getCompanyName() != null && !group.getCompanyName().isBlank()
+                    ? Character.toUpperCase(group.getCompanyName().charAt(0))
+                    + group.getCompanyName().substring(1).toLowerCase(Locale.ROOT)
+                    : "";
+            summary.addCell(formatterUtils.createStyledCell(name, 1));
+            summary.addCell(formatterUtils.createStyledCell(group.getFormattedStartDate() != null ? group.getFormattedStartDate() : "", 1));
+            summary.addCell(formatterUtils.createStyledCell(group.getFormattedEndDate() != null ? group.getFormattedEndDate() : "", 1));
+            summary.addCell(formatterUtils.createStyledCell(group.getExperienceLabel() != null ? group.getExperienceLabel() : "", 1));
+            if (group.getEntries() != null) {
+                flat.addAll(group.getEntries());
+            }
         }
-        document.add(table);
+        document.add(summary);
         document.add(new Paragraph("\n"));
 
-        String explanation = formatterUtils.getTotalExp(companies);
+        for (ExperienceCompanyGroupDTO group : groups) {
+            String name = group.getCompanyName() != null ? group.getCompanyName() : "";
+            document.add(new Paragraph(name)
+                    .setBold()
+                    .setFontSize(13)
+                    .setMarginBottom(4));
+            Table detail = new Table(4);
+            detail.setWidth(UnitValue.createPercentValue(100));
+            detail.setHorizontalAlignment(HorizontalAlignment.CENTER);
+            detail.addHeaderCell(formatterUtils.createStyledCell("Client", 0));
+            detail.addHeaderCell(formatterUtils.createStyledCell("Project", 0));
+            detail.addHeaderCell(formatterUtils.createStyledCell("From Date", 0));
+            detail.addHeaderCell(formatterUtils.createStyledCell("To Date", 0));
+            for (CompanyDTO entry : group.getEntries()) {
+                String client = entry.getClientName() != null && !entry.getClientName().isBlank()
+                        ? entry.getClientName() : "-";
+                String project = entry.getProjectName() != null && !entry.getProjectName().isBlank()
+                        ? entry.getProjectName() : "-";
+                detail.addCell(formatterUtils.createStyledCell(client, 1));
+                detail.addCell(formatterUtils.createStyledCell(project, 1));
+                detail.addCell(formatterUtils.createStyledCell(
+                        entry.getFormattedFromDate() != null ? entry.getFormattedFromDate()
+                                : (entry.getFromDate() != null ? formatterUtils.formatDate(entry.getFromDate()) : ""), 1));
+                detail.addCell(formatterUtils.createStyledCell(
+                        entry.isCurrentlyEmployed() ? "Currently Employed"
+                                : (entry.getFormattedToDate() != null ? entry.getFormattedToDate()
+                                : (entry.getToDate() != null ? formatterUtils.formatDate(entry.getToDate()) : "")), 1));
+            }
+            document.add(detail);
+            document.add(new Paragraph("\n"));
+        }
 
+        String explanation = formatterUtils.getTotalExp(flat);
         document.add(new Paragraph("Total Experience")
                 .setFontSize(12)
                 .setBold()

@@ -2,17 +2,24 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
 <div th:if="${owners != null and !owners.isEmpty()}">
-    <div id="reportContent">
-        <h1 class="h1report">Owners Report
-            <div class="report-buttons">
-                <button id="downloadPdf" class="pdf-btn" data-report="sal">
+    <div id="reportContent" class="fh-owners-report">
+        <div class="fh-report-toolbar">
+            <h1 class="h1report fh-report-title-plain">Owners Report</h1>
+            <div class="report-buttons fh-report-actions">
+                <button id="downloadPdf" class="pdf-btn" type="button"
+                        title="Download PDF" aria-label="Download PDF">
                     <img th:src="@{/images/pdf.png}" alt="PDF" />
                 </button>
-                <button id="printReport" class="print-btn" data-report="sal">
+                <button id="printReport" class="print-btn" type="button"
+                        title="Print" aria-label="Print">
                     <img th:src="@{/images/print.png}" alt="Print" />
                 </button>
             </div>
-        </h1>
+        </div>
+
+        <div class="fh-owners-advance-total"
+             th:text="'Total Advance Amount : ' + ${totalAdvance}">Total Advance Amount</div>
+
         <table>
             <thead>
             <tr>
@@ -52,7 +59,6 @@
             </tr>
             </tbody>
         </table>
-        <h2 class="fh-report-summary-line" th:text="'Total Advance Amount : ' + ${totalAdvance}"></h2>
     </div>
 </div>
 

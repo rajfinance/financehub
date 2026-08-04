@@ -7,7 +7,7 @@
 <div class="container">
     <div class="expenses fh-monthly-expenses">
         <h2 class="fh-expense-page-title fh-expense-page-title--center"
-            th:text="${expenseDetails != null} ? 'Update Monthly Expenses' : 'Monthly Expenses'"></h2>
+            th:text="${expenseDetails != null ? 'Update Monthly Expenses' : 'Monthly Expenses'}">Monthly Expenses</h2>
 
         <div th:if="${message != null}" class="form-banner form-banner--success" th:text="${message}"></div>
         <div th:if="${error != null}" class="form-banner form-banner--error" th:text="${error}"></div>
@@ -18,53 +18,53 @@
             <input type="hidden" name="expenseId" th:if="${expenseDetails != null}"
                    th:value="${expenseDetails.id}" />
 
-            <div class="fh-monthly-expenses__layout">
-                <div class="fh-monthly-expenses__controls">
-                    <div class="fh-expense-field fh-expense-field--inline">
-                        <label for="expense-month">Month</label>
-                        <input type="month" id="expense-month" name="month" required
-                               th:value="${expenseDetails != null} ? (${expenseDetails.expenseYear} + '-' + (${expenseDetails.month lt 10} ? '0' : '') + ${expenseDetails.month}) : ''" />
-                    </div>
-
-                    <div class="fh-expense-field fh-expense-field--inline">
-                        <span class="expenses-type-label">Type</span>
-                        <div class="expenses-type-radios" role="group" aria-label="Expense type">
-                            <input type="radio" name="expenseType" value="plan" id="plan"
-                                   th:checked="${expenseDetails != null and #strings.toLowerCase(expenseDetails.expenseType) == 'plan'}" />
-                            <label for="plan">Budget</label>
-                            <input type="radio" name="expenseType" value="actual" id="actual"
-                                   th:checked="${expenseDetails != null and #strings.toLowerCase(expenseDetails.expenseType) == 'actual'}" />
-                            <label for="actual">Actual</label>
-                        </div>
-                    </div>
-
-                    <div class="fh-expense-field fh-expense-field--inline">
-                        <label for="totalExpense">Total Expenses</label>
-                        <input type="number" id="totalExpense" readonly
-                               th:value="${totalExpense != null} ? ${totalExpense} : 0" />
-                    </div>
-
-                    <div class="fh-expense-form-actions">
-                        <button type="submit" class="fh-btn"
-                                th:text="${expenseDetails != null} ? 'Update' : 'Save'"></button>
-                    </div>
+            <div class="fh-monthly-expenses__toolbar">
+                <div class="fh-expense-field fh-expense-field--inline">
+                    <label for="expense-month">Month</label>
+                    <input type="month" id="expense-month" name="month" required
+                           th:value="${monthValue}" />
                 </div>
 
-                <div class="fh-monthly-expenses__categories">
-                    <div class="grid-container expenses-category-grid">
-                        <div class="grid-item" th:each="category : ${categories}">
-                            <label>
-                                <img class="expenses-category-icon" th:with="iu=${category.icon != null and category.icon != '' ? category.icon : '/images/category-placeholder.svg'}"
-                                     th:src="@{${iu}}" th:alt="${category.name}"
-                                     onerror="this.onerror=null;this.src='/images/category-placeholder.svg';"/>
-                                <span th:text="${category.name}"></span>
-                            </label>
-                            <input type="number" class="expenses"
-                                   th:name="'expenses[' + ${category.id} + ']'"
-                                   th:attr="oninput='calculateExpenses()'"
-                                   th:value="${expenseDetails != null} ? (${expenseDetails.expenseType == 'plan'} ? ${expenseDetails.plannedExpenses[category.id]} : ${expenseDetails.actualExpenses[category.id]}) : 0" />
-                        </div>
+                <div class="fh-expense-field fh-expense-field--inline">
+                    <span class="expenses-type-label">Type</span>
+                    <div class="expenses-type-radios" role="group" aria-label="Expense type">
+                        <input type="radio" name="expenseType" value="plan" id="plan"
+                               th:checked="${expenseDetails == null or #strings.equalsIgnoreCase(expenseDetails.expenseType, 'plan')}" />
+                        <label for="plan">Budget</label>
+                        <input type="radio" name="expenseType" value="actual" id="actual"
+                               th:checked="${expenseDetails != null and #strings.equalsIgnoreCase(expenseDetails.expenseType, 'actual')}" />
+                        <label for="actual">Actual</label>
                     </div>
+                </div>
+            </div>
+
+            <div class="fh-monthly-expenses__categories">
+                <div class="grid-container expenses-category-grid">
+                    <div class="grid-item" th:each="category : ${categories}">
+                        <label>
+                            <img class="expenses-category-icon"
+                                 th:src="${category.iconSrc}"
+                                 th:alt="${category.name}"
+                                 onerror="this.onerror=null;this.src='/images/category-placeholder.svg';"/>
+                            <span th:text="${category.name}"></span>
+                        </label>
+                        <input type="number" class="expenses" min="0" step="any"
+                               th:name="'expenses[' + ${category.id} + ']'"
+                               th:attr="oninput='calculateExpenses()'"
+                               th:value="${categoryAmounts != null ? categoryAmounts[category.id] : null}" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="fh-monthly-expenses__footer">
+                <div class="fh-expense-field fh-expense-field--inline">
+                    <label for="totalExpense">Total Expenses</label>
+                    <input type="number" id="totalExpense" readonly
+                           th:value="${totalExpense}" />
+                </div>
+                <div class="fh-expense-form-actions">
+                    <button type="submit" class="fh-btn"
+                            th:text="${expenseDetails != null ? 'Update' : 'Save'}">Save</button>
                 </div>
             </div>
         </form>

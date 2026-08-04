@@ -22,10 +22,11 @@
                 </button>
             </div>
         </div>
+        <div class="fh-summary-scroll">
         <table class="summaryTable">
             <thead>
             <tr>
-                <th>Category</th>
+                <th class="fh-sticky-col">Category</th>
                 <th>JAN</th> <th>FEB</th> <th>MAR</th> <th>APR</th> <th>MAY</th>
                 <th>JUN</th> <th>JUL</th> <th>AUG</th> <th>SEP</th> <th>OCT</th>
                 <th>NOV</th> <th>DEC</th> <th class="fh-summary-total-col">TOTAL</th> <th class="fh-summary-avg-col">AVG</th>
@@ -33,7 +34,7 @@
             </thead>
             <tbody>
             <tr th:each="entry : ${categorySums}">
-                <td style="text-align: left; font-weight: bold;" th:text="${entry.key}"></td>
+                <td class="fh-sticky-col" th:text="${entry.key}"></td>
                 <td th:each="month : ${#numbers.sequence(1, 12)}">
                     <span th:text="${expenseReport != null and expenseReport.size() > 0} ?
                         ${#numbers.formatInteger(
@@ -46,7 +47,7 @@
                 <td class="fh-summary-avg-col"><strong th:text="${categoryAverages[entry.key]}"></strong></td>
             </tr>
             <tr class="fh-report-footer-row">
-                <td style="text-align: left; font-weight: bold;"><strong>Total</strong></td>
+                <td class="fh-sticky-col"><strong>Total</strong></td>
                 <td th:each="month : ${#numbers.sequence(1, 12)}">
                     <strong th:text="${monthlySums[month.toString()] ?: '0'}"></strong>
                 </td>
@@ -55,6 +56,7 @@
             </tr>
             </tbody>
         </table>
+        </div>
     </div>
 </div>
 </body>

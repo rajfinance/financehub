@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<th:block sec:authorize="isAuthenticated()">
+    <th:block th:if="${companies != null and not companies.isEmpty()}">
+        <div id="reportContent" class="fh-company-salary-report">
+            <div class="fh-report-toolbar">
+                <h1 class="h1report fh-report-title-plain">Company-wise Salaries</h1>
+                <div class="report-buttons fh-report-actions">
+                    <button id="downloadPdf" class="pdf-btn" type="button"
+                            title="Download PDF" aria-label="Download PDF">
+                        <img th:src="@{/images/pdf.png}" src="/images/pdf.png" alt="PDF" />
+                    </button>
+                    <button id="printReport" class="print-btn" type="button"
+                            title="Print" aria-label="Print">
+                        <img th:src="@{/images/print.png}" src="/images/print.png" alt="Print" />
+                    </button>
+                </div>
+            </div>
+
+            <div class="fh-owners-advance-total"
+                 th:text="'Grand Total : ' + ${grandTotal}">Grand Total</div>
+
+            <details class="fh-year-panel" th:each="company : ${companies}">
+                <summary class="fh-year-panel__summary">
+                    <span class="fh-year-panel__title" th:text="${company.companyName}"></span>
+                    <span class="fh-year-panel__total"
+                          th:text="|${company.entryCount} payment(s)|"></span>
+                    <span class="fh-year-panel__total"
+                          th:text="'Total: ' + ${company.formattedTotal}"></span>
+                    <span class="fh-year-panel__chevron" aria-hidden="true"></span>
+                </summary>
+                <div class="fh-year-panel__body">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th class="second">Year</th>
+                            <th class="second">Total Salary</th>
+                        </tr>
+                        </thead>
+                        <tbody style="text-align: center;">
+                        <tr th:each="yearEntry : ${company.yearWiseTotals}">
+                            <td th:text="${yearEntry.key}"></td>
+                            <td style="text-align: right; padding-right: 15px;"
+                                th:text="${yearEntry.value}"></td>
+                        </tr>
+                        <tr class="fh-report-footer-row">
+                            <td style="text-align: right;">Company Total:</td>
+                            <td style="text-align: right; padding-right: 15px;"
+                                th:text="${company.formattedTotal}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+
+            <div class="summary">
+                <h2 class="year-header" style="width: 60%; margin: auto;">Company Wise Totals</h2>
+                <table style="width: 60%; margin-left: auto; margin-right: auto;">
+                    <thead>
+                    <tr>
+                        <th class="second">Company</th>
+                        <th class="second">Payments</th>
+                        <th class="second">Total Salary</th>
+                    </tr>
+                    </thead>
+                    <tbody style="text-align: center;">
+                    <tr th:each="company : ${companies}">
+                        <td style="text-align: left; padding-left: 12px;" th:text="${company.companyName}"></td>
+                        <td th:text="${company.entryCount}"></td>
+                        <td style="text-align: right; padding-right: 15px;"
+                            th:text="${company.formattedTotal}"></td>
+                    </tr>
+                    <tr class="fh-report-footer-row">
+                        <td colspan="2">Grand Total:</td>
+                        <td style="text-align: right; padding-right: 15px;"
+                            th:text="${grandTotal}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </th:block>
+    <th:block th:if="${companies == null or companies.isEmpty()}">
+        <h2 class="fh-report-empty">No Salary Data Available.</h2>
+    </th:block>
+</th:block>
+<th:block sec:authorize="!isAuthenticated()">
+    <p>Please log in to access this page.</p>
+</th:block>
+</body>
+</html>

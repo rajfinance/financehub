@@ -1,6 +1,8 @@
 package com.financehub.controller;
 
 import com.financehub.dtos.CompanyDTO;
+import com.financehub.dtos.CompanySalarySummaryDTO;
+import com.financehub.dtos.ExperienceCompanyGroupDTO;
 import com.financehub.dtos.OwnerDTO;
 import com.financehub.dtos.RentSummaryDTO;
 import com.financehub.dtos.SalaryDTO;
@@ -53,15 +55,31 @@ public class PdfReportController {
 		}
 	}
 
+	@GetMapping("/companySalaryReportPdf")
+	public void downloadCompanySalaryReport(HttpServletResponse response) {
+		try {
+			List<CompanySalarySummaryDTO> companies = workService.getCompanySalarySummaries();
+			response.setContentType("application/pdf");
+			response.setHeader("Content-Disposition", "attachment; filename=CompanyWiseSalaries.pdf");
+
+			try (OutputStream outputStream = response.getOutputStream()) {
+				workService.generateCompanySalaryPdf(outputStream, companies);
+			}
+		} catch (Exception e) {
+			log.error("Company salary PDF failed", e);
+			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+	}
+
 	@GetMapping("/expReportPdf")
 	public void downloadExperienceReport(HttpServletResponse response) {
 		try {
-			List<CompanyDTO> companies = workService.getCompaniesByUserName();
+			List<ExperienceCompanyGroupDTO> groups = workService.getExperienceGroupedByCompany();
 			response.setContentType("application/pdf");
 			response.setHeader("Content-Disposition", "attachment; filename=expReport.pdf");
 
 			try (OutputStream outputStream = response.getOutputStream()) {
-				workService.generateExperiencePdf(outputStream, companies);
+				workService.generateExperiencePdf(outputStream, groups);
 			}
 		} catch (Exception e) {
 			log.error("Experience PDF failed", e);
@@ -117,6 +135,25 @@ public class PdfReportController {
 			}
 		} catch (Exception e) {
 			log.error("Year summary PDF failed", e);
+			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		}
+	}
+
+	@GetMapping("/categoryYearReportPdf")
+	public void downloadCategoryYearReport(HttpServletResponse response) {
+		try {
+			Map<String, Object> data = expensesService.getCategoryYearWiseExpenseData();
+			response.setContentType("application/pdf");
+			response.setHeader("Content-Disposition", "attachment; filename=Category_Year_Amounts.pdf");
+
+			try (OutputStream outputStream = response.getOutputStream()) {
+				expensesService.generateCategoryYearExpensePdf(outputStream, data);
+				outputStream.flush();
+			} catch (IOException e) {
+				log.error("Category year PDF stream failed", e);
+			}
+		} catch (Exception e) {
+			log.error("Category year PDF failed", e);
 			response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
 	}
