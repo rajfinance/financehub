@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<th:block sec:authorize="isAuthenticated()">
+    <div class="fh-section-hub">
+        <aside class="fh-section-hub__sidebar" aria-label="Finance menu">
+            <div class="fh-section-hub__brand">
+                <h1 class="fh-section-hub__title">Finance</h1>
+            </div>
+            <nav class="fh-section-hub__menu">
+                <button type="button" class="tab-button fh-hub-nav-item"
+                        data-url="/api/finance/accounts/add" onclick="showHubPage(this)">Add Account</button>
+                <button type="button" class="tab-button fh-hub-nav-item"
+                        data-url="/api/finance/ledger/add" onclick="showHubPage(this)">Add Ledger</button>
+                <button type="button" class="tab-button fh-hub-nav-item"
+                        data-url="/api/finance/cards/add" onclick="showHubPage(this)">Add Credit Card</button>
+                <button type="button" class="tab-button fh-hub-nav-item"
+                        data-url="/api/finance/insurance/add" onclick="showHubPage(this)">Add Insurance</button>
+
+                <div class="fh-hub-nav-label">Reports</div>
+                <div class="fh-hub-nav-divider" role="separator"></div>
+
+                <button type="button" class="tab-button fh-hub-nav-item"
+                        data-report="accountsReport" onclick="showHubReport(this)">Accounts</button>
+                <button type="button" class="tab-button fh-hub-nav-item"
+                        data-report="ledgerReport" onclick="showHubReport(this)">Ledger</button>
+                <button type="button" class="tab-button fh-hub-nav-item"
+                        data-report="creditCardsReport" onclick="showHubReport(this)">Credit Cards</button>
+                <button type="button" class="tab-button fh-hub-nav-item"
+                        data-report="insuranceReport" onclick="showHubReport(this)">Insurance</button>
+                <button type="button" class="tab-button fh-hub-nav-item"
+                        data-report="cashFlowReport" onclick="showHubReport(this)">Cash Flow</button>
+                <button type="button" class="tab-button fh-hub-nav-item"
+                        data-report="yearEndPackReport" onclick="showHubReport(this)">Year-End Pack</button>
+            </nav>
+        </aside>
+        <div class="fh-section-hub__content">
+            <div id="fhHubPanel" class="fh-section-hub__panel"></div>
+        </div>
+    </div>
+</th:block>
+<th:block sec:authorize="!isAuthenticated()">
+    <p>Please log in to access this page.</p>
+</th:block>
+</body>
+</html>

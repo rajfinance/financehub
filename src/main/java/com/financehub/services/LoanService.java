@@ -8,6 +8,7 @@ import com.financehub.dtos.LoanEmiScheduleGroupDTO;
 import com.financehub.dtos.LoanEmiScheduleRowDTO;
 import com.financehub.dtos.LoanPreClosureDTO;
 import com.financehub.dtos.LoanSummaryDTO;
+import com.financehub.dtos.YearlyAmountRowDTO;
 import com.financehub.entities.Loan;
 import com.financehub.entities.LoanEmiPayment;
 import com.financehub.repositories.LoanEmiPaymentRepository;
@@ -752,6 +753,47 @@ public class LoanService {
     public int getCurrentYearPendingEmiAmount() {
         int year = LocalDate.now().getYear();
         return (int) Math.round(sumScheduleAmounts(buildScheduleContext(), year, null, true));
+    }
+
+    /**
+     * Year-wise completed EMI / interest payments (by deduction date), plus pre-closure settlements.
+     */
+    public List<YearlyAmountRowDTO> getYearlyPaidLoansReportRows() {
+        ScheduleContext context = buildScheduleContext();
+        LocalDate today = LocalDate.now();
+        Map<Integer, Double> byYear = new TreeMap<>();
+
+        for (Loan loan : context.loans) {
+            LoanPreClosureDTO preClosure = context.preClosureByLoan.get(loan.getId());
+            Map<Integer, LoanEmiPayment> overrides =
+                    context.overridesByLoan.getOrDefault(loan.getId(), Map.of());
+            for (ScheduleAmountSlice slice : buildScheduleAmountSlices(loan, null, preClosure, overrides)) {
+                LocalDate paidDate = slice.deductionDate();
+                if (paidDate == null || paidDate.isAfter(today)) {
+                    continue;
+                }
+                byYear.merge(paidDate.getYear(), slice.amount(), Double::sum);
+            }
+            if (preClosure != null
+                    && preClosure.getPreClosureDate() != null
+                    && preClosure.getSettlementAmount() != null
+                    && preClosure.getSettlementAmount() > 0
+                    && !preClosure.getPreClosureDate().isAfter(today)) {
+                byYear.merge(
+                        preClosure.getPreClosureDate().getYear(),
+                        preClosure.getSettlementAmount(),
+                        Double::sum);
+            }
+        }
+
+        List<YearlyAmountRowDTO> rows = new ArrayList<>();
+        for (Map.Entry<Integer, Double> entry : byYear.entrySet()) {
+            rows.add(new YearlyAmountRowDTO(
+                    String.valueOf(entry.getKey()),
+                    formatterUtils.formatInIndianStyle(entry.getValue()),
+                    entry.getValue()));
+        }
+        return rows;
     }
 
     public List<Integer> getScheduleYearsForUser() {

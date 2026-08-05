@@ -20,6 +20,23 @@
 
             <h1 class="fh-dashboard-title">Welcome, <span class="fh-display-username" th:text="${displayFullName}">User</span></h1>
 
+            <div class="fh-alerts" th:if="${financeAlerts != null and !financeAlerts.isEmpty()}" aria-label="Due soon alerts">
+                <h2 class="fh-alerts__title">Reminders</h2>
+                <ul class="fh-alerts__list">
+                    <li th:each="alert : ${financeAlerts}"
+                        class="fh-alert"
+                        th:classappend="${alert.severity == 'danger'} ? ' fh-alert--danger' : ' fh-alert--warn'">
+                        <span class="fh-alert__type" th:text="${alert.type == 'INSURANCE' ? 'Insurance' : 'Credit card'}"></span>
+                        <strong class="fh-alert__title" th:text="${alert.title}"></strong>
+                        <span class="fh-alert__detail" th:text="${alert.detail}"></span>
+                    </li>
+                </ul>
+                <p class="fh-alerts__foot">
+                    Manage in
+                    <a href="javascript:void(0);" th:onclick="'loadContent(\'/api/finance/reports\')'">Finance</a>
+                </p>
+            </div>
+
             <div class="dashboard">
 
                 <div class="fh-dashboard-kpis">

@@ -442,9 +442,33 @@ public class RentalService {
     public Map<String, Integer> getYearlyRentData() {
         List<RentPayment> rentList = rentPaymentRepository.findByUserId(userService.getUserId());
         return rentList.stream()
+                .filter(rent -> rent.getPaidOn() != null && rent.getAmount() != null)
                 .collect(Collectors.groupingBy(
                         rent -> String.valueOf(rent.getPaidOn().getYear()),
+                        TreeMap::new,
                         Collectors.summingInt(rent -> rent.getAmount().intValue())
                 ));
+    }
+
+    /**
+     * Year-wise rent paid (by payment date) for the Yearly Rent report.
+     */
+    public List<YearlyAmountRowDTO> getYearlyRentReportRows() {
+        List<RentPayment> rentList = rentPaymentRepository.findByUserId(userService.getUserId());
+        Map<Integer, Double> byYear = rentList.stream()
+                .filter(rent -> rent.getPaidOn() != null && rent.getAmount() != null)
+                .collect(Collectors.groupingBy(
+                        rent -> rent.getPaidOn().getYear(),
+                        TreeMap::new,
+                        Collectors.summingDouble(RentPayment::getAmount)
+                ));
+        List<YearlyAmountRowDTO> rows = new ArrayList<>();
+        for (Map.Entry<Integer, Double> entry : byYear.entrySet()) {
+            rows.add(new YearlyAmountRowDTO(
+                    String.valueOf(entry.getKey()),
+                    formatterUtils.formatInIndianStyle(entry.getValue()),
+                    entry.getValue()));
+        }
+        return rows;
     }
 }

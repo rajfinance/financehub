@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forgot username - RajaFinanceHub</title>
+</head>
+<body>
+<div th:replace="~{views/common/header :: header(true)}"></div>
+
+<div class="login-page">
+    <main class="login-container">
+        <div class="login-form">
+            <h1>Forgot username</h1>
+            <p class="auth-hint">
+                Enter the email on your account. If it matches, your username is shown here
+                (no email is sent — that keeps the service free).
+            </p>
+
+            <div th:if="${error != null}" class="form-alert form-alert--error" th:text="${error}"></div>
+            <div th:if="${recoveredUsername != null}" class="form-alert form-alert--success">
+                Your username is <strong th:text="${recoveredUsername}">username</strong>.
+                You can sign in with it now.
+            </div>
+
+            <form th:action="@{/api/forgot-username}" method="post" onsubmit="return validateForgotUsernameForm()">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <div class="input-group">
+                    <label for="email">Email<span class="req-mark" aria-hidden="true">*</span></label>
+                    <input type="email" id="email" name="email" required="required" autocomplete="email"
+                           placeholder="Email on your account"/>
+                </div>
+                <div class="input-group captcha-group">
+                    <label for="captchaAnswer">
+                        Captcha<span class="req-mark" aria-hidden="true">*</span>
+                        <span class="captcha-question" th:text="${captchaQuestion}">3 + 4</span>
+                    </label>
+                    <input type="text" id="captchaAnswer" name="captchaAnswer" required="required"
+                           inputmode="numeric" autocomplete="off" placeholder="Answer"/>
+                </div>
+                <button type="submit">Find username</button>
+            </form>
+            <div class="signup-link">
+                <p><a th:href="@{/login}">Back to login</a></p>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

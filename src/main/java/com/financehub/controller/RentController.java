@@ -3,6 +3,7 @@ package com.financehub.controller;
 import com.financehub.dtos.OwnerDTO;
 import com.financehub.dtos.RentPaymentDTO;
 import com.financehub.dtos.RentSummaryDTO;
+import com.financehub.dtos.YearlyAmountRowDTO;
 import com.financehub.entities.Owner;
 import com.financehub.entities.RentPayment;
 import com.financehub.services.RentalService;
@@ -150,6 +151,16 @@ public class RentController {
         model.addAttribute("grandTotal",grandTotalPeriodstring+"&"+formatterUtils.formatInIndianStyle(grandTotal));
         return "views/rent/PaymentsReport";
     }
+
+    @GetMapping("/yearlyRentReport")
+    public String getYearlyRentReport(Model model) {
+        List<YearlyAmountRowDTO> rows = rentalService.getYearlyRentReportRows();
+        double grandTotal = rows.stream().mapToDouble(YearlyAmountRowDTO::getAmount).sum();
+        model.addAttribute("rows", rows);
+        model.addAttribute("grandTotal", formatterUtils.formatInIndianStyle(grandTotal));
+        return "views/rent/yearlyRentReport";
+    }
+
     @DeleteMapping("/deleteOwner")
     public ResponseEntity<String> deleteOwner(@RequestParam("id") Long id) {
         try {

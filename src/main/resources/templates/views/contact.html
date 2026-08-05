@@ -4,20 +4,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact | RajaFinanceHub</title>
+    <title>Contact — RajaFinanceHub</title>
 </head>
-<body>
+<body class="fh-home-body">
 <div th:replace="~{views/common/header :: header(true)}"></div>
 
-<div class="public-page">
-    <main class="public-page-card static-page" role="main">
-        <h1 class="static-page-title">Contact</h1>
-        <p>For questions or support regarding your RajaFinanceHub account, please use the options available after you sign in when applicable, or reach out using the details below.</p>
-        <ul class="static-page-list static-page-list-bullets">
-            <li>Phone: <a href="tel:+919676149662">9676149662</a></li>
-            <li>Email: <a href="mailto:rajasekharyedlapalli@gmail.com">rajasekharyedlapalli@gmail.com</a></li>
-        </ul>
-    </main>
-</div>
+<main class="fh-home" role="main">
+    <section class="fh-home-hero fh-page-hero" aria-label="Contact">
+        <div class="fh-home-hero__media" aria-hidden="true">
+            <img th:src="@{/images/home-hero.jpg}" src="/images/home-hero.jpg"
+                 alt="" class="fh-home-hero__img"/>
+            <div class="fh-home-hero__veil"></div>
+        </div>
+        <div class="fh-home-hero__content">
+            <p class="fh-home-hero__brand">RajaFinanceHub</p>
+            <h1 class="fh-home-hero__headline">We are here when you need us</h1>
+            <p class="fh-home-hero__lead">
+                Reach out for account help, product questions, or feedback — a clear path to the right person.
+            </p>
+            <div class="fh-home-hero__actions">
+                <a class="fh-home-btn fh-home-btn--primary" href="tel:+919676149662">Call now</a>
+                <a class="fh-home-btn fh-home-btn--ghost" href="mailto:rajasekharyedlapalli@gmail.com">Send email</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="fh-contact-section" aria-label="Contact details">
+        <div class="fh-contact-section__inner">
+            <header class="fh-home-section-head">
+                <h2>Ways to connect</h2>
+                <p>Pick the channel that works best for you — both land with the same support path.</p>
+            </header>
+
+            <div class="fh-contact-grid">
+                <a class="fh-contact-card" href="tel:+919676149662">
+                    <div class="fh-contact-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16 12h6l2 8-4 2c2 4 5 7 9 9l2-4 8 2v6c0 1.5-1.2 3-3 3C22 38 10 26 10 15c0-1.8 1.5-3 3-3z"
+                                  stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="fh-contact-card__body">
+                        <span class="fh-contact-card__label">Phone</span>
+                        <span class="fh-contact-card__value">96761 49662</span>
+                        <span class="fh-contact-card__hint">Tap to call — available for account and product questions</span>
+                    </div>
+                    <span class="fh-contact-card__arrow" aria-hidden="true">→</span>
+                </a>
+
+                <a class="fh-contact-card" href="mailto:rajasekharyedlapalli@gmail.com">
+                    <div class="fh-contact-card__icon" aria-hidden="true">
+                        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="8" y="12" width="32" height="24" rx="3" stroke="currentColor" stroke-width="2.2"/>
+                            <path d="M8 16l16 12L40 16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="fh-contact-card__body">
+                        <span class="fh-contact-card__label">Email</span>
+                        <span class="fh-contact-card__value">rajasekharyedlapalli@gmail.com</span>
+                        <span class="fh-contact-card__hint">Write anytime — we reply as soon as we can</span>
+                    </div>
+                    <span class="fh-contact-card__arrow" aria-hidden="true">→</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="fh-home-spotlight" aria-label="Support note">
+        <div class="fh-home-spotlight__inner fh-contact-spotlight">
+            <div class="fh-home-spotlight__copy">
+                <h2>Prefer to manage it yourself?</h2>
+                <p>
+                    After you sign in, account settings and reports are available in your dashboard.
+                    Use contact details above when you need a personal hand.
+                </p>
+                <ul class="fh-home-spotlight__points">
+                    <li>Secure access to your private finance data</li>
+                    <li>Clear reports for expenses, rentals, and loans</li>
+                    <li>Help when something needs a human eye</li>
+                </ul>
+            </div>
+            <div class="fh-contact-spotlight__panel">
+                <div class="fh-contact-chip">
+                    <span class="fh-contact-chip__label">Direct line</span>
+                    <a class="fh-contact-chip__link" href="tel:+919676149662">+91 96761 49662</a>
+                </div>
+                <div class="fh-contact-chip fh-contact-chip--accent">
+                    <span class="fh-contact-chip__label">Inbox</span>
+                    <a class="fh-contact-chip__link" href="mailto:rajasekharyedlapalli@gmail.com">Email support</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="fh-home-closing">
+        <div class="fh-home-closing__inner">
+            <h2>Explore what is included</h2>
+            <p>Browse services, or sign in if you already have an account.</p>
+            <div class="fh-home-hero__actions fh-home-closing__actions">
+                <a class="fh-home-btn fh-home-btn--primary" th:href="@{/services}" href="/services">View services</a>
+                <a class="fh-home-btn fh-home-btn--ghost fh-home-btn--on-dark" th:href="@{/login}" href="/login">Sign in</a>
+            </div>
+        </div>
+    </section>
+</main>
 </body>
 </html>

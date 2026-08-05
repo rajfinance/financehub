@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div id="reportContent" class="fh-finance-report">
+    <div class="fh-report-toolbar">
+        <h1 class="h1report fh-report-title-plain">Ledger</h1>
+        <div class="report-buttons fh-report-actions">
+            <button id="printReport" class="print-btn" type="button" title="Print"><img th:src="@{/images/print.png}" alt="Print"/></button>
+        </div>
+    </div>
+
+    <div class="fh-report-filters" th:if="${accounts != null and !accounts.isEmpty()}">
+        <label for="ledgerAccountFilter">Account</label>
+        <select id="ledgerAccountFilter"
+                onchange="(function(sel){ var p=typeof getHubPanel==='function'?getHubPanel():null; if(!p)return; var url='/api/finance/ledgerReport'+(sel.value?'?accountId='+encodeURIComponent(sel.value):''); fetch(url,{credentials:'same-origin',headers:typeof getCsrfHeaders==='function'?getCsrfHeaders():{}}).then(function(r){return r.text();}).then(function(html){p.innerHTML=html; if(typeof attachReportListeners==='function') attachReportListeners(p,'ledgerReport');}); })(this)">
+            <option value="">All accounts</option>
+            <option th:each="a : ${accounts}" th:value="${a.id}" th:text="${a.name}"
+                    th:selected="${selectedAccountId != null and selectedAccountId == a.id}"></option>
+        </select>
+    </div>
+
+    <th:block th:if="${entries != null and !entries.isEmpty()}">
+        <table class="summaryTable">
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Account</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th class="fh-summary-total-col">Amount</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="e : ${entries}">
+                <td th:text="${e.entryDate}"></td>
+                <td th:text="${e.accountName}"></td>
+                <td th:text="${e.entryType}"></td>
+                <td th:text="${e.description != null ? e.description : '—'}"></td>
+                <td class="fh-summary-total-col" th:text="${e.formattedAmount}"></td>
+                <td>
+                    <a href="javascript:void(0);"
+                       th:attr="data-report-type='ledgerReport', data-id=${e.id}"
+                       th:onclick="'deleteEntity(this, \'Ledger entry\', \'/api/finance/deleteLedger\')'">
+                        <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:20px;height:20px;"/>
+                    </a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </th:block>
+    <p th:if="${entries == null or entries.isEmpty()}" class="fh-report-empty">No ledger entries yet.</p>
+</div>
+</body>
+</html>

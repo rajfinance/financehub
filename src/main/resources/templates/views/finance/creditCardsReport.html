@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div id="reportContent" class="fh-finance-report">
+    <div class="fh-report-toolbar">
+        <h1 class="h1report fh-report-title-plain">Credit Cards</h1>
+        <div class="report-buttons fh-report-actions">
+            <button id="printReport" class="print-btn" type="button" title="Print"><img th:src="@{/images/print.png}" alt="Print"/></button>
+        </div>
+    </div>
+    <p class="fh-report-hint">Manual outstanding. Cards due within 7 days show a Due soon badge and Home alert.</p>
+
+    <th:block th:if="${cards != null and !cards.isEmpty()}">
+        <table class="summaryTable">
+            <thead>
+            <tr>
+                <th>Card</th>
+                <th>Bank</th>
+                <th class="fh-summary-total-col">Limit</th>
+                <th class="fh-summary-total-col">Outstanding</th>
+                <th>Due day</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${cards}">
+                <td th:text="${c.cardName}"></td>
+                <td th:text="${c.bankName != null ? c.bankName : '—'}"></td>
+                <td class="fh-summary-total-col" th:text="${c.formattedCreditLimit}"></td>
+                <td class="fh-summary-total-col" th:text="${c.formattedOutstanding}"></td>
+                <td th:text="${c.dueDay != null ? c.dueDay : '—'}"></td>
+                <td>
+                    <span th:if="${c.dueSoon}" class="fh-status-badge fh-status-pending">Due soon</span>
+                    <span th:unless="${c.dueSoon}">—</span>
+                </td>
+                <td>
+                    <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/cards/add?id=${c.id}')|">
+                        <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:20px;height:20px;margin-right:12px;"/>
+                    </a>
+                    <a href="javascript:void(0);"
+                       th:attr="data-report-type='creditCardsReport', data-id=${c.id}"
+                       th:onclick="'deleteEntity(this, \'Credit card\', \'/api/finance/deleteCreditCard\')'">
+                        <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:20px;height:20px;"/>
+                    </a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </th:block>
+    <p th:if="${cards == null or cards.isEmpty()}" class="fh-report-empty">No credit cards tracked yet.</p>
+</div>
+</body>
+</html>

@@ -4,16 +4,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance Hub</title>
+    <title>RajaFinanceHub — Personal Finance Hub</title>
 </head>
-<body>
+<body class="fh-home-body">
 <div th:replace="~{views/common/header :: header(true)}"></div>
 
-<div class="public-page">
-    <main class="public-page-card" role="main">
-        <h1 class="static-page-title">Welcome to RajaFinanceHub</h1>
-        <p>This is your financial management hub where you can track expenses, analyze transactions, and more.</p>
-    </main>
-</div>
+<main class="fh-home" role="main">
+    <section class="fh-home-hero" aria-label="Welcome">
+        <div class="fh-home-hero__media" aria-hidden="true">
+            <img th:src="@{/images/home-hero.jpg}" src="/images/home-hero.jpg"
+                 alt="" class="fh-home-hero__img"/>
+            <div class="fh-home-hero__veil"></div>
+        </div>
+        <div class="fh-home-hero__content">
+            <p class="fh-home-hero__brand">RajaFinanceHub</p>
+            <h1 class="fh-home-hero__headline">Your money, clear and in control</h1>
+            <p class="fh-home-hero__lead">
+                Track expenses, salaries, rentals, and loans in one calm place built for everyday decisions.
+            </p>
+            <div class="fh-home-hero__actions">
+                <a class="fh-home-btn fh-home-btn--primary" th:href="@{/login}" href="/login">Sign in</a>
+                <a class="fh-home-btn fh-home-btn--ghost" th:href="@{/services}" href="/services">See sample reports</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="fh-home-journey" aria-label="How it works">
+        <div class="fh-home-journey__inner">
+            <header class="fh-home-section-head">
+                <h2>Three steps to a clearer month</h2>
+                <p>Home is your starting point — a simple path from recording money to deciding with confidence.</p>
+            </header>
+            <ol class="fh-home-steps">
+                <li class="fh-home-step">
+                    <span class="fh-home-step__num">01</span>
+                    <h3>Record</h3>
+                    <p>Capture expenses, salaries, rent, and EMIs as they happen.</p>
+                </li>
+                <li class="fh-home-step">
+                    <span class="fh-home-step__num">02</span>
+                    <h3>Review</h3>
+                    <p>Open reports that answer one question at a time — no clutter.</p>
+                </li>
+                <li class="fh-home-step">
+                    <span class="fh-home-step__num">03</span>
+                    <h3>Decide</h3>
+                    <p>Plan the next month with balances, budgets, and dues in view.</p>
+                </li>
+            </ol>
+        </div>
+    </section>
+
+    <section class="fh-home-spotlight" aria-label="Why FinanceHub">
+        <div class="fh-home-spotlight__inner">
+            <div class="fh-home-spotlight__copy">
+                <h2>Designed for clarity, not clutter</h2>
+                <p>
+                    RajaFinanceHub is a private money workspace — secure sign-in, Indian number formats,
+                    and reports shaped for real household and career decisions.
+                </p>
+                <ul class="fh-home-spotlight__points">
+                    <li>One hub for income, spending, rentals, and loans</li>
+                    <li>Print-ready summaries when you need a paper trail</li>
+                    <li>Built for calm monthly reviews, not noise</li>
+                </ul>
+            </div>
+            <div class="fh-home-spotlight__panel" aria-hidden="true">
+                <div class="fh-home-stat">
+                    <span class="fh-home-stat__label">Feel</span>
+                    <span class="fh-home-stat__value">Calm</span>
+                </div>
+                <div class="fh-home-stat">
+                    <span class="fh-home-stat__label">Focus</span>
+                    <span class="fh-home-stat__value">Clarity</span>
+                </div>
+                <div class="fh-home-stat">
+                    <span class="fh-home-stat__label">Access</span>
+                    <span class="fh-home-stat__value">Private</span>
+                </div>
+                <div class="fh-home-stat fh-home-stat--accent">
+                    <span class="fh-home-stat__label">Outcome</span>
+                    <span class="fh-home-stat__value">Control</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="fh-home-closing">
+        <div class="fh-home-closing__inner">
+            <h2>Ready when you are</h2>
+            <p>Sign in to open your dashboard, or browse services for sample graphs and reports.</p>
+            <div class="fh-home-hero__actions fh-home-closing__actions">
+                <a class="fh-home-btn fh-home-btn--primary" th:href="@{/login}" href="/login">Sign in</a>
+                <a class="fh-home-btn fh-home-btn--ghost fh-home-btn--on-dark" th:href="@{/services}" href="/services">Explore services</a>
+            </div>
+        </div>
+    </section>
+</main>
 </body>
 </html>

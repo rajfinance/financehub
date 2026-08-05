@@ -4,27 +4,225 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Services | RajaFinanceHub</title>
+    <title>Services — RajaFinanceHub</title>
 </head>
-<body>
+<body class="fh-home-body">
 <div th:replace="~{views/common/header :: header(true)}"></div>
 
-<div class="public-page">
-    <main class="public-page-card static-page" role="main">
-        <h1 class="static-page-title">Services</h1>
-        <p>RajaFinanceHub helps you manage professional income, expenses, rentals, and loans in one place.</p>
-        <ul class="static-page-list static-page-list-bullets">
-            <li>Expense tracking and category management</li>
-            <li>Rental owners, payments, and reports</li>
-            <li>Loan planning and summaries</li>
-            <li>Professional experience and salary reporting</li>
-        </ul>
-        <div class="static-page-actions">
-            <form th:action="@{/login}" method="get">
-                <button type="submit" class="btn-services-signin">Sign in</button>
-            </form>
+<main class="fh-home" role="main">
+    <section class="fh-home-hero fh-page-hero fh-page-hero--services" aria-label="Services">
+        <div class="fh-home-hero__media" aria-hidden="true">
+            <img th:src="@{/images/home-hero.jpg}" src="/images/home-hero.jpg"
+                 alt="" class="fh-home-hero__img"/>
+            <div class="fh-home-hero__veil fh-home-hero__veil--services"></div>
         </div>
-    </main>
-</div>
+        <div class="fh-home-hero__content">
+            <p class="fh-home-hero__brand">Services</p>
+            <h1 class="fh-home-hero__headline">Sample graphs &amp; reports you will use</h1>
+            <p class="fh-home-hero__lead">
+                Preview the style of charts and summaries inside RajaFinanceHub — illustrative sample data only.
+            </p>
+            <div class="fh-home-hero__actions">
+                <a class="fh-home-btn fh-home-btn--primary" href="#sample-reports">View samples</a>
+                <a class="fh-home-btn fh-home-btn--ghost" th:href="@{/login}" href="/login">Sign in</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="fh-svc-catalog" aria-label="Service catalog">
+        <div class="fh-svc-catalog__inner">
+            <header class="fh-home-section-head">
+                <h2>What each module delivers</h2>
+                <p>Four workspaces — each with its own reports, not just a welcome overview.</p>
+            </header>
+            <div class="fh-svc-list">
+                <article class="fh-svc-item">
+                    <span class="fh-svc-item__tag">01 · Expenses</span>
+                    <h3>Budgets, categories, plan vs actual</h3>
+                    <p>Monthly bars, category mix, and year-wise totals for spending control.</p>
+                </article>
+                <article class="fh-svc-item">
+                    <span class="fh-svc-item__tag">02 · Professional</span>
+                    <h3>Experience &amp; company salaries</h3>
+                    <p>Income by employer and career timeline reporting.</p>
+                </article>
+                <article class="fh-svc-item">
+                    <span class="fh-svc-item__tag">03 · Rentals</span>
+                    <h3>Owners, advances, payment history</h3>
+                    <p>Collection summaries and owner-wise payment rolls.</p>
+                </article>
+                <article class="fh-svc-item">
+                    <span class="fh-svc-item__tag">04 · Loans</span>
+                    <h3>EMI schedules &amp; projections</h3>
+                    <p>Outstanding balance curves and installment tables.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="fh-demo" id="sample-reports" aria-label="Sample graphs and reports">
+        <div class="fh-demo__inner">
+            <header class="fh-home-section-head">
+                <h2>Illustrative dashboard samples</h2>
+                <p>Styled dummy charts — not live account data. Sign in to see your own numbers.</p>
+            </header>
+
+            <div class="fh-demo-charts">
+                <figure class="fh-demo-panel">
+                    <figcaption class="fh-demo-panel__head">
+                        <span class="fh-demo-panel__title">Monthly expenses</span>
+                        <span class="fh-demo-panel__badge">Sample</span>
+                    </figcaption>
+                    <div class="fh-demo-bars" role="img" aria-label="Sample bar chart of monthly expenses">
+                        <div class="fh-demo-bars__col"><span class="fh-demo-bars__fill" style="--h:58%"></span><span class="fh-demo-bars__lbl">Jan</span></div>
+                        <div class="fh-demo-bars__col"><span class="fh-demo-bars__fill" style="--h:72%"></span><span class="fh-demo-bars__lbl">Feb</span></div>
+                        <div class="fh-demo-bars__col"><span class="fh-demo-bars__fill" style="--h:45%"></span><span class="fh-demo-bars__lbl">Mar</span></div>
+                        <div class="fh-demo-bars__col"><span class="fh-demo-bars__fill" style="--h:88%"></span><span class="fh-demo-bars__lbl">Apr</span></div>
+                        <div class="fh-demo-bars__col"><span class="fh-demo-bars__fill" style="--h:63%"></span><span class="fh-demo-bars__lbl">May</span></div>
+                        <div class="fh-demo-bars__col"><span class="fh-demo-bars__fill fh-demo-bars__fill--accent" style="--h:79%"></span><span class="fh-demo-bars__lbl">Jun</span></div>
+                    </div>
+                    <p class="fh-demo-panel__foot">Plan vs trend · illustrative ₹ values</p>
+                </figure>
+
+                <figure class="fh-demo-panel">
+                    <figcaption class="fh-demo-panel__head">
+                        <span class="fh-demo-panel__title">Spend by category</span>
+                        <span class="fh-demo-panel__badge">Sample</span>
+                    </figcaption>
+                    <div class="fh-demo-donut-wrap">
+                        <div class="fh-demo-donut" role="img" aria-label="Sample category donut chart"></div>
+                        <ul class="fh-demo-legend">
+                            <li><span class="fh-demo-swatch fh-demo-swatch--a"></span>Housing 32%</li>
+                            <li><span class="fh-demo-swatch fh-demo-swatch--b"></span>Food 24%</li>
+                            <li><span class="fh-demo-swatch fh-demo-swatch--c"></span>Travel 18%</li>
+                            <li><span class="fh-demo-swatch fh-demo-swatch--d"></span>Other 26%</li>
+                        </ul>
+                    </div>
+                    <p class="fh-demo-panel__foot">Category mix · sample split</p>
+                </figure>
+
+                <figure class="fh-demo-panel fh-demo-panel--wide">
+                    <figcaption class="fh-demo-panel__head">
+                        <span class="fh-demo-panel__title">Loan outstanding (EMI path)</span>
+                        <span class="fh-demo-panel__badge">Sample</span>
+                    </figcaption>
+                    <svg class="fh-demo-line" viewBox="0 0 560 160" preserveAspectRatio="none" role="img" aria-label="Sample loan balance line chart">
+                        <defs>
+                            <linearGradient id="fhLineFill" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="rgba(0,100,148,0.28)"/>
+                                <stop offset="100%" stop-color="rgba(0,100,148,0)"/>
+                            </linearGradient>
+                        </defs>
+                        <path class="fh-demo-line__area" d="M20,28 L100,42 L180,55 L260,70 L340,88 L420,108 L500,128 L540,138 L540,150 L20,150 Z" fill="url(#fhLineFill)"/>
+                        <path class="fh-demo-line__path" d="M20,28 L100,42 L180,55 L260,70 L340,88 L420,108 L500,128 L540,138" fill="none"/>
+                        <circle cx="20" cy="28" r="4"/><circle cx="180" cy="55" r="4"/><circle cx="340" cy="88" r="4"/><circle cx="540" cy="138" r="4"/>
+                    </svg>
+                    <div class="fh-demo-line__axis">
+                        <span>Yr 1</span><span>Yr 2</span><span>Yr 3</span><span>Yr 4</span><span>Yr 5</span>
+                    </div>
+                    <p class="fh-demo-panel__foot">Balance declining with EMIs · sample curve</p>
+                </figure>
+            </div>
+
+            <div class="fh-demo-reports">
+                <article class="fh-demo-report">
+                    <header class="fh-demo-report__head">
+                        <h3>Expense summary report</h3>
+                        <span class="fh-demo-panel__badge">Sample</span>
+                    </header>
+                    <table class="fh-demo-table">
+                        <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Plan</th>
+                            <th>Actual</th>
+                            <th>Variance</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>Groceries</td>
+                            <td class="num">12,000</td>
+                            <td class="num">11,450</td>
+                            <td class="num pos">−550</td>
+                        </tr>
+                        <tr>
+                            <td>Utilities</td>
+                            <td class="num">4,500</td>
+                            <td class="num">4,820</td>
+                            <td class="num neg">+320</td>
+                        </tr>
+                        <tr>
+                            <td>Transport</td>
+                            <td class="num">3,000</td>
+                            <td class="num">2,760</td>
+                            <td class="num pos">−240</td>
+                        </tr>
+                        <tr class="fh-demo-table__total">
+                            <td>Total</td>
+                            <td class="num">19,500</td>
+                            <td class="num">19,030</td>
+                            <td class="num pos">−470</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </article>
+
+                <article class="fh-demo-report">
+                    <header class="fh-demo-report__head">
+                        <h3>EMI schedule snapshot</h3>
+                        <span class="fh-demo-panel__badge">Sample</span>
+                    </header>
+                    <table class="fh-demo-table">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Due</th>
+                            <th>EMI</th>
+                            <th>Balance</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>18</td>
+                            <td>05 Apr</td>
+                            <td class="num">24,580</td>
+                            <td class="num">8,42,100</td>
+                        </tr>
+                        <tr>
+                            <td>19</td>
+                            <td>05 May</td>
+                            <td class="num">24,580</td>
+                            <td class="num">8,25,640</td>
+                        </tr>
+                        <tr>
+                            <td>20</td>
+                            <td>05 Jun</td>
+                            <td class="num">24,580</td>
+                            <td class="num">8,09,010</td>
+                        </tr>
+                        <tr class="fh-demo-table__total">
+                            <td colspan="2">Next due</td>
+                            <td class="num">24,580</td>
+                            <td class="num">05 Jul</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="fh-home-closing">
+        <div class="fh-home-closing__inner">
+            <h2>Open your live reports</h2>
+            <p>Samples above are illustrative. Sign in to track your real expenses, rentals, and loans.</p>
+            <div class="fh-home-hero__actions fh-home-closing__actions">
+                <a class="fh-home-btn fh-home-btn--primary" th:href="@{/login}" href="/login">Sign in</a>
+                <a class="fh-home-btn fh-home-btn--ghost fh-home-btn--on-dark" th:href="@{/signup}" href="/signup">Create account</a>
+            </div>
+        </div>
+    </section>
+</main>
 </body>
 </html>

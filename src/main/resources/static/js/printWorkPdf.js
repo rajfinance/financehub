@@ -33,12 +33,16 @@ function prepareUrl(reportType) {
     let baseUrl = '';
     if (type === 'expReport' || type === 'salaryReport' || type === 'companySalaryReport') {
         baseUrl = '/api/work/' + type;
-    } else if (type === 'ownersReport' || type === 'rentPaymentReport') {
+    } else if (type === 'ownersReport' || type === 'rentPaymentReport' || type === 'yearlyRentReport') {
         baseUrl = '/api/rent/' + type;
     } else if (type === 'manageReport') {
         baseUrl = '/api/expenses/' + type;
-    } else if (type === 'loansReport' || type === 'loanEmiReport' || type === 'loanBankProjectionReport') {
+    } else if (type === 'loansReport' || type === 'loanEmiReport' || type === 'loanBankProjectionReport'
+            || type === 'yearlyPaidLoansReport') {
         baseUrl = '/api/loan/' + type;
+    } else if (type === 'accountsReport' || type === 'ledgerReport' || type === 'creditCardsReport'
+            || type === 'insuranceReport' || type === 'cashFlowReport' || type === 'yearEndPackReport') {
+        baseUrl = '/api/finance/' + type;
     }
     if (type === 'loanEmiReport') {
         const yearEl = document.getElementById('emiScheduleYear');

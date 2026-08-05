@@ -5,7 +5,9 @@ import com.financehub.dtos.LoanBankEmiProjectionReportDTO;
 import com.financehub.dtos.LoanEmiPaymentDTO;
 import com.financehub.dtos.LoanPreClosureDTO;
 import com.financehub.dtos.LoanSummaryDTO;
+import com.financehub.dtos.YearlyAmountRowDTO;
 import com.financehub.services.LoanService;
+import com.financehub.utils.FormatterUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -27,9 +29,11 @@ public class LoanController {
             "Personal", "Home", "Vehicle", "Education", "Business", "Gold", "Other");
 
     private final LoanService loanService;
+    private final FormatterUtils formatterUtils;
 
-    public LoanController(LoanService loanService) {
+    public LoanController(LoanService loanService, FormatterUtils formatterUtils) {
         this.loanService = loanService;
+        this.formatterUtils = formatterUtils;
     }
 
     @GetMapping("/addLoan")
@@ -164,6 +168,15 @@ public class LoanController {
         LoanBankEmiProjectionReportDTO report = loanService.getBankNextMonthProjectionReport(loanIds, comboBanks, applied);
         model.addAttribute("projectionReport", report);
         return "views/loan/loanBankProjectionReport";
+    }
+
+    @GetMapping("/yearlyPaidLoansReport")
+    public String yearlyPaidLoansReport(Model model) {
+        List<YearlyAmountRowDTO> rows = loanService.getYearlyPaidLoansReportRows();
+        double grandTotal = rows.stream().mapToDouble(YearlyAmountRowDTO::getAmount).sum();
+        model.addAttribute("rows", rows);
+        model.addAttribute("grandTotal", formatterUtils.formatInIndianStyle(grandTotal));
+        return "views/loan/yearlyPaidLoansReport";
     }
 
     @GetMapping("/preCloseLoan")

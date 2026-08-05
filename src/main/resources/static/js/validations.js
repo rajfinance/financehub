@@ -1,6 +1,7 @@
 function validateLoginForm() {
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
+    const captcha = document.getElementById("captchaAnswer");
 
     if (username === "") {
         alert("Username cannot be empty");
@@ -8,6 +9,24 @@ function validateLoginForm() {
     }
     if (password === "") {
         alert("Password cannot be empty");
+        return false;
+    }
+    if (captcha && captcha.value.trim() === "") {
+        alert("Please solve the captcha");
+        return false;
+    }
+    return true;
+}
+
+function validateForgotUsernameForm() {
+    const email = document.getElementById("email").value;
+    const captcha = document.getElementById("captchaAnswer");
+    if (email === "") {
+        alert("Email cannot be empty");
+        return false;
+    }
+    if (captcha && captcha.value.trim() === "") {
+        alert("Please solve the captcha");
         return false;
     }
     return true;

@@ -1,5 +1,6 @@
 package com.financehub.controller;
 
+import com.financehub.security.CaptchaService;
 import com.financehub.security.PasswordResetSession;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
@@ -12,6 +13,13 @@ import java.text.DecimalFormat;
 
 @Controller
 public class HomeController {
+
+    private final CaptchaService captchaService;
+
+    public HomeController(CaptchaService captchaService) {
+        this.captchaService = captchaService;
+    }
+
     @GetMapping("/")
     public String index() {
         return "views/index";
@@ -28,13 +36,22 @@ public class HomeController {
     }
 
     @GetMapping("/login")
-    public String showLoginPage() {
+    public String showLoginPage(HttpSession session, Model model) {
+        captchaService.issueChallenge(session);
+        model.addAttribute("captchaQuestion", captchaService.currentQuestion(session));
         return "views/inputs/login";
     }
 
     @GetMapping("/forgotPassword")
     public String showForgotPassword() {
         return "views/inputs/forgotPassword";
+    }
+
+    @GetMapping("/forgotUsername")
+    public String showForgotUsername(HttpSession session, Model model) {
+        captchaService.issueChallenge(session);
+        model.addAttribute("captchaQuestion", captchaService.currentQuestion(session));
+        return "views/inputs/forgotUsername";
     }
 
     @GetMapping("/password-reset/confirm")

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div id="reportContent" class="fh-yearly-amount-report">
+    <div class="fh-report-toolbar">
+        <h1 class="h1report fh-report-title-plain">Yearly Paid Loans</h1>
+        <div class="report-buttons fh-report-actions">
+            <button id="printReport" class="print-btn" type="button"
+                    title="Print" aria-label="Print">
+                <img th:src="@{/images/print.png}" alt="Print" />
+            </button>
+        </div>
+    </div>
+
+    <p class="fh-report-hint">Completed EMI / interest payments and pre-closure settlements by year.</p>
+
+    <th:block th:if="${rows != null and !rows.isEmpty()}">
+        <table class="summaryTable fh-yearly-amount-table">
+            <thead>
+            <tr>
+                <th>Year</th>
+                <th class="fh-summary-total-col">Total Paid</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="row : ${rows}">
+                <td th:text="${row.year}"></td>
+                <td class="fh-summary-total-col" th:text="${row.formattedAmount}"></td>
+            </tr>
+            <tr class="fh-report-footer-row">
+                <td><strong>Grand Total</strong></td>
+                <td class="fh-summary-total-col"><strong th:text="${grandTotal}"></strong></td>
+            </tr>
+            </tbody>
+        </table>
+    </th:block>
+
+    <p th:if="${rows == null or rows.isEmpty()}" class="fh-report-empty">No paid loan amounts available.</p>
+</div>
+</body>
+</html>

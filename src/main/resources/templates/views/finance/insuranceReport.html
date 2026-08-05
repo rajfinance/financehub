@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div id="reportContent" class="fh-finance-report">
+    <div class="fh-report-toolbar">
+        <h1 class="h1report fh-report-title-plain">Insurance</h1>
+        <div class="report-buttons fh-report-actions">
+            <button id="printReport" class="print-btn" type="button" title="Print"><img th:src="@{/images/print.png}" alt="Print"/></button>
+        </div>
+    </div>
+    <div th:if="${successMessage != null}" class="form-banner form-banner--success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage != null}" class="form-banner form-banner--error" th:text="${errorMessage}"></div>
+    <p class="fh-report-hint">Due within 30 days (or overdue) also appear on the Home dashboard after login.</p>
+
+    <th:block th:if="${policies != null and !policies.isEmpty()}">
+        <table class="summaryTable">
+            <thead>
+            <tr>
+                <th>Policy</th>
+                <th>Type</th>
+                <th class="fh-summary-total-col">Premium</th>
+                <th>Frequency</th>
+                <th>Next due</th>
+                <th>Alert</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="p : ${policies}">
+                <td>
+                    <div th:text="${p.policyName}"></div>
+                    <div class="fh-muted" th:text="${p.insurerName}"></div>
+                </td>
+                <td th:text="${p.policyType}"></td>
+                <td class="fh-summary-total-col" th:text="${p.formattedPremium}"></td>
+                <td th:text="${p.premiumFrequency}"></td>
+                <td th:text="${p.formattedDueDate}"></td>
+                <td>
+                    <span th:if="${p.overdue}" class="fh-status-badge fh-status-partial">Overdue</span>
+                    <span th:if="${p.dueSoon and !p.overdue}" class="fh-status-badge fh-status-pending">Due soon</span>
+                    <span th:if="${!p.dueSoon and !p.overdue}">—</span>
+                </td>
+                <td>
+                    <a href="javascript:void(0);"
+                       title="Mark paid / advance due"
+                       th:onclick="|loadIntoHubPanel('/api/finance/insurance/markPaid?id=${p.id}', {reportType:'insuranceReport'})|">
+                        Mark paid
+                    </a>
+                    <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/insurance/add?id=${p.id}')|" style="margin-left:10px;">
+                        <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:20px;height:20px;"/>
+                    </a>
+                    <a href="javascript:void(0);" style="margin-left:10px;"
+                       th:attr="data-report-type='insuranceReport', data-id=${p.id}"
+                       th:onclick="'deleteEntity(this, \'Insurance\', \'/api/finance/deleteInsurance\')'">
+                        <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:20px;height:20px;"/>
+                    </a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </th:block>
+    <p th:if="${policies == null or policies.isEmpty()}" class="fh-report-empty">No insurance policies yet.</p>
+</div>
+</body>
+</html>

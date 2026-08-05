@@ -25,6 +25,8 @@ public interface ClientUserRepository extends JpaRepository<ClientUser, Long> {
 
     Optional<ClientUser> findByUsernameIgnoreCaseAndEmailIgnoreCase(String username, String email);
 
+    Optional<ClientUser> findByEmailIgnoreCase(String email);
+
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM ClientUser u WHERE LOWER(u.email) = LOWER(:email) AND u.id <> :id")
     boolean existsAnotherUserWithEmail(@Param("email") String email, @Param("id") int id);
 

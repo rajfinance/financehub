@@ -110,6 +110,13 @@ public class UserService {
 		return clientUserRepository.findByUsernameIgnoreCaseAndEmailIgnoreCase(username, email);
 	}
 
+	public Optional<ClientUser> findByEmail(String email) {
+		if (email == null || email.isBlank()) {
+			return Optional.empty();
+		}
+		return clientUserRepository.findByEmailIgnoreCase(email.trim());
+	}
+
 	public Optional<ClientUser> getCurrentClientUser() {
 		long uid = getUserId();
 		if (uid <= 0) {

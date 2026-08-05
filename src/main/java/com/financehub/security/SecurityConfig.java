@@ -8,11 +8,18 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+	private final LoginCaptchaFilter loginCaptchaFilter;
+
+	public SecurityConfig(LoginCaptchaFilter loginCaptchaFilter) {
+		this.loginCaptchaFilter = loginCaptchaFilter;
+	}
 
 	@Bean
 	public PasswordEncoder passwordEncoder() {
@@ -24,15 +31,18 @@ public class SecurityConfig {
 		http
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/", "/error", "/services", "/contact").permitAll()
-						.requestMatchers("/login", "/signup", "/forgotPassword", "/password-reset/confirm").permitAll()
+						.requestMatchers("/login", "/signup", "/forgotPassword", "/forgotUsername",
+								"/password-reset/confirm").permitAll()
 						.requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
 						.requestMatchers("/uploads/**").authenticated()
 						.requestMatchers("/api/perform_signup").permitAll()
 						.requestMatchers("/api/password-reset/request", "/api/password-reset/complete").permitAll()
+						.requestMatchers("/api/forgot-username").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/perform_login", "/api/calculate").permitAll()
 				.requestMatchers("/account/**").authenticated()
 				.requestMatchers("/api/**").authenticated()
 				.anyRequest().permitAll())
+				.addFilterBefore(loginCaptchaFilter, UsernamePasswordAuthenticationFilter.class)
 				.formLogin(form -> form
 						.loginPage("/login")
 						.loginProcessingUrl("/api/perform_login")

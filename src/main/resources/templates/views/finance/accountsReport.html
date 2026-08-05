@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div id="reportContent" class="fh-finance-report">
+    <div class="fh-report-toolbar">
+        <h1 class="h1report fh-report-title-plain">Accounts</h1>
+        <div class="report-buttons fh-report-actions">
+            <button id="printReport" class="print-btn" type="button" title="Print"><img th:src="@{/images/print.png}" alt="Print"/></button>
+        </div>
+    </div>
+    <p class="fh-report-hint">Manual balances only — update via Edit or ledger entries.</p>
+
+    <th:block th:if="${accounts != null and !accounts.isEmpty()}">
+        <table class="summaryTable">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Bank</th>
+                <th>Mask</th>
+                <th class="fh-summary-total-col">Balance</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="a : ${accounts}">
+                <td th:text="${a.name}"></td>
+                <td th:text="${a.accountType}"></td>
+                <td th:text="${a.bankName != null ? a.bankName : '—'}"></td>
+                <td th:text="${a.accountMask != null ? a.accountMask : '—'}"></td>
+                <td class="fh-summary-total-col" th:text="${a.formattedBalance}"></td>
+                <td>
+                    <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/accounts/add?id=${a.id}')|">
+                        <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:20px;height:20px;margin-right:12px;"/>
+                    </a>
+                    <a href="javascript:void(0);"
+                       th:attr="data-report-type='accountsReport', data-id=${a.id}"
+                       th:onclick="'deleteEntity(this, \'Account\', \'/api/finance/deleteAccount\')'">
+                        <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:20px;height:20px;"/>
+                    </a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </th:block>
+    <p th:if="${accounts == null or accounts.isEmpty()}" class="fh-report-empty">No accounts yet. Add a bank, cash, wallet, or investment account.</p>
+</div>
+</body>
+</html>

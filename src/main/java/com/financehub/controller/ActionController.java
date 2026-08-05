@@ -2,9 +2,11 @@ package com.financehub.controller;
 
 import com.financehub.dtos.ClientUserDTO;
 import com.financehub.entities.ClientUser;
+import com.financehub.security.CaptchaService;
 import com.financehub.security.PasswordResetSession;
 import com.financehub.dtos.DashboardChartDataDTO;
 import com.financehub.services.DashboardService;
+import com.financehub.services.FinanceService;
 import com.financehub.services.UserService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -29,10 +31,15 @@ public class ActionController {
 
 	private final UserService userService;
 	private final DashboardService dashboardService;
+	private final CaptchaService captchaService;
+	private final FinanceService financeService;
 
-	public ActionController(UserService userService, DashboardService dashboardService) {
+	public ActionController(UserService userService, DashboardService dashboardService, CaptchaService captchaService,
+			FinanceService financeService) {
 		this.userService = userService;
 		this.dashboardService = dashboardService;
+		this.captchaService = captchaService;
+		this.financeService = financeService;
 	}
 
 	@PostMapping(value = "/perform_signup", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -56,6 +63,24 @@ public class ActionController {
 		}
 		redirectAttributes.addFlashAttribute("success", response.get("success"));
 		return "redirect:/signup";
+	}
+
+	@PostMapping(value = "/forgot-username", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+	public String forgotUsername(@RequestParam("email") String email,
+			@RequestParam("captchaAnswer") String captchaAnswer,
+			HttpSession session,
+			RedirectAttributes redirectAttributes) {
+		if (!captchaService.validateAndConsume(session, captchaAnswer)) {
+			redirectAttributes.addFlashAttribute("error", "Captcha answer is incorrect. Please try again.");
+			return "redirect:/forgotUsername";
+		}
+		Optional<ClientUser> user = userService.findByEmail(email);
+		if (user.isEmpty()) {
+			redirectAttributes.addFlashAttribute("error", "No account found for that email.");
+			return "redirect:/forgotUsername";
+		}
+		redirectAttributes.addFlashAttribute("recoveredUsername", user.get().getUsername());
+		return "redirect:/forgotUsername";
 	}
 
 	@PostMapping(value = "/password-reset/request", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
@@ -105,6 +130,11 @@ public class ActionController {
 		model.addAttribute("currentYearRent", kpis.get("currentYearRent"));
 		model.addAttribute("currentYearNetBalance", kpis.get("currentYearNetBalance"));
 		model.addAttribute("currentYearPendingLoanEmi", 0);
+		try {
+			model.addAttribute("financeAlerts", financeService.getDashboardAlerts());
+		} catch (Exception ignored) {
+			model.addAttribute("financeAlerts", java.util.List.of());
+		}
 		return "views/login/dashboard";
 	}
 
