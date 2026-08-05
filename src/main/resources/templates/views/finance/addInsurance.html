@@ -3,7 +3,6 @@
 <body>
 <div class="form-container">
     <h1 th:text="${policy != null and policy.id != null} ? 'Edit Insurance' : 'Add Insurance'"></h1>
-    <p class="fh-form-note">Static policy details. After login, due-soon policies appear as alerts on Home.</p>
     <form th:action="@{/api/finance/insurance/save}" th:object="${policy}" method="post" th:onsubmit="submitForm(event)">
         <div th:if="${successMessage != null}" class="form-banner form-banner--success" th:text="${successMessage}"></div>
         <div th:if="${errorMessage != null}" class="form-banner form-banner--error" th:text="${errorMessage}"></div>
@@ -65,11 +64,6 @@
                     <input type="number" step="0.01" id="coverAmount" name="coverAmount" th:value="${policy?.coverAmount}"/>
                 </div>
             </div>
-        </div>
-
-        <div class="input-group">
-            <label for="notes">Notes</label>
-            <textarea id="notes" name="notes" th:text="${policy?.notes}"></textarea>
         </div>
 
         <button type="submit" th:text="${policy != null and policy.id != null} ? 'Update' : 'Save'"></button>

@@ -229,6 +229,10 @@ public class FinanceService {
 		card.setOutstandingBalance(dto.getOutstandingBalance() != null ? dto.getOutstandingBalance() : 0.0);
 		card.setBillingDay(sanitizeDay(dto.getBillingDay()));
 		card.setDueDay(sanitizeDay(dto.getDueDay()));
+		if (dto.getInterestRate() != null && dto.getInterestRate() < 0) {
+			throw new IllegalArgumentException("Interest rate cannot be negative.");
+		}
+		card.setInterestRate(dto.getInterestRate());
 		card.setNotes(blankToNull(dto.getNotes()));
 		card.setUpdatedAt(now);
 		creditCardRepository.save(card);
@@ -255,6 +259,9 @@ public class FinanceService {
 		dto.setFormattedOutstanding(formatterUtils.formatInIndianStyle(nz(c.getOutstandingBalance())));
 		dto.setBillingDay(c.getBillingDay());
 		dto.setDueDay(c.getDueDay());
+		dto.setInterestRate(c.getInterestRate());
+		dto.setFormattedInterestRate(c.getInterestRate() == null ? "—"
+				: formatterUtils.formatInIndianStyle(c.getInterestRate()) + "%");
 		dto.setNotes(c.getNotes());
 		dto.setDueSoon(isCardDueSoon(c.getDueDay(), today));
 		return dto;

@@ -3,7 +3,6 @@
 <body>
 <div class="form-container">
     <h1 th:text="${card != null and card.id != null} ? 'Edit Credit Card' : 'Add Credit Card'"></h1>
-    <p class="fh-form-note">Outstanding and due day are tracked manually — no real-time bank or card network access.</p>
     <form th:action="@{/api/finance/cards/save}" th:object="${card}" method="post" th:onsubmit="submitForm(event)">
         <div th:if="${successMessage != null}" class="form-banner form-banner--success" th:text="${successMessage}"></div>
         <div th:if="${errorMessage != null}" class="form-banner form-banner--error" th:text="${errorMessage}"></div>
@@ -19,7 +18,11 @@
             <div class="form-column">
                 <div class="input-group">
                     <label for="bankName">Bank</label>
-                    <input type="text" id="bankName" name="bankName" th:value="${card?.bankName}"/>
+                    <select id="bankName" name="bankName">
+                        <option value="">Select bank</option>
+                        <option th:each="b : ${bankNames}" th:value="${b}" th:text="${b}"
+                                th:selected="${card != null and card.bankName == b}"></option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -40,8 +43,9 @@
             </div>
             <div class="form-column">
                 <div class="input-group">
-                    <label for="dueDay">Due day (1–31)</label>
-                    <input type="number" min="1" max="31" id="dueDay" name="dueDay" th:value="${card?.dueDay}"/>
+                    <label for="interestRate">Interest rate (%)</label>
+                    <input type="number" step="0.01" min="0" id="interestRate" name="interestRate"
+                           th:value="${card?.interestRate}" placeholder="e.g. 36"/>
                 </div>
             </div>
         </div>
@@ -49,14 +53,14 @@
         <div class="form-row">
             <div class="form-column">
                 <div class="input-group">
-                    <label for="billingDay">Billing day (1–31)</label>
-                    <input type="number" min="1" max="31" id="billingDay" name="billingDay" th:value="${card?.billingDay}"/>
+                    <label for="dueDay">Due day (1–31)</label>
+                    <input type="number" min="1" max="31" id="dueDay" name="dueDay" th:value="${card?.dueDay}"/>
                 </div>
             </div>
             <div class="form-column">
                 <div class="input-group">
-                    <label for="notes">Notes</label>
-                    <input type="text" id="notes" name="notes" th:value="${card?.notes}"/>
+                    <label for="billingDay">Billing day (1–31)</label>
+                    <input type="number" min="1" max="31" id="billingDay" name="billingDay" th:value="${card?.billingDay}"/>
                 </div>
             </div>
         </div>

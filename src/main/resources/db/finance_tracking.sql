@@ -38,12 +38,16 @@ CREATE TABLE IF NOT EXISTS finance_credit_cards (
     outstanding_balance  DOUBLE PRECISION NOT NULL DEFAULT 0,
     billing_day          INT,
     due_day              INT,
+    interest_rate        DOUBLE PRECISION,
     notes                VARCHAR(500),
     created_at           TIMESTAMP       NOT NULL DEFAULT NOW(),
     updated_at           TIMESTAMP       NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_finance_cards_user ON finance_credit_cards (user_id);
+
+-- If finance_credit_cards already exists without interest_rate, run:
+-- ALTER TABLE finance_credit_cards ADD COLUMN IF NOT EXISTS interest_rate DOUBLE PRECISION;
 
 CREATE TABLE IF NOT EXISTS finance_insurance_policies (
     id                 BIGSERIAL PRIMARY KEY,

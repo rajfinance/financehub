@@ -26,7 +26,6 @@
                 <th>Date</th>
                 <th>Account</th>
                 <th>Type</th>
-                <th>Description</th>
                 <th class="fh-summary-total-col">Amount</th>
                 <th>Action</th>
             </tr>
@@ -36,7 +35,6 @@
                 <td th:text="${e.entryDate}"></td>
                 <td th:text="${e.accountName}"></td>
                 <td th:text="${e.entryType}"></td>
-                <td th:text="${e.description != null ? e.description : '—'}"></td>
                 <td class="fh-summary-total-col" th:text="${e.formattedAmount}"></td>
                 <td>
                     <a href="javascript:void(0);"

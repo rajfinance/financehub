@@ -35,6 +35,10 @@ public class FinanceCreditCard {
 	@Column(name = "due_day")
 	private Integer dueDay;
 
+	/** Annual interest rate percent, e.g. 36 for 36% p.a. */
+	@Column(name = "interest_rate")
+	private Double interestRate;
+
 	@Column(length = 500)
 	private String notes;
 

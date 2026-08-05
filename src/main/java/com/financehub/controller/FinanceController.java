@@ -17,6 +17,24 @@ import java.util.List;
 @RequestMapping("/api/finance")
 public class FinanceController {
 
+	private static final List<String> ACCOUNT_TYPES = List.of(
+			"SAVINGS", "CURRENT", "CASH", "WALLET", "FD", "INVESTMENT");
+
+	private static final List<String> BANK_NAMES = List.of(
+			"State Bank of India",
+			"Union Bank of India",
+			"ICICI Bank",
+			"HDFC Bank",
+			"Axis Bank",
+			"Kotak Mahindra Bank",
+			"Bank of Baroda",
+			"Canara Bank",
+			"Punjab National Bank",
+			"Indian Bank",
+			"Yes Bank",
+			"IDFC First Bank",
+			"Other");
+
 	private final FinanceService financeService;
 
 	public FinanceController(FinanceService financeService) {
@@ -32,7 +50,8 @@ public class FinanceController {
 	@GetMapping("/accounts/add")
 	public String accountForm(@RequestParam(value = "id", required = false) Long id, Model model) {
 		model.addAttribute("account", id != null ? financeService.getAccountDto(id) : new FinanceAccountDTO());
-		model.addAttribute("accountTypes", List.of("BANK", "CASH", "WALLET", "INVESTMENT"));
+		model.addAttribute("accountTypes", ACCOUNT_TYPES);
+		model.addAttribute("bankNames", BANK_NAMES);
 		return "views/finance/addAccount";
 	}
 
@@ -40,7 +59,7 @@ public class FinanceController {
 	public String saveAccount(@ModelAttribute FinanceAccountDTO account, RedirectAttributes ra) {
 		try {
 			financeService.saveAccount(account);
-			ra.addFlashAttribute("successMessage", "Account saved. Balance is updated only by you (manual).");
+			ra.addFlashAttribute("successMessage", "Account saved successfully.");
 		} catch (IllegalArgumentException e) {
 			ra.addFlashAttribute("errorMessage", e.getMessage());
 		}
@@ -78,7 +97,7 @@ public class FinanceController {
 	public String saveLedger(@ModelAttribute FinanceLedgerEntryDTO entry, RedirectAttributes ra) {
 		try {
 			financeService.saveLedgerEntry(entry);
-			ra.addFlashAttribute("successMessage", "Ledger entry saved and account balance updated.");
+			ra.addFlashAttribute("successMessage", "Ledger entry saved successfully.");
 		} catch (IllegalArgumentException e) {
 			ra.addFlashAttribute("errorMessage", e.getMessage());
 		}
@@ -107,6 +126,7 @@ public class FinanceController {
 	@GetMapping("/cards/add")
 	public String cardForm(@RequestParam(value = "id", required = false) Long id, Model model) {
 		model.addAttribute("card", id != null ? financeService.getCreditCardDto(id) : new FinanceCreditCardDTO());
+		model.addAttribute("bankNames", BANK_NAMES);
 		return "views/finance/addCreditCard";
 	}
 
@@ -114,7 +134,7 @@ public class FinanceController {
 	public String saveCard(@ModelAttribute FinanceCreditCardDTO card, RedirectAttributes ra) {
 		try {
 			financeService.saveCreditCard(card);
-			ra.addFlashAttribute("successMessage", "Credit card saved. Outstanding is manual — no bank sync.");
+			ra.addFlashAttribute("successMessage", "Credit card saved successfully.");
 		} catch (IllegalArgumentException e) {
 			ra.addFlashAttribute("errorMessage", e.getMessage());
 		}

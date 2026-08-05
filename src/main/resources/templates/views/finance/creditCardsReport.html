@@ -8,8 +8,6 @@
             <button id="printReport" class="print-btn" type="button" title="Print"><img th:src="@{/images/print.png}" alt="Print"/></button>
         </div>
     </div>
-    <p class="fh-report-hint">Manual outstanding. Cards due within 7 days show a Due soon badge and Home alert.</p>
-
     <th:block th:if="${cards != null and !cards.isEmpty()}">
         <table class="summaryTable">
             <thead>
@@ -18,6 +16,7 @@
                 <th>Bank</th>
                 <th class="fh-summary-total-col">Limit</th>
                 <th class="fh-summary-total-col">Outstanding</th>
+                <th class="fh-summary-total-col">Interest %</th>
                 <th>Due day</th>
                 <th>Status</th>
                 <th>Action</th>
@@ -29,6 +28,7 @@
                 <td th:text="${c.bankName != null ? c.bankName : '—'}"></td>
                 <td class="fh-summary-total-col" th:text="${c.formattedCreditLimit}"></td>
                 <td class="fh-summary-total-col" th:text="${c.formattedOutstanding}"></td>
+                <td class="fh-summary-total-col" th:text="${c.formattedInterestRate}"></td>
                 <td th:text="${c.dueDay != null ? c.dueDay : '—'}"></td>
                 <td>
                     <span th:if="${c.dueSoon}" class="fh-status-badge fh-status-pending">Due soon</span>

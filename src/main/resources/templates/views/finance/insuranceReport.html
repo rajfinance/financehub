@@ -10,8 +10,6 @@
     </div>
     <div th:if="${successMessage != null}" class="form-banner form-banner--success" th:text="${successMessage}"></div>
     <div th:if="${errorMessage != null}" class="form-banner form-banner--error" th:text="${errorMessage}"></div>
-    <p class="fh-report-hint">Due within 30 days (or overdue) also appear on the Home dashboard after login.</p>
-
     <th:block th:if="${policies != null and !policies.isEmpty()}">
         <table class="summaryTable">
             <thead>
