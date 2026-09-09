@@ -12,9 +12,5 @@ public class FinanceCreditCardDTO {
 	private Double outstandingBalance;
 	private String formattedOutstanding;
 	private Integer billingDay;
-	private Integer dueDay;
-	private Double interestRate;
-	private String formattedInterestRate;
 	private String notes;
-	private boolean dueSoon;
 }

@@ -25,8 +25,8 @@ public class FinanceService {
 	private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd-MMM-yyyy", Locale.ENGLISH);
 
 	private final FinanceAccountRepository accountRepository;
-	private final FinanceLedgerEntryRepository ledgerRepository;
 	private final FinanceCreditCardRepository creditCardRepository;
+	private final FinanceCreditCardBillRepository cardBillRepository;
 	private final FinanceInsurancePolicyRepository insuranceRepository;
 	private final SalaryRepository salaryRepository;
 	private final ExpensesRepository expensesRepository;
@@ -36,8 +36,8 @@ public class FinanceService {
 	private final LoanService loanService;
 
 	public FinanceService(FinanceAccountRepository accountRepository,
-			FinanceLedgerEntryRepository ledgerRepository,
 			FinanceCreditCardRepository creditCardRepository,
+			FinanceCreditCardBillRepository cardBillRepository,
 			FinanceInsurancePolicyRepository insuranceRepository,
 			SalaryRepository salaryRepository,
 			ExpensesRepository expensesRepository,
@@ -46,8 +46,8 @@ public class FinanceService {
 			FormatterUtils formatterUtils,
 			LoanService loanService) {
 		this.accountRepository = accountRepository;
-		this.ledgerRepository = ledgerRepository;
 		this.creditCardRepository = creditCardRepository;
+		this.cardBillRepository = cardBillRepository;
 		this.insuranceRepository = insuranceRepository;
 		this.salaryRepository = salaryRepository;
 		this.expensesRepository = expensesRepository;
@@ -93,6 +93,8 @@ public class FinanceService {
 		account.setAccountType(dto.getAccountType().trim().toUpperCase(Locale.ROOT));
 		account.setBankName(blankToNull(dto.getBankName()));
 		account.setAccountMask(blankToNull(dto.getAccountMask()));
+		account.setIfscCode(blankToNull(dto.getIfscCode()));
+		account.setHomeBranch(blankToNull(dto.getHomeBranch()));
 		if (dto.getCurrentBalance() != null) {
 			account.setCurrentBalance(dto.getCurrentBalance());
 		} else if (account.getCurrentBalance() == null) {
@@ -106,7 +108,6 @@ public class FinanceService {
 	@Transactional
 	public void deleteAccount(Long id) {
 		FinanceAccount account = requireAccount(id);
-		ledgerRepository.deleteAll(ledgerRepository.findByUserIdAndAccountIdOrderByEntryDateDescIdDesc(uid(), id));
 		accountRepository.delete(account);
 	}
 
@@ -122,91 +123,22 @@ public class FinanceService {
 		dto.setAccountType(a.getAccountType());
 		dto.setBankName(a.getBankName());
 		dto.setAccountMask(a.getAccountMask());
+		dto.setIfscCode(a.getIfscCode());
+		dto.setHomeBranch(a.getHomeBranch());
 		dto.setCurrentBalance(a.getCurrentBalance());
 		dto.setFormattedBalance(formatterUtils.formatInIndianStyle(nz(a.getCurrentBalance())));
 		dto.setNotes(a.getNotes());
 		return dto;
 	}
 
-	public List<FinanceLedgerEntryDTO> listLedger(Long accountId) {
-		List<FinanceLedgerEntry> entries = accountId != null
-				? ledgerRepository.findByUserIdAndAccountIdOrderByEntryDateDescIdDesc(uid(), accountId)
-				: ledgerRepository.findByUserIdOrderByEntryDateDescIdDesc(uid());
-		return entries.stream().map(this::toLedgerDto).collect(Collectors.toList());
-	}
-
-	@Transactional
-	public void saveLedgerEntry(FinanceLedgerEntryDTO dto) {
-		if (dto.getAccountId() == null) {
-			throw new IllegalArgumentException("Select an account.");
-		}
-		if (dto.getAmount() == null || dto.getAmount() <= 0) {
-			throw new IllegalArgumentException("Amount must be greater than zero.");
-		}
-		String type = dto.getEntryType() == null ? "" : dto.getEntryType().trim().toUpperCase(Locale.ROOT);
-		if (!"CREDIT".equals(type) && !"DEBIT".equals(type)) {
-			throw new IllegalArgumentException("Entry type must be Credit or Debit.");
-		}
-		FinanceAccount account = requireAccount(dto.getAccountId());
-		LocalDate date = dto.getEntryDate() != null ? dto.getEntryDate() : LocalDate.now();
-
-		FinanceLedgerEntry entry = new FinanceLedgerEntry();
-		entry.setUserId(uid());
-		entry.setAccountId(account.getId());
-		entry.setEntryDate(date);
-		entry.setEntryType(type);
-		entry.setAmount(dto.getAmount());
-		entry.setDescription(blankToNull(dto.getDescription()));
-		entry.setCreatedAt(LocalDateTime.now());
-		ledgerRepository.save(entry);
-
-		double bal = nz(account.getCurrentBalance());
-		bal = "CREDIT".equals(type) ? bal + dto.getAmount() : bal - dto.getAmount();
-		account.setCurrentBalance(bal);
-		account.setUpdatedAt(LocalDateTime.now());
-		accountRepository.save(account);
-	}
-
-	@Transactional
-	public void deleteLedgerEntry(Long id) {
-		FinanceLedgerEntry entry = ledgerRepository.findByIdAndUserId(id, uid())
-				.orElseThrow(() -> new IllegalArgumentException("Ledger entry not found."));
-		FinanceAccount account = requireAccount(entry.getAccountId());
-		double bal = nz(account.getCurrentBalance());
-		if ("CREDIT".equalsIgnoreCase(entry.getEntryType())) {
-			bal -= nz(entry.getAmount());
-		} else {
-			bal += nz(entry.getAmount());
-		}
-		account.setCurrentBalance(bal);
-		account.setUpdatedAt(LocalDateTime.now());
-		accountRepository.save(account);
-		ledgerRepository.delete(entry);
-	}
-
-	private FinanceLedgerEntryDTO toLedgerDto(FinanceLedgerEntry e) {
-		FinanceLedgerEntryDTO dto = new FinanceLedgerEntryDTO();
-		dto.setId(e.getId());
-		dto.setAccountId(e.getAccountId());
-		accountRepository.findByIdAndUserId(e.getAccountId(), uid())
-				.ifPresent(a -> dto.setAccountName(a.getName()));
-		dto.setEntryDate(e.getEntryDate());
-		dto.setEntryType(e.getEntryType());
-		dto.setAmount(e.getAmount());
-		dto.setFormattedAmount(formatterUtils.formatInIndianStyle(nz(e.getAmount())));
-		dto.setDescription(e.getDescription());
-		return dto;
-	}
-
 	public List<FinanceCreditCardDTO> listCreditCards() {
-		LocalDate today = LocalDate.now();
 		return creditCardRepository.findByUserIdOrderByCardNameAsc(uid()).stream()
-				.map(c -> toCardDto(c, today))
+				.map(this::toCardDto)
 				.collect(Collectors.toList());
 	}
 
 	public FinanceCreditCardDTO getCreditCardDto(Long id) {
-		return toCardDto(requireCard(id), LocalDate.now());
+		return toCardDto(requireCard(id));
 	}
 
 	@Transactional
@@ -228,11 +160,6 @@ public class FinanceService {
 		card.setCreditLimit(dto.getCreditLimit());
 		card.setOutstandingBalance(dto.getOutstandingBalance() != null ? dto.getOutstandingBalance() : 0.0);
 		card.setBillingDay(sanitizeDay(dto.getBillingDay()));
-		card.setDueDay(sanitizeDay(dto.getDueDay()));
-		if (dto.getInterestRate() != null && dto.getInterestRate() < 0) {
-			throw new IllegalArgumentException("Interest rate cannot be negative.");
-		}
-		card.setInterestRate(dto.getInterestRate());
 		card.setNotes(blankToNull(dto.getNotes()));
 		card.setUpdatedAt(now);
 		creditCardRepository.save(card);
@@ -240,7 +167,10 @@ public class FinanceService {
 
 	@Transactional
 	public void deleteCreditCard(Long id) {
-		creditCardRepository.delete(requireCard(id));
+		FinanceCreditCard card = requireCard(id);
+		cardBillRepository.deleteAll(
+				cardBillRepository.findByUserIdAndCardIdOrderByBillYearDescBillMonthDescIdDesc(uid(), id));
+		creditCardRepository.delete(card);
 	}
 
 	private FinanceCreditCard requireCard(Long id) {
@@ -248,7 +178,7 @@ public class FinanceService {
 				.orElseThrow(() -> new IllegalArgumentException("Credit card not found."));
 	}
 
-	private FinanceCreditCardDTO toCardDto(FinanceCreditCard c, LocalDate today) {
+	private FinanceCreditCardDTO toCardDto(FinanceCreditCard c) {
 		FinanceCreditCardDTO dto = new FinanceCreditCardDTO();
 		dto.setId(c.getId());
 		dto.setCardName(c.getCardName());
@@ -258,24 +188,146 @@ public class FinanceService {
 		dto.setOutstandingBalance(c.getOutstandingBalance());
 		dto.setFormattedOutstanding(formatterUtils.formatInIndianStyle(nz(c.getOutstandingBalance())));
 		dto.setBillingDay(c.getBillingDay());
-		dto.setDueDay(c.getDueDay());
-		dto.setInterestRate(c.getInterestRate());
-		dto.setFormattedInterestRate(c.getInterestRate() == null ? "—"
-				: formatterUtils.formatInIndianStyle(c.getInterestRate()) + "%");
 		dto.setNotes(c.getNotes());
-		dto.setDueSoon(isCardDueSoon(c.getDueDay(), today));
 		return dto;
 	}
 
-	private boolean isCardDueSoon(Integer dueDay, LocalDate today) {
-		if (dueDay == null || dueDay < 1 || dueDay > 31) {
-			return false;
+	public List<FinanceCreditCardBillDTO> listCardBills(Long cardId) {
+		LocalDate today = LocalDate.now();
+		List<FinanceCreditCardBill> bills = cardId != null
+				? cardBillRepository.findByUserIdAndCardIdOrderByBillYearDescBillMonthDescIdDesc(uid(), cardId)
+				: cardBillRepository.findByUserIdOrderByBillYearDescBillMonthDescIdDesc(uid());
+		return bills.stream().map(b -> toCardBillDto(b, today)).collect(Collectors.toList());
+	}
+
+	public FinanceCreditCardBillDTO getCardBillDto(Long id) {
+		return toCardBillDto(requireCardBill(id), LocalDate.now());
+	}
+
+	public FinanceCreditCardBillDTO newCardBillDefaults() {
+		LocalDate prevMonth = LocalDate.now().minusMonths(1);
+		FinanceCreditCardBillDTO dto = new FinanceCreditCardBillDTO();
+		dto.setBillMonth(prevMonth.getMonthValue());
+		dto.setBillYear(prevMonth.getYear());
+		return dto;
+	}
+
+	@Transactional
+	public void saveCardBill(FinanceCreditCardBillDTO dto) {
+		if (dto.getCardId() == null) {
+			throw new IllegalArgumentException("Select a credit card.");
 		}
-		int due = Math.min(dueDay, today.lengthOfMonth());
-		LocalDate dueDate = today.withDayOfMonth(due);
-		if (dueDate.isBefore(today)) {
-			dueDate = dueDate.plusMonths(1);
-			dueDate = dueDate.withDayOfMonth(Math.min(dueDay, dueDate.lengthOfMonth()));
+		if (dto.getBillMonth() == null || dto.getBillMonth() < 1 || dto.getBillMonth() > 12) {
+			throw new IllegalArgumentException("Select a valid bill month.");
+		}
+		if (dto.getBillYear() == null || dto.getBillYear() < 2000) {
+			throw new IllegalArgumentException("Select a valid bill year.");
+		}
+		if (dto.getDueDate() == null) {
+			throw new IllegalArgumentException("Due date is required.");
+		}
+		if (dto.getOutstandingAmount() == null || dto.getOutstandingAmount() < 0) {
+			throw new IllegalArgumentException("Outstanding amount is required.");
+		}
+		requireCard(dto.getCardId());
+
+		LocalDate billingDate = dto.getBillingDate();
+		if (billingDate == null) {
+			billingDate = resolveBillingDate(dto.getCardId(), dto.getBillMonth(), dto.getBillYear());
+		}
+
+		LocalDateTime now = LocalDateTime.now();
+		FinanceCreditCardBill bill;
+		if (dto.getId() != null) {
+			bill = requireCardBill(dto.getId());
+			if (cardBillRepository.existsByUserIdAndCardIdAndBillMonthAndBillYearAndIdNot(
+					uid(), dto.getCardId(), dto.getBillMonth(), dto.getBillYear(), dto.getId())) {
+				throw new IllegalArgumentException("A bill for this card and month already exists.");
+			}
+		} else {
+			if (cardBillRepository.existsByUserIdAndCardIdAndBillMonthAndBillYear(
+					uid(), dto.getCardId(), dto.getBillMonth(), dto.getBillYear())) {
+				throw new IllegalArgumentException("A bill for this card and month already exists.");
+			}
+			bill = new FinanceCreditCardBill();
+			bill.setUserId(uid());
+			bill.setCreatedAt(now);
+		}
+
+		bill.setCardId(dto.getCardId());
+		bill.setBillMonth(dto.getBillMonth());
+		bill.setBillYear(dto.getBillYear());
+		bill.setBillingDate(billingDate);
+		bill.setDueDate(dto.getDueDate());
+		bill.setInterestAmount(dto.getInterestAmount());
+		bill.setOutstandingAmount(dto.getOutstandingAmount());
+		bill.setPaidAmount(dto.getPaidAmount());
+		bill.setUpdatedAt(now);
+		cardBillRepository.save(bill);
+
+		updateCardOutstandingFromLatestBill(dto.getCardId());
+	}
+
+	@Transactional
+	public void deleteCardBill(Long id) {
+		FinanceCreditCardBill bill = requireCardBill(id);
+		Long cardId = bill.getCardId();
+		cardBillRepository.delete(bill);
+		updateCardOutstandingFromLatestBill(cardId);
+	}
+
+	public LocalDate resolveBillingDate(Long cardId, int month, int year) {
+		FinanceCreditCard card = requireCard(cardId);
+		int billingDay = card.getBillingDay() != null ? card.getBillingDay() : 1;
+		LocalDate base = LocalDate.of(year, month, 1);
+		int day = Math.min(billingDay, base.lengthOfMonth());
+		return base.withDayOfMonth(day);
+	}
+
+	private void updateCardOutstandingFromLatestBill(Long cardId) {
+		List<FinanceCreditCardBill> bills = cardBillRepository
+				.findByUserIdAndCardIdOrderByBillYearDescBillMonthDescIdDesc(uid(), cardId);
+		if (bills.isEmpty()) {
+			return;
+		}
+		FinanceCreditCard card = requireCard(cardId);
+		card.setOutstandingBalance(nz(bills.get(0).getOutstandingAmount()));
+		card.setUpdatedAt(LocalDateTime.now());
+		creditCardRepository.save(card);
+	}
+
+	private FinanceCreditCardBill requireCardBill(Long id) {
+		return cardBillRepository.findByIdAndUserId(id, uid())
+				.orElseThrow(() -> new IllegalArgumentException("Card bill not found."));
+	}
+
+	private FinanceCreditCardBillDTO toCardBillDto(FinanceCreditCardBill b, LocalDate today) {
+		FinanceCreditCardBillDTO dto = new FinanceCreditCardBillDTO();
+		dto.setId(b.getId());
+		dto.setCardId(b.getCardId());
+		creditCardRepository.findByIdAndUserId(b.getCardId(), uid())
+				.ifPresent(c -> dto.setCardName(c.getCardName()));
+		dto.setBillMonth(b.getBillMonth());
+		dto.setBillYear(b.getBillYear());
+		dto.setBillingDate(b.getBillingDate());
+		dto.setFormattedBillingDate(b.getBillingDate() != null ? b.getBillingDate().format(DATE_FMT) : "—");
+		dto.setDueDate(b.getDueDate());
+		dto.setFormattedDueDate(b.getDueDate() != null ? b.getDueDate().format(DATE_FMT) : "—");
+		dto.setInterestAmount(b.getInterestAmount());
+		dto.setFormattedInterestAmount(b.getInterestAmount() == null ? "—"
+				: formatterUtils.formatInIndianStyle(b.getInterestAmount()));
+		dto.setOutstandingAmount(b.getOutstandingAmount());
+		dto.setFormattedOutstanding(formatterUtils.formatInIndianStyle(nz(b.getOutstandingAmount())));
+		dto.setPaidAmount(b.getPaidAmount());
+		dto.setFormattedPaidAmount(b.getPaidAmount() == null ? "—"
+				: formatterUtils.formatInIndianStyle(b.getPaidAmount()));
+		dto.setDueSoon(isDueSoon(b.getDueDate(), today));
+		return dto;
+	}
+
+	private boolean isDueSoon(LocalDate dueDate, LocalDate today) {
+		if (dueDate == null) {
+			return false;
 		}
 		long days = ChronoUnit.DAYS.between(today, dueDate);
 		return days >= 0 && days <= CARD_DUE_SOON_DAYS;
@@ -405,13 +457,16 @@ public class FinanceService {
 							+ " · ₹" + formatterUtils.formatInIndianStyle(nz(p.getPremiumAmount())),
 					overdue ? "danger" : "warn"));
 		}
-		for (FinanceCreditCard c : creditCardRepository.findByUserIdOrderByCardNameAsc(uid())) {
-			if (isCardDueSoon(c.getDueDay(), today)) {
+		for (FinanceCreditCardBill bill : cardBillRepository.findByUserIdOrderByBillYearDescBillMonthDescIdDesc(uid())) {
+			if (isDueSoon(bill.getDueDate(), today)) {
+				String cardName = creditCardRepository.findByIdAndUserId(bill.getCardId(), uid())
+						.map(FinanceCreditCard::getCardName)
+						.orElse("Credit card");
 				alerts.add(new FinanceAlertDTO(
 						"CREDIT_CARD",
-						c.getCardName(),
-						"Payment due around day " + c.getDueDay()
-								+ " · Outstanding ₹" + formatterUtils.formatInIndianStyle(nz(c.getOutstandingBalance())),
+						cardName,
+						"Bill due on " + bill.getDueDate().format(DATE_FMT)
+								+ " · Outstanding ₹" + formatterUtils.formatInIndianStyle(nz(bill.getOutstandingAmount())),
 						"warn"));
 			}
 		}
@@ -425,10 +480,9 @@ public class FinanceService {
 		List<FinanceCashFlowLineDTO> lines = new ArrayList<>();
 		addLine(lines, "Salary (Professional)", totals.salary, true);
 		addLine(lines, "Rental income", totals.rent, true);
-		addLine(lines, "Ledger credits (manual)", totals.ledgerCredit, true);
 		addLine(lines, "Expenses", totals.expense, false);
 		addLine(lines, "Loans paid (EMI / settlements)", totals.loansPaid, false);
-		addLine(lines, "Ledger debits (manual)", totals.ledgerDebit, false);
+		addLine(lines, "Credit card bills paid", totals.cardBillsPaid, false);
 		report.setLines(lines);
 		report.setInflow(totals.inflow());
 		report.setOutflow(totals.outflow());
@@ -446,10 +500,9 @@ public class FinanceService {
 		List<FinanceYearEndSectionDTO> sections = new ArrayList<>();
 		sections.add(section("Salary", totals.salary, true));
 		sections.add(section("Rental income", totals.rent, true));
-		sections.add(section("Ledger credits", totals.ledgerCredit, true));
 		sections.add(section("Expenses", totals.expense, false));
 		sections.add(section("Loans paid", totals.loansPaid, false));
-		sections.add(section("Ledger debits", totals.ledgerDebit, false));
+		sections.add(section("Credit card bills paid", totals.cardBillsPaid, false));
 		sections.add(section("Insurance (annualised estimate)", totals.insuranceEstimate, false));
 		pack.setSections(sections);
 		double net = totals.inflow() - totals.outflow();
@@ -469,10 +522,16 @@ public class FinanceService {
 				.mapToDouble(YearlyAmountRowDTO::getAmount)
 				.findFirst()
 				.orElse(0);
-		t.ledgerCredit = ledgerRepository.sumByUserIdAndTypeAndYear(userId, "CREDIT", year);
-		t.ledgerDebit = ledgerRepository.sumByUserIdAndTypeAndYear(userId, "DEBIT", year);
+		t.cardBillsPaid = sumCardBillsPaidForYear(year);
 		t.insuranceEstimate = estimateInsuranceAnnual();
 		return t;
+	}
+
+	private double sumCardBillsPaidForYear(int year) {
+		return cardBillRepository.findByUserIdOrderByBillYearDescBillMonthDescIdDesc(uid()).stream()
+				.filter(b -> b.getBillYear() != null && b.getBillYear() == year)
+				.mapToDouble(b -> nz(b.getPaidAmount()))
+				.sum();
 	}
 
 	private double sumActualExpensesForYear(long userId, int year) {
@@ -518,16 +577,15 @@ public class FinanceService {
 		double expense;
 		double rent;
 		double loansPaid;
-		double ledgerCredit;
-		double ledgerDebit;
+		double cardBillsPaid;
 		double insuranceEstimate;
 
 		double inflow() {
-			return salary + rent + ledgerCredit;
+			return salary + rent;
 		}
 
 		double outflow() {
-			return expense + loansPaid + ledgerDebit;
+			return expense + loansPaid + cardBillsPaid;
 		}
 	}
 

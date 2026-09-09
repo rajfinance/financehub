@@ -76,6 +76,11 @@ public class WorkController {
         if ("edit".equals(action) && id != null) {
             SalaryDTO salary = workService.getSalaryById(id);
             model.addAttribute("salary", salary);
+        } else {
+            LocalDate previousMonth = LocalDate.now().minusMonths(1);
+            model.addAttribute("defaultCompanyId", workService.getDefaultSalaryCompanyId());
+            model.addAttribute("defaultMonth", previousMonth.getMonthValue());
+            model.addAttribute("defaultYear", LocalDate.now().getYear());
         }
         List<String> monthAbbreviations = new ArrayList<>();
         String[] months = new DateFormatSymbols().getMonths();

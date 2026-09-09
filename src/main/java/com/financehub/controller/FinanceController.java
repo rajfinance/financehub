@@ -9,8 +9,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.text.DateFormatSymbols;
 import java.time.LocalDate;
 import java.time.Year;
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -82,46 +84,6 @@ public class FinanceController {
 		}
 	}
 
-	/* Ledger */
-	@GetMapping("/ledger/add")
-	public String ledgerForm(Model model) {
-		FinanceLedgerEntryDTO entry = new FinanceLedgerEntryDTO();
-		entry.setEntryDate(LocalDate.now());
-		entry.setEntryType("CREDIT");
-		model.addAttribute("entry", entry);
-		model.addAttribute("accounts", financeService.listAccounts());
-		return "views/finance/addLedgerEntry";
-	}
-
-	@PostMapping("/ledger/save")
-	public String saveLedger(@ModelAttribute FinanceLedgerEntryDTO entry, RedirectAttributes ra) {
-		try {
-			financeService.saveLedgerEntry(entry);
-			ra.addFlashAttribute("successMessage", "Ledger entry saved successfully.");
-		} catch (IllegalArgumentException e) {
-			ra.addFlashAttribute("errorMessage", e.getMessage());
-		}
-		return "redirect:/api/finance/ledger/add";
-	}
-
-	@GetMapping("/ledgerReport")
-	public String ledgerReport(@RequestParam(value = "accountId", required = false) Long accountId, Model model) {
-		model.addAttribute("entries", financeService.listLedger(accountId));
-		model.addAttribute("accounts", financeService.listAccounts());
-		model.addAttribute("selectedAccountId", accountId);
-		return "views/finance/ledgerReport";
-	}
-
-	@DeleteMapping("/deleteLedger")
-	public ResponseEntity<String> deleteLedger(@RequestParam("id") Long id) {
-		try {
-			financeService.deleteLedgerEntry(id);
-			return ResponseEntity.ok("success");
-		} catch (IllegalArgumentException e) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-		}
-	}
-
 	/* Credit cards */
 	@GetMapping("/cards/add")
 	public String cardForm(@RequestParam(value = "id", required = false) Long id, Model model) {
@@ -157,6 +119,52 @@ public class FinanceController {
 		}
 	}
 
+	/* Credit card monthly bills */
+	@GetMapping("/cardBills/add")
+	public String cardBillForm(@RequestParam(value = "id", required = false) Long id, Model model) {
+		FinanceCreditCardBillDTO bill = id != null
+				? financeService.getCardBillDto(id)
+				: financeService.newCardBillDefaults();
+		if (bill.getCardId() != null && bill.getBillingDate() == null
+				&& bill.getBillMonth() != null && bill.getBillYear() != null) {
+			bill.setBillingDate(financeService.resolveBillingDate(bill.getCardId(), bill.getBillMonth(), bill.getBillYear()));
+		}
+		model.addAttribute("bill", bill);
+		model.addAttribute("cards", financeService.listCreditCards());
+		model.addAttribute("monthAbbreviations", monthAbbreviations());
+		model.addAttribute("years", financeService.reportYears());
+		return "views/finance/addCardBill";
+	}
+
+	@PostMapping("/cardBills/save")
+	public String saveCardBill(@ModelAttribute FinanceCreditCardBillDTO bill, RedirectAttributes ra) {
+		try {
+			financeService.saveCardBill(bill);
+			ra.addFlashAttribute("successMessage", "Monthly bill saved successfully.");
+		} catch (IllegalArgumentException e) {
+			ra.addFlashAttribute("errorMessage", e.getMessage());
+		}
+		return "redirect:/api/finance/cardBills/add" + (bill.getId() != null ? "?id=" + bill.getId() : "");
+	}
+
+	@GetMapping("/cardBillsReport")
+	public String cardBillsReport(@RequestParam(value = "cardId", required = false) Long cardId, Model model) {
+		model.addAttribute("bills", financeService.listCardBills(cardId));
+		model.addAttribute("cards", financeService.listCreditCards());
+		model.addAttribute("selectedCardId", cardId);
+		return "views/finance/cardBillsReport";
+	}
+
+	@DeleteMapping("/deleteCardBill")
+	public ResponseEntity<String> deleteCardBill(@RequestParam("id") Long id) {
+		try {
+			financeService.deleteCardBill(id);
+			return ResponseEntity.ok("success");
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+		}
+	}
+
 	/* Insurance */
 	@GetMapping("/insurance/add")
 	public String insuranceForm(@RequestParam(value = "id", required = false) Long id, Model model) {
@@ -171,7 +179,7 @@ public class FinanceController {
 			dto.setPolicyType("LIFE");
 		}
 		model.addAttribute("policy", dto);
-		model.addAttribute("policyTypes", List.of("LIFE", "HEALTH", "VEHICLE", "TERM", "OTHER"));
+		model.addAttribute("policyTypes", List.of("LIFE", "HEALTH", "VEHICLE", "TERM", "ENDOWMENT", "OTHER"));
 		model.addAttribute("frequencies", List.of("MONTHLY", "QUARTERLY", "HALF_YEARLY", "YEARLY"));
 		return "views/finance/addInsurance";
 	}
@@ -233,5 +241,14 @@ public class FinanceController {
 		model.addAttribute("years", financeService.reportYears());
 		model.addAttribute("selectedYear", y);
 		return "views/finance/yearEndPackReport";
+	}
+
+	private List<String> monthAbbreviations() {
+		List<String> months = new ArrayList<>();
+		String[] names = new DateFormatSymbols().getMonths();
+		for (int i = 0; i < 12; i++) {
+			months.add(names[i].substring(0, 3));
+		}
+		return months;
 	}
 }

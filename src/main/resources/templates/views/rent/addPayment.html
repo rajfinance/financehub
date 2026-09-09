@@ -25,7 +25,7 @@
                 <option th:each="owner : ${owners}"
                         th:value="${owner.ownerId}"
                         th:text="${owner.name}"
-                        th:selected="${payment != null and payment.ownerId == owner.ownerId}"></option>
+                        th:selected="${payment != null and payment.ownerId != null and payment.ownerId == owner.ownerId}"></option>
             </select>
         </div>
 
@@ -34,7 +34,7 @@
                 <div class="input-group">
                     <label for="start">Rent period start<span class="mandatory">*</span></label>
                     <input type="date" id="start" name="rentPeriodStart"
-                           th:value="${payment != null and payment.id != null} ? ${payment.rentPeriodStart} : ''"
+                           th:value="${payment?.rentPeriodStart}"
                            required />
                 </div>
             </div>
@@ -42,7 +42,7 @@
                 <div class="input-group">
                     <label for="end">Rent period end<span class="mandatory">*</span></label>
                     <input type="date" id="end" name="rentPeriodEnd"
-                           th:value="${payment != null and payment.id != null} ? ${payment.rentPeriodEnd} : ''"
+                           th:value="${payment?.rentPeriodEnd}"
                            required />
                 </div>
             </div>
@@ -53,7 +53,7 @@
                 <div class="input-group">
                     <label for="paidOn">Paid on<span class="mandatory">*</span></label>
                     <input type="date" id="paidOn" name="paidOn"
-                           th:value="${payment != null and payment.id != null} ? ${payment.paidOn} : ''"
+                           th:value="${payment?.paidOn}"
                            required />
                 </div>
             </div>
@@ -61,7 +61,7 @@
                 <div class="input-group">
                     <label for="amount">Amount<span class="mandatory">*</span></label>
                     <input type="number" id="amount" name="amount"
-                           th:value="${payment != null and payment.id != null} ? ${payment.amount} : ''"
+                           th:value="${payment?.amount}"
                            required />
                 </div>
             </div>

@@ -46,6 +46,25 @@ public class WorkService {
     @Autowired
     private UserService userService;
 
+    public Long getDefaultSalaryCompanyId() {
+        if (userService.getUserId() == 0) {
+            return null;
+        }
+        List<Company> companies = companyRepository.findCompaniesByUserId(userService.getUserId());
+        Optional<Company> currentCompany = companies.stream()
+                .filter(c -> Boolean.TRUE.equals(c.getIsCurrentCompany()))
+                .findFirst();
+        if (currentCompany.isEmpty()) {
+            return null;
+        }
+        String currentName = currentCompany.get().getCompanyName();
+        return getUniqueCompaniesByUserName().stream()
+                .filter(c -> c.getCompanyName() != null && c.getCompanyName().equals(currentName))
+                .map(CompanyDTO::getCompanyId)
+                .findFirst()
+                .orElse(null);
+    }
+
     public List<CompanyDTO> getUniqueCompaniesByUserName() {
         List<CompanyDTO> companyDTOs = null;
         if (userService.getUserId() != 0) {

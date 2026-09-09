@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div class="form-container">
+    <h1 th:text="${bill != null and bill.id != null} ? 'Edit Monthly Bill' : 'Add Monthly Bill'"></h1>
+    <form th:action="@{/api/finance/cardBills/save}" th:object="${bill}" method="post" th:onsubmit="submitForm(event)">
+        <div th:if="${successMessage != null}" class="form-banner form-banner--success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage != null}" class="form-banner form-banner--error" th:text="${errorMessage}"></div>
+        <input type="hidden" name="id" th:value="${bill?.id}" th:if="${bill != null and bill.id != null}"/>
+
+        <div class="input-group">
+            <label for="cardId">Credit card<span class="mandatory">*</span></label>
+            <select id="cardId" name="cardId" required onchange="updateBillingDateFromCard()">
+                <option value="">Select card</option>
+                <option th:each="c : ${cards}" th:value="${c.id}" th:text="${c.cardName}"
+                        th:attr="data-billing-day=${c.billingDay}"
+                        th:selected="${bill != null and bill.cardId == c.id}"></option>
+            </select>
+        </div>
+
+        <div class="form-row form-row--3">
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="billMonth">Month<span class="mandatory">*</span></label>
+                    <select id="billMonth" name="billMonth" required onchange="updateBillingDateFromCard()">
+                        <option value="">Select month</option>
+                        <option th:each="month, status : ${monthAbbreviations}"
+                                th:value="${status.count}" th:text="${month}"
+                                th:selected="${bill != null and bill.billMonth == status.count}"></option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="billYear">Year<span class="mandatory">*</span></label>
+                    <select id="billYear" name="billYear" required onchange="updateBillingDateFromCard()">
+                        <option value="">Select year</option>
+                        <option th:each="y : ${years}" th:value="${y}" th:text="${y}"
+                                th:selected="${bill != null and bill.billYear == y}"></option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="billingDate">Billing date</label>
+                    <input type="date" id="billingDate" name="billingDate"
+                           th:value="${bill?.billingDate}" readonly/>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row form-row--3">
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="dueDate">Due date<span class="mandatory">*</span></label>
+                    <input type="date" id="dueDate" name="dueDate" th:value="${bill?.dueDate}" required/>
+                </div>
+            </div>
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="interestAmount">Interest amount</label>
+                    <input type="number" step="0.01" min="0" id="interestAmount" name="interestAmount"
+                           th:value="${bill?.interestAmount}"/>
+                </div>
+            </div>
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="outstandingAmount">Outstanding amount<span class="mandatory">*</span></label>
+                    <input type="number" step="0.01" min="0" id="outstandingAmount" name="outstandingAmount"
+                           th:value="${bill?.outstandingAmount}" required/>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="paidAmount">Paid amount</label>
+            <input type="number" step="0.01" min="0" id="paidAmount" name="paidAmount"
+                   th:value="${bill?.paidAmount}"/>
+        </div>
+
+        <button type="submit" th:text="${bill != null and bill.id != null} ? 'Update' : 'Save'"></button>
+    </form>
+</div>
+<script>
+    function updateBillingDateFromCard() {
+        var cardSelect = document.getElementById('cardId');
+        var month = parseInt(document.getElementById('billMonth').value, 10);
+        var year = parseInt(document.getElementById('billYear').value, 10);
+        var billingDay = parseInt(cardSelect.selectedOptions[0]?.dataset.billingDay, 10);
+        var billingInput = document.getElementById('billingDate');
+        if (!billingDay || !month || !year) {
+            billingInput.value = '';
+            return;
+        }
+        var lastDay = new Date(year, month, 0).getDate();
+        var day = Math.min(billingDay, lastDay);
+        var mm = String(month).padStart(2, '0');
+        var dd = String(day).padStart(2, '0');
+        billingInput.value = year + '-' + mm + '-' + dd;
+    }
+    document.addEventListener('DOMContentLoaded', updateBillingDateFromCard);
+</script>
+</body>
+</html>

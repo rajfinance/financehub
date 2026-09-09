@@ -58,6 +58,27 @@ public class RentalService {
     public void deleteRentPayment(Long id) {
         rentPaymentRepository.findByIdAndOwnerUserId(id, userService.getUserId()).ifPresent(rentPaymentRepository::delete);
     }
+    public RentPaymentDTO newPaymentDefaults() {
+        RentPaymentDTO payment = new RentPaymentDTO();
+        payment.setOwnerId(getDefaultOwnerId());
+        LocalDate previousMonth = LocalDate.now().minusMonths(1);
+        payment.setRentPeriodStart(previousMonth.withDayOfMonth(1));
+        payment.setRentPeriodEnd(previousMonth.withDayOfMonth(previousMonth.lengthOfMonth()));
+        return payment;
+    }
+
+    public Long getDefaultOwnerId() {
+        List<RentPayment> payments = rentPaymentRepository.findByUserId(userService.getUserId());
+        if (!payments.isEmpty()) {
+            return payments.stream()
+                    .max(Comparator.comparing(RentPayment::getPaidOn))
+                    .map(p -> p.getOwner().getId())
+                    .orElse(null);
+        }
+        List<Owner> owners = ownerRepository.findByUserId(userService.getUserId());
+        return owners.isEmpty() ? null : owners.get(0).getId();
+    }
+
     public List<OwnerDTO> getOwnersByUserId() {
         List<Owner> owners =  ownerRepository.findByUserId(userService.getUserId());
         List<OwnerDTO> ownersDto = owners.stream()

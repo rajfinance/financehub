@@ -9,6 +9,8 @@ public class FinanceAccountDTO {
 	private String accountType;
 	private String bankName;
 	private String accountMask;
+	private String ifscCode;
+	private String homeBranch;
 	private Double currentBalance;
 	private String formattedBalance;
 	private String notes;

@@ -16,6 +16,8 @@
                 <th>Account number</th>
                 <th>Type</th>
                 <th>Bank</th>
+                <th>IFSC</th>
+                <th>Home branch</th>
                 <th class="fh-summary-total-col">Balance</th>
                 <th>Action</th>
             </tr>
@@ -26,6 +28,8 @@
                 <td th:text="${a.accountMask != null and !a.accountMask.isEmpty()} ? ${a.accountMask} : '—'"></td>
                 <td th:text="${a.accountType}"></td>
                 <td th:text="${a.bankName != null ? a.bankName : '—'}"></td>
+                <td th:text="${a.ifscCode != null and !a.ifscCode.isEmpty()} ? ${a.ifscCode} : '—'"></td>
+                <td th:text="${a.homeBranch != null and !a.homeBranch.isEmpty()} ? ${a.homeBranch} : '—'"></td>
                 <td class="fh-summary-total-col" th:text="${a.formattedBalance}"></td>
                 <td>
                     <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/accounts/add?id=${a.id}')|">

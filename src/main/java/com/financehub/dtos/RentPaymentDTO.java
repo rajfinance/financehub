@@ -3,9 +3,12 @@ package com.financehub.dtos;
 import com.financehub.entities.Owner;
 import com.financehub.entities.RentPayment;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+
 @Data
+@NoArgsConstructor
 public class RentPaymentDTO {
 
     private Long id;

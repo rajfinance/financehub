@@ -30,6 +30,12 @@ public class FinanceAccount {
 	@Column(name = "account_mask", length = 40)
 	private String accountMask;
 
+	@Column(name = "ifsc_code", length = 11)
+	private String ifscCode;
+
+	@Column(name = "home_branch", length = 120)
+	private String homeBranch;
+
 	@Column(name = "current_balance", nullable = false)
 	private Double currentBalance;
 

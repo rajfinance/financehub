@@ -54,7 +54,7 @@ public class RentController {
             RentPaymentDTO paymentDTO = rentalService.getPaymentById(paymentId);
             model.addAttribute("payment", paymentDTO);
         } else {
-            model.addAttribute("payment", null);
+            model.addAttribute("payment", rentalService.newPaymentDefaults());
         }
         List<OwnerDTO> owners = rentalService.getOwnersByUserId();
         model.addAttribute("owners", owners);

@@ -43,22 +43,6 @@
             </div>
             <div class="form-column">
                 <div class="input-group">
-                    <label for="interestRate">Interest rate (%)</label>
-                    <input type="number" step="0.01" min="0" id="interestRate" name="interestRate"
-                           th:value="${card?.interestRate}" placeholder="e.g. 36"/>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-column">
-                <div class="input-group">
-                    <label for="dueDay">Due day (1–31)</label>
-                    <input type="number" min="1" max="31" id="dueDay" name="dueDay" th:value="${card?.dueDay}"/>
-                </div>
-            </div>
-            <div class="form-column">
-                <div class="input-group">
                     <label for="billingDay">Billing day (1–31)</label>
                     <input type="number" min="1" max="31" id="billingDay" name="billingDay" th:value="${card?.billingDay}"/>
                 </div>

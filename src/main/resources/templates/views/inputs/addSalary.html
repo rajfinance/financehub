@@ -16,7 +16,9 @@
                 <select id="companyId" name="companyId" required="required">
                     <option value="">Select Company</option>
                     <th:block th:each="company : ${companies}">
-                        <option th:value="${company.companyId}" th:selected="${salary != null and company.companyId == salary.companyId}" th:text="${company.companyName}"></option>
+                        <option th:value="${company.companyId}"
+                                th:selected="${(salary != null and company.companyId == salary.companyId) or (salary == null and defaultCompanyId != null and company.companyId == defaultCompanyId)}"
+                                th:text="${company.companyName}"></option>
                     </th:block>
                     <th:block th:if="${companies == null or companies.isEmpty()}">
                         <option value="">No companies available</option>
@@ -31,7 +33,9 @@
                         <select id="month" name="month" required="required">
                             <option value="">Select Month</option>
                             <th:block th:each="month, status : ${monthAbbreviations}">
-                                <option th:value="${status.count}" th:selected="${salary != null and status.count == salary.month}" th:text="${month}"></option>
+                                <option th:value="${status.count}"
+                                        th:selected="${(salary != null and status.count == salary.month) or (salary == null and defaultMonth != null and status.count == defaultMonth)}"
+                                        th:text="${month}"></option>
                             </th:block>
                         </select>
                     </div>
@@ -39,7 +43,8 @@
                 <div class="form-column">
                     <div class="input-group">
                         <label for="year">Year<span class="mandatory">*</span>:</label>
-                        <input type="number" id="year" name="year" min="2000" max="2100" th:value="${salary != null ? salary.year : ''}" required="required" />
+                        <input type="number" id="year" name="year" min="2000" max="2100"
+                               th:value="${salary != null ? salary.year : defaultYear}" required="required" />
                     </div>
                 </div>
             </div>

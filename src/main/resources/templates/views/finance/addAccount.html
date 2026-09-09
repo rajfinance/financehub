@@ -29,6 +29,23 @@
         <div class="form-row">
             <div class="form-column">
                 <div class="input-group">
+                    <label for="ifscCode">IFSC code</label>
+                    <input type="text" id="ifscCode" name="ifscCode" th:value="${account?.ifscCode}"
+                           placeholder="e.g. SBIN0001234" maxlength="11"/>
+                </div>
+            </div>
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="homeBranch">Home branch</label>
+                    <input type="text" id="homeBranch" name="homeBranch" th:value="${account?.homeBranch}"
+                           placeholder="Branch name"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-column">
+                <div class="input-group">
                     <label for="accountType">Account type<span class="mandatory">*</span></label>
                     <select id="accountType" name="accountType" required>
                         <option value="">Select type</option>

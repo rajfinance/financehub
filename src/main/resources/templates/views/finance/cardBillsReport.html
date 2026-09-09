@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div id="reportContent" class="fh-finance-report">
+    <div class="fh-report-toolbar">
+        <h1 class="h1report fh-report-title-plain">Credit Card Bills</h1>
+        <div class="report-buttons fh-report-actions">
+            <button id="printReport" class="print-btn" type="button" title="Print"><img th:src="@{/images/print.png}" alt="Print"/></button>
+        </div>
+    </div>
+
+    <div class="fh-report-filter" th:if="${cards != null and !cards.isEmpty()}">
+        <label for="cardBillFilter">Card</label>
+        <select id="cardBillFilter"
+                onchange="(function(sel){ var p=typeof getHubPanel==='function'?getHubPanel():null; if(!p)return; var url='/api/finance/cardBillsReport'+(sel.value?'?cardId='+encodeURIComponent(sel.value):''); fetch(url,{credentials:'same-origin',headers:typeof getCsrfHeaders==='function'?getCsrfHeaders():{}}).then(function(r){return r.text();}).then(function(html){p.innerHTML=html; if(typeof attachReportListeners==='function') attachReportListeners(p,'cardBillsReport');}); })(this)">
+            <option value="">All cards</option>
+            <option th:each="c : ${cards}" th:value="${c.id}" th:text="${c.cardName}"
+                    th:selected="${selectedCardId != null and selectedCardId == c.id}"></option>
+        </select>
+    </div>
+
+    <th:block th:if="${bills != null and !bills.isEmpty()}">
+        <table class="summaryTable">
+            <thead>
+            <tr>
+                <th>Card</th>
+                <th>Period</th>
+                <th>Billing date</th>
+                <th>Due date</th>
+                <th class="fh-summary-total-col">Interest</th>
+                <th class="fh-summary-total-col">Outstanding</th>
+                <th class="fh-summary-total-col">Paid</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="b : ${bills}">
+                <td th:text="${b.cardName}"></td>
+                <td th:text="${b.billMonth + '/' + b.billYear}"></td>
+                <td th:text="${b.formattedBillingDate}"></td>
+                <td th:text="${b.formattedDueDate}"></td>
+                <td class="fh-summary-total-col" th:text="${b.formattedInterestAmount}"></td>
+                <td class="fh-summary-total-col" th:text="${b.formattedOutstanding}"></td>
+                <td class="fh-summary-total-col" th:text="${b.formattedPaidAmount}"></td>
+                <td>
+                    <span th:if="${b.dueSoon}" class="fh-status-badge fh-status-pending">Due soon</span>
+                    <span th:unless="${b.dueSoon}">—</span>
+                </td>
+                <td>
+                    <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/cardBills/add?id=${b.id}')|">
+                        <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:20px;height:20px;margin-right:12px;"/>
+                    </a>
+                    <a href="javascript:void(0);"
+                       th:attr="data-report-type='cardBillsReport', data-id=${b.id}"
+                       th:onclick="'deleteEntity(this, \'Monthly bill\', \'/api/finance/deleteCardBill\')'">
+                        <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:20px;height:20px;"/>
+                    </a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </th:block>
+    <p th:if="${bills == null or bills.isEmpty()}" class="fh-report-empty">No monthly bills recorded yet.</p>
+</div>
+</body>
+</html>
