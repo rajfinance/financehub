@@ -14,34 +14,42 @@
             <tr>
                 <th>Display name</th>
                 <th>Account number</th>
-                <th>Type</th>
-                <th>Bank</th>
                 <th>IFSC</th>
-                <th>Home branch</th>
                 <th class="fh-summary-total-col">Balance</th>
                 <th>Action</th>
             </tr>
             </thead>
             <tbody>
-            <tr th:each="a : ${accounts}">
-                <td th:text="${a.name}"></td>
-                <td th:text="${a.accountMask != null and !a.accountMask.isEmpty()} ? ${a.accountMask} : '—'"></td>
-                <td th:text="${a.accountType}"></td>
-                <td th:text="${a.bankName != null ? a.bankName : '—'}"></td>
-                <td th:text="${a.ifscCode != null and !a.ifscCode.isEmpty()} ? ${a.ifscCode} : '—'"></td>
-                <td th:text="${a.homeBranch != null and !a.homeBranch.isEmpty()} ? ${a.homeBranch} : '—'"></td>
-                <td class="fh-summary-total-col" th:text="${a.formattedBalance}"></td>
-                <td>
-                    <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/accounts/add?id=${a.id}')|">
-                        <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:20px;height:20px;margin-right:12px;"/>
-                    </a>
-                    <a href="javascript:void(0);"
-                       th:attr="data-report-type='accountsReport', data-id=${a.id}"
-                       th:onclick="'deleteEntity(this, \'Bank account\', \'/api/finance/deleteAccount\')'">
-                        <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:20px;height:20px;"/>
-                    </a>
-                </td>
-            </tr>
+            <th:block th:each="a : ${accounts}">
+                <tr>
+                    <td>
+                        <a href="javascript:void(0);" class="fh-report-link" onclick="toggleReportDetailRow(this)"
+                           aria-expanded="false" th:text="${a.name}"></a>
+                    </td>
+                    <td th:text="${a.accountMask != null and !a.accountMask.isEmpty()} ? ${a.accountMask} : '—'"></td>
+                    <td th:text="${a.ifscCode != null and !a.ifscCode.isEmpty()} ? ${a.ifscCode} : '—'"></td>
+                    <td class="fh-summary-total-col" th:text="${a.formattedBalance}"></td>
+                    <td>
+                        <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/accounts/add?id=${a.id}')|">
+                            <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:20px;height:20px;margin-right:12px;"/>
+                        </a>
+                        <a href="javascript:void(0);"
+                           th:attr="data-report-type='accountsReport', data-id=${a.id}"
+                           th:onclick="'deleteEntity(this, \'Bank account\', \'/api/finance/deleteAccount\')'">
+                            <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:20px;height:20px;"/>
+                        </a>
+                    </td>
+                </tr>
+                <tr class="fh-report-detail-row" hidden>
+                    <td colspan="5">
+                        <div class="fh-report-detail">
+                            <span><strong>Type:</strong> <th:block th:text="${a.accountType != null ? a.accountType : '—'}"></th:block></span>
+                            <span><strong>Bank:</strong> <th:block th:text="${a.bankName != null ? a.bankName : '—'}"></th:block></span>
+                            <span><strong>Home branch:</strong> <th:block th:text="${a.homeBranch != null and !a.homeBranch.isEmpty()} ? ${a.homeBranch} : '—'"></th:block></span>
+                        </div>
+                    </td>
+                </tr>
+            </th:block>
             </tbody>
         </table>
     </th:block>

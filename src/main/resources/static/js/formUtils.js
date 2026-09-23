@@ -827,6 +827,30 @@ function fetchCardBillPeriodSummary() {
         });
 }
 
+function toggleReportDetailRow(link) {
+    if (!link) {
+        return;
+    }
+    var row = link.closest('tr');
+    if (!row) {
+        return;
+    }
+    var detail = row.nextElementSibling;
+    if (!detail || !detail.classList.contains('fh-report-detail-row')) {
+        return;
+    }
+    var open = detail.hasAttribute('hidden');
+    if (open) {
+        detail.removeAttribute('hidden');
+        link.setAttribute('aria-expanded', 'true');
+        link.classList.add('is-open');
+    } else {
+        detail.setAttribute('hidden', 'hidden');
+        link.setAttribute('aria-expanded', 'false');
+        link.classList.remove('is-open');
+    }
+}
+
 function toIsoDate(year, month, day) {
     return year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
 }

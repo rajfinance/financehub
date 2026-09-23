@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
-import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -523,7 +522,7 @@ public class FinanceService {
 				.ifPresent(c -> dto.setCardName(cardDisplayLabel(c)));
 		dto.setBillMonth(b.getBillMonth());
 		dto.setBillYear(b.getBillYear());
-		dto.setFormattedPeriod(formatBillPeriod(b.getBillMonth(), b.getBillYear()));
+		dto.setFormattedPeriod(formatBillPeriod(b.getBillingDate()));
 		dto.setBillingDate(b.getBillingDate());
 		dto.setFormattedBillingDate(b.getBillingDate() != null ? b.getBillingDate().format(DAY_MONTH_FMT) : "—");
 		dto.setDueDate(b.getDueDate());
@@ -595,13 +594,14 @@ public class FinanceService {
 		return Long.compare(a.getId() != null ? a.getId() : 0, b.getId() != null ? b.getId() : 0);
 	}
 
-	private static String formatBillPeriod(Integer billMonth, Integer billYear) {
-		if (billMonth == null || billYear == null || billMonth < 1 || billMonth > 12) {
+	private static String formatBillPeriod(LocalDate billingDate) {
+		if (billingDate == null) {
 			return "—";
 		}
-		YearMonth ym = YearMonth.of(billYear, billMonth);
-		LocalDate start = ym.atDay(1);
-		LocalDate end = ym.atEndOfMonth();
+		LocalDate end = billingDate.minusDays(1);
+		LocalDate start = billingDate.getDayOfMonth() == 1
+				? billingDate.minusMonths(1)
+				: end.minusMonths(1);
 		return start.format(DAY_MONTH_FMT) + "-" + end.format(DAY_MONTH_FMT);
 	}
 

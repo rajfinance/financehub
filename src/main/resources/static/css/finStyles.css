@@ -2816,6 +2816,39 @@ button.fh-btn:active,
     padding: 0.5rem 0.45rem 0.6rem;
 }
 
+.fh-report-link {
+    color: var(--fh-link, #0f766e);
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px dashed rgba(15, 118, 110, 0.45);
+    cursor: pointer;
+}
+
+.fh-report-link:hover,
+.fh-report-link.is-open {
+    color: #0d9488;
+    border-bottom-style: solid;
+}
+
+.fh-report-detail-row > td {
+    background: #f8fafc;
+    padding: 0.55rem 0.75rem !important;
+    border-top: none !important;
+}
+
+.fh-report-detail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 1.25rem;
+    font-size: 0.88rem;
+    color: var(--fh-text-muted, #475569);
+}
+
+.fh-report-detail strong {
+    color: var(--fh-text, #0f172a);
+    font-weight: 650;
+}
+
 /* Section hubs: left sidebar + right content (Professional / Expenses / Rentals) */
 .fh-section-hub {
     display: flex;
