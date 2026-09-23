@@ -9,11 +9,12 @@ CREATE TABLE IF NOT EXISTS finance_credit_card_bills (
     billing_date        DATE            NOT NULL,
     due_date            DATE            NOT NULL,
     interest_amount     DOUBLE PRECISION,
+    bill_amount         DOUBLE PRECISION,
     outstanding_amount  DOUBLE PRECISION NOT NULL DEFAULT 0,
     paid_amount         DOUBLE PRECISION,
+    paid_date           DATE,
     created_at          TIMESTAMP       NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMP       NOT NULL DEFAULT NOW(),
-    CONSTRAINT uq_card_bill_period UNIQUE (user_id, card_id, bill_month, bill_year)
+    updated_at          TIMESTAMP       NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_finance_card_bills_user ON finance_credit_card_bills (user_id);

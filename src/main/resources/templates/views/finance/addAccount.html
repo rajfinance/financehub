@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
 <div class="form-container">
-    <h1 th:text="${account != null and account.id != null} ? 'Edit Account' : 'Add Account'"></h1>
+    <h1 th:text="${account != null and account.id != null} ? 'Edit Bank Account' : 'Add Bank Account'"></h1>
     <form th:action="@{/api/finance/accounts/save}" th:object="${account}" method="post" th:onsubmit="submitForm(event)">
         <div th:if="${successMessage != null}" class="form-banner form-banner--success" th:text="${successMessage}"></div>
         <div th:if="${errorMessage != null}" class="form-banner form-banner--error" th:text="${errorMessage}"></div>

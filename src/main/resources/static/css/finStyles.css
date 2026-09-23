@@ -1373,8 +1373,13 @@ main.content.static-page,
     grid-template-columns: repeat(3, 1fr);
 }
 
+.form-container .form-row--4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
 @media (max-width: 900px) {
-    .form-container .form-row--3 {
+    .form-container .form-row--3,
+    .form-container .form-row--4 {
         grid-template-columns: 1fr;
     }
 }
@@ -2717,6 +2722,98 @@ button.fh-btn:active,
 
 .fh-year-panel--current > .fh-year-panel__summary .fh-year-panel__chevron {
     display: none;
+}
+
+.fh-card-bills-report .fh-card-bills-table {
+    width: 100%;
+    table-layout: fixed;
+    font-size: 0.9rem;
+}
+
+.fh-card-bills-report .fh-card-bills-table th,
+.fh-card-bills-report .fh-card-bills-table td {
+    padding: 0.45rem 0.4rem;
+    vertical-align: middle;
+    word-break: break-word;
+}
+
+.fh-card-bills-report .fh-card-bills-date {
+    white-space: nowrap;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.fh-card-bills-report .fh-card-bills-status {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.fh-card-bills-report .fh-card-bills-actions {
+    white-space: nowrap;
+    text-align: center;
+    width: 4.5rem;
+}
+
+.fh-card-bills-report .fh-status-badge {
+    padding: 0.15rem 0.45rem;
+    font-size: 0.72rem;
+}
+
+.fh-card-bills-card-panel {
+    margin: 0.55rem 0 0;
+    border: 1px solid var(--fh-border, #dbe3ea);
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.fh-card-bills-card-panel__summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem 1rem;
+    padding: 0.55rem 0.75rem;
+    cursor: pointer;
+    list-style: none;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.fh-card-bills-card-panel__summary::-webkit-details-marker {
+    display: none;
+}
+
+.fh-card-bills-card-panel[open] > .fh-card-bills-card-panel__summary {
+    border-bottom: 1px solid var(--fh-border, #dbe3ea);
+}
+
+.fh-card-bills-card-panel__title {
+    font-weight: 700;
+    color: var(--fh-text, #0f172a);
+    margin-right: auto;
+}
+
+.fh-card-bills-card-panel__total {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--fh-text-muted, #5f6368);
+}
+
+.fh-card-bills-card-panel__chevron {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-right: 2px solid #64748b;
+    border-bottom: 2px solid #64748b;
+    transform: rotate(45deg);
+    transition: transform 0.15s ease;
+    flex: 0 0 auto;
+}
+
+.fh-card-bills-card-panel[open] > .fh-card-bills-card-panel__summary .fh-card-bills-card-panel__chevron {
+    transform: rotate(225deg);
+}
+
+.fh-card-bills-card-panel__body {
+    padding: 0.5rem 0.45rem 0.6rem;
 }
 
 /* Section hubs: left sidebar + right content (Professional / Expenses / Rentals) */

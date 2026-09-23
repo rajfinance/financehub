@@ -36,11 +36,18 @@ public class FinanceCreditCardBill {
 	@Column(name = "interest_amount")
 	private Double interestAmount;
 
+	/** Statement total, already inclusive of interest. */
+	@Column(name = "bill_amount")
+	private Double billAmount;
+
 	@Column(name = "outstanding_amount", nullable = false)
 	private Double outstandingAmount;
 
 	@Column(name = "paid_amount")
 	private Double paidAmount;
+
+	@Column(name = "paid_date")
+	private LocalDate paidDate;
 
 	@Column(name = "created_at", nullable = false)
 	private LocalDateTime createdAt;

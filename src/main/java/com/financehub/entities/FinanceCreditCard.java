@@ -23,6 +23,18 @@ public class FinanceCreditCard {
 	@Column(name = "bank_name", length = 120)
 	private String bankName;
 
+	@Column(name = "card_number", length = 19)
+	private String cardNumber;
+
+	@Column(name = "expiry_month")
+	private Integer expiryMonth;
+
+	@Column(name = "expiry_year")
+	private Integer expiryYear;
+
+	@Column(length = 4)
+	private String cvv;
+
 	@Column(name = "credit_limit")
 	private Double creditLimit;
 

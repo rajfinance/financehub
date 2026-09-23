@@ -14,9 +14,12 @@
             <tr>
                 <th>Card</th>
                 <th>Bank</th>
+                <th>Last 4</th>
+                <th>Expiry</th>
                 <th class="fh-summary-total-col">Limit</th>
                 <th class="fh-summary-total-col">Outstanding</th>
                 <th>Billing day</th>
+                <th>Due day</th>
                 <th>Action</th>
             </tr>
             </thead>
@@ -24,9 +27,12 @@
             <tr th:each="c : ${cards}">
                 <td th:text="${c.cardName}"></td>
                 <td th:text="${c.bankName != null ? c.bankName : '—'}"></td>
+                <td th:text="${c.lastFour != null ? c.lastFour : '—'}"></td>
+                <td th:text="${c.formattedExpiry}"></td>
                 <td class="fh-summary-total-col" th:text="${c.formattedCreditLimit}"></td>
                 <td class="fh-summary-total-col" th:text="${c.formattedOutstanding}"></td>
                 <td th:text="${c.billingDay != null ? c.billingDay : '—'}"></td>
+                <td th:text="${c.dueDay != null ? c.dueDay : '—'}"></td>
                 <td>
                     <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/cards/add?id=${c.id}')|">
                         <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:20px;height:20px;margin-right:12px;"/>

@@ -3,7 +3,7 @@
 <body>
 <div id="reportContent" class="fh-finance-report">
     <div class="fh-report-toolbar">
-        <h1 class="h1report fh-report-title-plain">Accounts</h1>
+        <h1 class="h1report fh-report-title-plain">Bank Accounts</h1>
         <div class="report-buttons fh-report-actions">
             <button id="printReport" class="print-btn" type="button" title="Print"><img th:src="@{/images/print.png}" alt="Print"/></button>
         </div>
@@ -37,7 +37,7 @@
                     </a>
                     <a href="javascript:void(0);"
                        th:attr="data-report-type='accountsReport', data-id=${a.id}"
-                       th:onclick="'deleteEntity(this, \'Account\', \'/api/finance/deleteAccount\')'">
+                       th:onclick="'deleteEntity(this, \'Bank account\', \'/api/finance/deleteAccount\')'">
                         <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:20px;height:20px;"/>
                     </a>
                 </td>
@@ -45,7 +45,7 @@
             </tbody>
         </table>
     </th:block>
-    <p th:if="${accounts == null or accounts.isEmpty()}" class="fh-report-empty">No accounts yet. Add a bank, cash, wallet, or investment account.</p>
+    <p th:if="${accounts == null or accounts.isEmpty()}" class="fh-report-empty">No bank accounts yet. Add a bank account to get started.</p>
 </div>
 </body>
 </html>

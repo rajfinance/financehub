@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
-<div id="reportContent" class="fh-finance-report">
+<div id="reportContent" class="fh-finance-report fh-card-bills-report">
     <div class="fh-report-toolbar">
         <h1 class="h1report fh-report-title-plain">Credit Card Bills</h1>
         <div class="report-buttons fh-report-actions">
@@ -14,54 +14,83 @@
         <select id="cardBillFilter"
                 onchange="(function(sel){ var p=typeof getHubPanel==='function'?getHubPanel():null; if(!p)return; var url='/api/finance/cardBillsReport'+(sel.value?'?cardId='+encodeURIComponent(sel.value):''); fetch(url,{credentials:'same-origin',headers:typeof getCsrfHeaders==='function'?getCsrfHeaders():{}}).then(function(r){return r.text();}).then(function(html){p.innerHTML=html; if(typeof attachReportListeners==='function') attachReportListeners(p,'cardBillsReport');}); })(this)">
             <option value="">All cards</option>
-            <option th:each="c : ${cards}" th:value="${c.id}" th:text="${c.cardName}"
+            <option th:each="c : ${cards}" th:value="${c.id}" th:text="${c.displayLabel}"
                     th:selected="${selectedCardId != null and selectedCardId == c.id}"></option>
         </select>
     </div>
 
-    <th:block th:if="${bills != null and !bills.isEmpty()}">
-        <table class="summaryTable">
-            <thead>
-            <tr>
-                <th>Card</th>
-                <th>Period</th>
-                <th>Billing date</th>
-                <th>Due date</th>
-                <th class="fh-summary-total-col">Interest</th>
-                <th class="fh-summary-total-col">Outstanding</th>
-                <th class="fh-summary-total-col">Paid</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="b : ${bills}">
-                <td th:text="${b.cardName}"></td>
-                <td th:text="${b.billMonth + '/' + b.billYear}"></td>
-                <td th:text="${b.formattedBillingDate}"></td>
-                <td th:text="${b.formattedDueDate}"></td>
-                <td class="fh-summary-total-col" th:text="${b.formattedInterestAmount}"></td>
-                <td class="fh-summary-total-col" th:text="${b.formattedOutstanding}"></td>
-                <td class="fh-summary-total-col" th:text="${b.formattedPaidAmount}"></td>
-                <td>
-                    <span th:if="${b.dueSoon}" class="fh-status-badge fh-status-pending">Due soon</span>
-                    <span th:unless="${b.dueSoon}">—</span>
-                </td>
-                <td>
-                    <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/cardBills/add?id=${b.id}')|">
-                        <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:20px;height:20px;margin-right:12px;"/>
-                    </a>
-                    <a href="javascript:void(0);"
-                       th:attr="data-report-type='cardBillsReport', data-id=${b.id}"
-                       th:onclick="'deleteEntity(this, \'Monthly bill\', \'/api/finance/deleteCardBill\')'">
-                        <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:20px;height:20px;"/>
-                    </a>
-                </td>
-            </tr>
-            </tbody>
-        </table>
+    <th:block th:if="${billYearGroups != null and !billYearGroups.isEmpty()}">
+        <details class="fh-year-panel"
+                 th:each="group : ${billYearGroups}"
+                 th:classappend="${group.year == currentYear} ? ' fh-year-panel--current'"
+                 th:open="${group.year == currentYear} ? 'open' : null">
+            <summary class="fh-year-panel__summary">
+                <span class="fh-year-panel__title" th:text="'YEAR - ' + ${group.year}"></span>
+                <span class="fh-year-panel__total" th:text="'Bill: ' + ${group.formattedTotalBill}"></span>
+                <span class="fh-year-panel__total" th:text="'Interest: ' + ${group.formattedTotalInterest}"></span>
+                <span class="fh-year-panel__total" th:text="'Paid: ' + ${group.formattedTotalPaid}"></span>
+                <span class="fh-year-panel__chevron" th:unless="${group.year == currentYear}" aria-hidden="true"></span>
+            </summary>
+            <div class="fh-year-panel__body">
+                <details class="fh-card-bills-card-panel"
+                         th:each="cardGroup : ${group.cardGroups}"
+                         open>
+                    <summary class="fh-card-bills-card-panel__summary">
+                        <span class="fh-card-bills-card-panel__title" th:text="${cardGroup.cardName}"></span>
+                        <span class="fh-card-bills-card-panel__total"
+                              th:text="'Bill: ' + ${cardGroup.formattedTotalBill}"></span>
+                        <span class="fh-card-bills-card-panel__total"
+                              th:text="'Interest: ' + ${cardGroup.formattedTotalInterest}"></span>
+                        <span class="fh-card-bills-card-panel__total"
+                              th:text="'Paid: ' + ${cardGroup.formattedTotalPaid}"></span>
+                        <span class="fh-card-bills-card-panel__chevron" aria-hidden="true"></span>
+                    </summary>
+                    <div class="fh-card-bills-card-panel__body">
+                        <table class="summaryTable fh-card-bills-table">
+                            <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Billed</th>
+                                <th>Paid on</th>
+                                <th class="fh-summary-total-col">Bill</th>
+                                <th class="fh-summary-total-col">Interest</th>
+                                <th class="fh-summary-total-col">Paid</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="b : ${cardGroup.bills}">
+                                <td class="fh-card-bills-date" th:text="${b.formattedPeriod}"></td>
+                                <td class="fh-card-bills-date" th:text="${b.formattedBillingDate}"></td>
+                                <td class="fh-card-bills-date" th:text="${b.formattedPaidDate}"></td>
+                                <td class="fh-summary-total-col" th:text="${b.formattedBillAmount}"></td>
+                                <td class="fh-summary-total-col" th:text="${b.formattedInterestAmount}"></td>
+                                <td class="fh-summary-total-col" th:text="${b.formattedPaidAmount}"></td>
+                                <td class="fh-card-bills-status">
+                                    <span th:if="${b.paymentStatus == 'Paid'}" class="fh-status-badge fh-status-completed">Paid</span>
+                                    <span th:if="${b.paymentStatus == 'Partially paid'}" class="fh-status-badge fh-status-partial">Partial</span>
+                                    <span th:if="${b.paymentStatus == 'Not paid'}" class="fh-status-badge fh-status-pending">Unpaid</span>
+                                </td>
+                                <td class="fh-card-bills-actions">
+                                    <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/cardBills/add?id=${b.id}')|">
+                                        <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:18px;height:18px;margin-right:8px;"/>
+                                    </a>
+                                    <a href="javascript:void(0);"
+                                       th:attr="data-report-type='cardBillsReport', data-id=${b.id}"
+                                       th:onclick="'deleteEntity(this, \'Monthly bill\', \'/api/finance/deleteCardBill\')'">
+                                        <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:18px;height:18px;"/>
+                                    </a>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            </div>
+        </details>
     </th:block>
-    <p th:if="${bills == null or bills.isEmpty()}" class="fh-report-empty">No monthly bills recorded yet.</p>
+    <p th:if="${billYearGroups == null or billYearGroups.isEmpty()}" class="fh-report-empty">No monthly bills recorded yet.</p>
 </div>
 </body>
 </html>

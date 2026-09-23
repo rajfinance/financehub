@@ -61,7 +61,7 @@ public class FinanceController {
 	public String saveAccount(@ModelAttribute FinanceAccountDTO account, RedirectAttributes ra) {
 		try {
 			financeService.saveAccount(account);
-			ra.addFlashAttribute("successMessage", "Account saved successfully.");
+			ra.addFlashAttribute("successMessage", "Bank account saved successfully.");
 		} catch (IllegalArgumentException e) {
 			ra.addFlashAttribute("errorMessage", e.getMessage());
 		}
@@ -87,8 +87,11 @@ public class FinanceController {
 	/* Credit cards */
 	@GetMapping("/cards/add")
 	public String cardForm(@RequestParam(value = "id", required = false) Long id, Model model) {
-		model.addAttribute("card", id != null ? financeService.getCreditCardDto(id) : new FinanceCreditCardDTO());
+		FinanceCreditCardDTO card = id != null ? financeService.getCreditCardDto(id) : new FinanceCreditCardDTO();
+		model.addAttribute("card", card);
 		model.addAttribute("bankNames", BANK_NAMES);
+		model.addAttribute("expiryMonths", monthNames());
+		model.addAttribute("expiryYears", cardExpiryYears(card.getExpiryYear()));
 		return "views/finance/addCreditCard";
 	}
 
@@ -125,9 +128,13 @@ public class FinanceController {
 		FinanceCreditCardBillDTO bill = id != null
 				? financeService.getCardBillDto(id)
 				: financeService.newCardBillDefaults();
-		if (bill.getCardId() != null && bill.getBillingDate() == null
-				&& bill.getBillMonth() != null && bill.getBillYear() != null) {
-			bill.setBillingDate(financeService.resolveBillingDate(bill.getCardId(), bill.getBillMonth(), bill.getBillYear()));
+		if (bill.getCardId() != null && bill.getBillMonth() != null && bill.getBillYear() != null) {
+			try {
+				bill.setBillingDate(financeService.resolveBillingDate(bill.getCardId(), bill.getBillMonth(), bill.getBillYear()));
+				bill.setDueDate(financeService.resolveDueDate(bill.getCardId(), bill.getBillMonth(), bill.getBillYear()));
+			} catch (IllegalArgumentException ignored) {
+				// Card is missing a billing or due day; the form stays blank until the card is updated.
+			}
 		}
 		model.addAttribute("bill", bill);
 		model.addAttribute("cards", financeService.listCreditCards());
@@ -136,11 +143,25 @@ public class FinanceController {
 		return "views/finance/addCardBill";
 	}
 
+	@GetMapping(value = "/cardBills/periodSummary", produces = "application/json")
+	@ResponseBody
+	public ResponseEntity<String> cardBillPeriodSummary(
+			@RequestParam("cardId") Long cardId,
+			@RequestParam("billMonth") Integer billMonth,
+			@RequestParam("billYear") Integer billYear) {
+		try {
+			return ResponseEntity.ok(financeService.cardBillPeriodSummaryJson(cardId, billMonth, billYear));
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.badRequest().body("{\"followUp\":false}");
+		}
+	}
+
 	@PostMapping("/cardBills/save")
 	public String saveCardBill(@ModelAttribute FinanceCreditCardBillDTO bill, RedirectAttributes ra) {
 		try {
 			financeService.saveCardBill(bill);
-			ra.addFlashAttribute("successMessage", "Monthly bill saved successfully.");
+			ra.addFlashAttribute("successMessage",
+					bill.getId() != null ? "Monthly bill updated successfully." : "Payment saved successfully.");
 		} catch (IllegalArgumentException e) {
 			ra.addFlashAttribute("errorMessage", e.getMessage());
 		}
@@ -149,9 +170,10 @@ public class FinanceController {
 
 	@GetMapping("/cardBillsReport")
 	public String cardBillsReport(@RequestParam(value = "cardId", required = false) Long cardId, Model model) {
-		model.addAttribute("bills", financeService.listCardBills(cardId));
+		model.addAttribute("billYearGroups", financeService.listCardBillsByYear(cardId));
 		model.addAttribute("cards", financeService.listCreditCards());
 		model.addAttribute("selectedCardId", cardId);
+		model.addAttribute("currentYear", Year.now().getValue());
 		return "views/finance/cardBillsReport";
 	}
 
@@ -250,5 +272,29 @@ public class FinanceController {
 			months.add(names[i].substring(0, 3));
 		}
 		return months;
+	}
+
+	private List<String> monthNames() {
+		List<String> months = new ArrayList<>();
+		String[] names = new DateFormatSymbols().getMonths();
+		for (int i = 0; i < 12; i++) {
+			months.add(names[i]);
+		}
+		return months;
+	}
+
+	private List<Integer> cardExpiryYears(Integer selectedYear) {
+		int current = Year.now().getValue();
+		int start = current - 5;
+		int end = current + 20;
+		if (selectedYear != null) {
+			start = Math.min(start, selectedYear);
+			end = Math.max(end, selectedYear);
+		}
+		List<Integer> years = new ArrayList<>();
+		for (int y = start; y <= end; y++) {
+			years.add(y);
+		}
+		return years;
 	}
 }

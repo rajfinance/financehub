@@ -675,9 +675,168 @@ function initAddLoanForm() {
     toggleGoldLoanFields();
 }
 
+function updateDatesFromCard() {
+    var cardSelect = document.getElementById('cardId');
+    var monthEl = document.getElementById('billMonth');
+    var yearEl = document.getElementById('billYear');
+    var billingInput = document.getElementById('billingDate');
+    var dueInput = document.getElementById('dueDate');
+    if (!cardSelect || !monthEl || !yearEl || !billingInput || !dueInput) {
+        return;
+    }
+    var month = parseInt(monthEl.value, 10);
+    var year = parseInt(yearEl.value, 10);
+    var selected = cardSelect.selectedOptions[0];
+    var billingDay = parseInt(selected && selected.dataset.billingDay, 10);
+    var dueDay = parseInt(selected && selected.dataset.dueDay, 10);
+    if (!billingDay || !month || !year) {
+        billingInput.value = '';
+        dueInput.value = '';
+        fetchCardBillPeriodSummary();
+        return;
+    }
+    var billingDom = Math.min(billingDay, new Date(year, month, 0).getDate());
+    billingInput.value = toIsoDate(year, month, billingDom);
+    if (!dueDay) {
+        dueInput.value = '';
+        fetchCardBillPeriodSummary();
+        return;
+    }
+    var dueMonth = month;
+    var dueYear = year;
+    if (dueDay <= billingDay) {
+        dueMonth = month === 12 ? 1 : month + 1;
+        dueYear = month === 12 ? year + 1 : year;
+    }
+    var dueDom = Math.min(dueDay, new Date(dueYear, dueMonth, 0).getDate());
+    dueInput.value = toIsoDate(dueYear, dueMonth, dueDom);
+    fetchCardBillPeriodSummary();
+}
+
+function clearCardBillFollowUpMode() {
+    var billAmount = document.getElementById('billAmount');
+    var interestAmount = document.getElementById('interestAmount');
+    var paidAmount = document.getElementById('paidAmount');
+    var paidDate = document.getElementById('paidDate');
+    var title = document.getElementById('cardBillFormTitle');
+    var editing = !!document.querySelector('input[name="id"]');
+    if (billAmount) {
+        billAmount.readOnly = false;
+        billAmount.classList.remove('fh-input-readonly');
+    }
+    if (interestAmount) {
+        interestAmount.readOnly = false;
+        interestAmount.classList.remove('fh-input-readonly');
+    }
+    if (paidAmount) {
+        paidAmount.required = false;
+    }
+    if (paidDate) {
+        paidDate.required = false;
+    }
+    if (title && !editing) {
+        title.textContent = 'Add Monthly Bill';
+    }
+}
+
+function applyCardBillFollowUpMode(info) {
+    var billAmount = document.getElementById('billAmount');
+    var interestAmount = document.getElementById('interestAmount');
+    var paidAmount = document.getElementById('paidAmount');
+    var paidDate = document.getElementById('paidDate');
+    var title = document.getElementById('cardBillFormTitle');
+    if (!billAmount || !interestAmount || !info) {
+        return;
+    }
+    billAmount.value = info.billAmount != null ? info.billAmount : '';
+    interestAmount.value = info.interestAmount != null ? info.interestAmount : '';
+    billAmount.readOnly = true;
+    interestAmount.readOnly = true;
+    billAmount.classList.add('fh-input-readonly');
+    interestAmount.classList.add('fh-input-readonly');
+    if (paidAmount) {
+        paidAmount.value = '';
+        paidAmount.required = true;
+    }
+    if (paidDate) {
+        paidDate.value = '';
+        paidDate.required = true;
+    }
+    if (title) {
+        title.textContent = 'Add Payment';
+    }
+}
+
+function fetchCardBillPeriodSummary() {
+    var cardSelect = document.getElementById('cardId');
+    var monthEl = document.getElementById('billMonth');
+    var yearEl = document.getElementById('billYear');
+    if (!cardSelect || !monthEl || !yearEl) {
+        return;
+    }
+    var editing = !!document.querySelector('input[name="id"]');
+    if (editing) {
+        clearCardBillFollowUpMode();
+        return;
+    }
+    var cardId = cardSelect.value;
+    var month = monthEl.value;
+    var year = yearEl.value;
+    if (!cardId || !month || !year) {
+        clearCardBillFollowUpMode();
+        return;
+    }
+    var requestId = (window._cardBillPeriodSummaryRequestId || 0) + 1;
+    window._cardBillPeriodSummaryRequestId = requestId;
+    var url = '/api/finance/cardBills/periodSummary'
+        + '?cardId=' + encodeURIComponent(cardId)
+        + '&billMonth=' + encodeURIComponent(month)
+        + '&billYear=' + encodeURIComponent(year);
+    fetch(url, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: typeof getCsrfHeaders === 'function' ? getCsrfHeaders() : {}
+    })
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+            if (requestId !== window._cardBillPeriodSummaryRequestId) {
+                return;
+            }
+            if (data && data.followUp) {
+                applyCardBillFollowUpMode(data);
+            } else {
+                var billAmount = document.getElementById('billAmount');
+                var interestAmount = document.getElementById('interestAmount');
+                var wasFollowUp = !!(billAmount && billAmount.readOnly);
+                clearCardBillFollowUpMode();
+                if (wasFollowUp) {
+                    if (billAmount) {
+                        billAmount.value = '';
+                    }
+                    if (interestAmount) {
+                        interestAmount.value = '';
+                    }
+                }
+            }
+        })
+        .catch(function () {
+            if (requestId !== window._cardBillPeriodSummaryRequestId) {
+                return;
+            }
+            clearCardBillFollowUpMode();
+        });
+}
+
+function toIsoDate(year, month, day) {
+    return year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+}
+
 function initLoadedPageContent() {
     if (document.getElementById('addLoanForm')) {
         initAddLoanForm();
+    }
+    if (document.getElementById('billingDate') && document.getElementById('cardId')) {
+        updateDatesFromCard();
     }
     const pageContent = document.getElementById('page-content');
     if (!pageContent) {

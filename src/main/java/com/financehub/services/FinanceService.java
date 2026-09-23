@@ -10,11 +10,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,6 +26,7 @@ public class FinanceService {
 	private static final int INSURANCE_ALERT_DAYS = 30;
 	private static final int CARD_DUE_SOON_DAYS = 7;
 	private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd-MMM-yyyy", Locale.ENGLISH);
+	private static final DateTimeFormatter DAY_MONTH_FMT = DateTimeFormatter.ofPattern("dd/MM", Locale.ENGLISH);
 
 	private final FinanceAccountRepository accountRepository;
 	private final FinanceCreditCardRepository creditCardRepository;
@@ -157,9 +161,22 @@ public class FinanceService {
 		}
 		card.setCardName(dto.getCardName().trim());
 		card.setBankName(blankToNull(dto.getBankName()));
+		card.setCardNumber(normalizeCardNumber(dto.getCardNumber()));
+		card.setExpiryMonth(requireExpiryMonth(dto.getExpiryMonth()));
+		card.setExpiryYear(requireExpiryYear(dto.getExpiryYear()));
+		card.setCvv(normalizeCvv(dto.getCvv()));
 		card.setCreditLimit(dto.getCreditLimit());
-		card.setOutstandingBalance(dto.getOutstandingBalance() != null ? dto.getOutstandingBalance() : 0.0);
+		if (dto.getId() == null) {
+			card.setOutstandingBalance(0.0);
+		}
+		if (dto.getBillingDay() == null) {
+			throw new IllegalArgumentException("Billing day is required.");
+		}
+		if (dto.getDueDay() == null) {
+			throw new IllegalArgumentException("Due day is required.");
+		}
 		card.setBillingDay(sanitizeDay(dto.getBillingDay()));
+		card.setDueDay(sanitizeDay(dto.getDueDay()));
 		card.setNotes(blankToNull(dto.getNotes()));
 		card.setUpdatedAt(now);
 		creditCardRepository.save(card);
@@ -183,32 +200,138 @@ public class FinanceService {
 		dto.setId(c.getId());
 		dto.setCardName(c.getCardName());
 		dto.setBankName(c.getBankName());
+		dto.setCardNumber(c.getCardNumber());
+		dto.setExpiryMonth(c.getExpiryMonth());
+		dto.setExpiryYear(c.getExpiryYear());
+		dto.setFormattedExpiry(formatExpiry(c.getExpiryMonth(), c.getExpiryYear()));
+		dto.setCvv(c.getCvv());
+		dto.setLastFour(lastFour(c.getCardNumber()));
+		dto.setDisplayLabel(cardDisplayLabel(c));
 		dto.setCreditLimit(c.getCreditLimit());
 		dto.setFormattedCreditLimit(c.getCreditLimit() == null ? "—" : formatterUtils.formatInIndianStyle(c.getCreditLimit()));
 		dto.setOutstandingBalance(c.getOutstandingBalance());
 		dto.setFormattedOutstanding(formatterUtils.formatInIndianStyle(nz(c.getOutstandingBalance())));
 		dto.setBillingDay(c.getBillingDay());
+		dto.setDueDay(c.getDueDay());
 		dto.setNotes(c.getNotes());
 		return dto;
 	}
 
 	public List<FinanceCreditCardBillDTO> listCardBills(Long cardId) {
-		LocalDate today = LocalDate.now();
 		List<FinanceCreditCardBill> bills = cardId != null
 				? cardBillRepository.findByUserIdAndCardIdOrderByBillYearDescBillMonthDescIdDesc(uid(), cardId)
 				: cardBillRepository.findByUserIdOrderByBillYearDescBillMonthDescIdDesc(uid());
-		return bills.stream().map(b -> toCardBillDto(b, today)).collect(Collectors.toList());
+		Map<String, double[]> periodTotals = buildPeriodPaidTotals(bills);
+		return bills.stream().map(b -> toCardBillDto(b, periodTotals)).collect(Collectors.toList());
+	}
+
+	public String cardBillPeriodSummaryJson(Long cardId, Integer billMonth, Integer billYear) {
+		if (cardId == null || billMonth == null || billYear == null
+				|| billMonth < 1 || billMonth > 12 || billYear < 2000) {
+			return "{\"followUp\":false}";
+		}
+		requireCard(cardId);
+		List<FinanceCreditCardBill> periodBills = cardBillRepository
+				.findByUserIdAndCardIdAndBillMonthAndBillYearOrderByIdAsc(uid(), cardId, billMonth, billYear);
+		if (periodBills.isEmpty()) {
+			return "{\"followUp\":false}";
+		}
+		double billAmount = periodBills.stream().mapToDouble(b -> nz(b.getBillAmount())).max().orElse(0);
+		double totalPaid = periodBills.stream().mapToDouble(b -> nz(b.getPaidAmount())).sum();
+		double remaining = Math.max(0, billAmount - totalPaid);
+		if (remaining <= 0.009) {
+			return "{\"followUp\":false}";
+		}
+		Double interestAmount = periodBills.stream()
+				.map(FinanceCreditCardBill::getInterestAmount)
+				.filter(v -> v != null)
+				.max(Double::compareTo)
+				.orElse(null);
+		StringBuilder json = new StringBuilder("{\"followUp\":true");
+		json.append(",\"billAmount\":").append(billAmount);
+		json.append(",\"interestAmount\":");
+		if (interestAmount == null) {
+			json.append("null");
+		} else {
+			json.append(interestAmount);
+		}
+		json.append(",\"totalPaid\":").append(totalPaid);
+		json.append(",\"remaining\":").append(remaining);
+		json.append('}');
+		return json.toString();
+	}
+
+	public List<FinanceCreditCardBillYearGroupDTO> listCardBillsByYear(Long cardId) {
+		Map<Integer, Map<Long, FinanceCreditCardBillCardGroupDTO>> yearCards = new LinkedHashMap<>();
+		for (FinanceCreditCardBillDTO bill : listCardBills(cardId)) {
+			Integer year = bill.getBillYear() != null ? bill.getBillYear() : 0;
+			Long cid = bill.getCardId() != null ? bill.getCardId() : 0L;
+			Map<Long, FinanceCreditCardBillCardGroupDTO> cards = yearCards.computeIfAbsent(year, y -> new LinkedHashMap<>());
+			FinanceCreditCardBillCardGroupDTO cardGroup = cards.computeIfAbsent(cid, id -> {
+				FinanceCreditCardBillCardGroupDTO g = new FinanceCreditCardBillCardGroupDTO();
+				g.setCardId(id);
+				g.setCardName(bill.getCardName() != null ? bill.getCardName() : "Credit card");
+				return g;
+			});
+			cardGroup.getBills().add(bill);
+		}
+
+		List<FinanceCreditCardBillYearGroupDTO> years = new ArrayList<>();
+		for (Map.Entry<Integer, Map<Long, FinanceCreditCardBillCardGroupDTO>> yearEntry : yearCards.entrySet()) {
+			FinanceCreditCardBillYearGroupDTO yearGroup = new FinanceCreditCardBillYearGroupDTO();
+			yearGroup.setYear(yearEntry.getKey());
+			List<FinanceCreditCardBillCardGroupDTO> cardGroups = new ArrayList<>(yearEntry.getValue().values());
+			cardGroups.sort((a, b) -> String.CASE_INSENSITIVE_ORDER.compare(
+					a.getCardName() != null ? a.getCardName() : "",
+					b.getCardName() != null ? b.getCardName() : ""));
+			double yearBill = 0;
+			double yearPaid = 0;
+			double yearInterest = 0;
+			for (FinanceCreditCardBillCardGroupDTO cardGroup : cardGroups) {
+				cardGroup.getBills().sort(this::compareBillsForReport);
+				Map<String, Double> monthBill = new LinkedHashMap<>();
+				Map<String, Double> monthInterest = new LinkedHashMap<>();
+				double cardPaid = 0;
+				for (FinanceCreditCardBillDTO bill : cardGroup.getBills()) {
+					String key = periodKey(bill.getCardId(), bill.getBillMonth(), bill.getBillYear());
+					monthBill.merge(key, nz(bill.getBillAmount()), Math::max);
+					monthInterest.merge(key, nz(bill.getInterestAmount()), Math::max);
+					cardPaid += nz(bill.getPaidAmount());
+				}
+				double cardBill = monthBill.values().stream().mapToDouble(Double::doubleValue).sum();
+				double cardInterest = monthInterest.values().stream().mapToDouble(Double::doubleValue).sum();
+				cardGroup.setFormattedTotalBill(formatterUtils.formatInIndianStyle(cardBill));
+				cardGroup.setFormattedTotalPaid(formatterUtils.formatInIndianStyle(cardPaid));
+				cardGroup.setFormattedTotalInterest(formatterUtils.formatInIndianStyle(cardInterest));
+				yearBill += cardBill;
+				yearPaid += cardPaid;
+				yearInterest += cardInterest;
+			}
+			yearGroup.setCardGroups(cardGroups);
+			yearGroup.setFormattedTotalBill(formatterUtils.formatInIndianStyle(yearBill));
+			yearGroup.setFormattedTotalPaid(formatterUtils.formatInIndianStyle(yearPaid));
+			yearGroup.setFormattedTotalInterest(formatterUtils.formatInIndianStyle(yearInterest));
+			years.add(yearGroup);
+		}
+		years.sort((a, b) -> Integer.compare(
+				a.getYear() != null ? a.getYear() : 0,
+				b.getYear() != null ? b.getYear() : 0));
+		return years;
 	}
 
 	public FinanceCreditCardBillDTO getCardBillDto(Long id) {
-		return toCardBillDto(requireCardBill(id), LocalDate.now());
+		FinanceCreditCardBill bill = requireCardBill(id);
+		List<FinanceCreditCardBill> periodBills = cardBillRepository
+				.findByUserIdAndCardIdAndBillMonthAndBillYearOrderByIdAsc(
+						uid(), bill.getCardId(), bill.getBillMonth(), bill.getBillYear());
+		return toCardBillDto(bill, buildPeriodPaidTotals(periodBills));
 	}
 
 	public FinanceCreditCardBillDTO newCardBillDefaults() {
-		LocalDate prevMonth = LocalDate.now().minusMonths(1);
+		LocalDate today = LocalDate.now();
 		FinanceCreditCardBillDTO dto = new FinanceCreditCardBillDTO();
-		dto.setBillMonth(prevMonth.getMonthValue());
-		dto.setBillYear(prevMonth.getYear());
+		dto.setBillMonth(today.getMonthValue());
+		dto.setBillYear(today.getYear());
 		return dto;
 	}
 
@@ -223,48 +346,88 @@ public class FinanceService {
 		if (dto.getBillYear() == null || dto.getBillYear() < 2000) {
 			throw new IllegalArgumentException("Select a valid bill year.");
 		}
-		if (dto.getDueDate() == null) {
-			throw new IllegalArgumentException("Due date is required.");
-		}
-		if (dto.getOutstandingAmount() == null || dto.getOutstandingAmount() < 0) {
-			throw new IllegalArgumentException("Outstanding amount is required.");
-		}
 		requireCard(dto.getCardId());
 
-		LocalDate billingDate = dto.getBillingDate();
-		if (billingDate == null) {
-			billingDate = resolveBillingDate(dto.getCardId(), dto.getBillMonth(), dto.getBillYear());
-		}
+		List<FinanceCreditCardBill> existingPeriodBills = cardBillRepository
+				.findByUserIdAndCardIdAndBillMonthAndBillYearOrderByIdAsc(
+						uid(), dto.getCardId(), dto.getBillMonth(), dto.getBillYear());
+
+		LocalDate billingDate = resolveBillingDate(dto.getCardId(), dto.getBillMonth(), dto.getBillYear());
+		LocalDate dueDate = resolveDueDate(dto.getCardId(), dto.getBillMonth(), dto.getBillYear());
 
 		LocalDateTime now = LocalDateTime.now();
 		FinanceCreditCardBill bill;
+		boolean additionalPayment = false;
 		if (dto.getId() != null) {
 			bill = requireCardBill(dto.getId());
-			if (cardBillRepository.existsByUserIdAndCardIdAndBillMonthAndBillYearAndIdNot(
-					uid(), dto.getCardId(), dto.getBillMonth(), dto.getBillYear(), dto.getId())) {
-				throw new IllegalArgumentException("A bill for this card and month already exists.");
-			}
 		} else {
-			if (cardBillRepository.existsByUserIdAndCardIdAndBillMonthAndBillYear(
-					uid(), dto.getCardId(), dto.getBillMonth(), dto.getBillYear())) {
-				throw new IllegalArgumentException("A bill for this card and month already exists.");
-			}
 			bill = new FinanceCreditCardBill();
 			bill.setUserId(uid());
 			bill.setCreatedAt(now);
+			additionalPayment = !existingPeriodBills.isEmpty();
+		}
+
+		double paid = nz(dto.getPaidAmount());
+		if (paid < 0) {
+			throw new IllegalArgumentException("Paid amount cannot be negative.");
+		}
+		if (dto.getInterestAmount() != null && dto.getInterestAmount() < 0) {
+			throw new IllegalArgumentException("Interest amount cannot be negative.");
+		}
+		if (paid > 0 && dto.getPaidDate() == null) {
+			throw new IllegalArgumentException("Paid date is required when paid amount is entered.");
+		}
+
+		double billAmount;
+		Double interestAmount;
+		if (additionalPayment) {
+			if (paid <= 0 || dto.getPaidDate() == null) {
+				throw new IllegalArgumentException("Paid amount and paid date are required for an additional payment.");
+			}
+			FinanceCreditCardBill statement = existingPeriodBills.stream()
+					.filter(b -> b.getBillAmount() != null && b.getBillAmount() > 0)
+					.findFirst()
+					.orElse(existingPeriodBills.get(0));
+			billAmount = nz(statement.getBillAmount());
+			interestAmount = statement.getInterestAmount();
+		} else if (dto.getId() != null && !isPrimaryPeriodBill(bill, existingPeriodBills)) {
+			if (paid <= 0 || dto.getPaidDate() == null) {
+				throw new IllegalArgumentException("Paid amount and paid date are required for a payment row.");
+			}
+			FinanceCreditCardBill statement = existingPeriodBills.stream()
+					.filter(b -> b.getBillAmount() != null && b.getBillAmount() > 0)
+					.findFirst()
+					.orElse(bill);
+			billAmount = nz(statement.getBillAmount());
+			interestAmount = statement.getInterestAmount();
+		} else {
+			if (dto.getBillAmount() == null || dto.getBillAmount() < 0) {
+				throw new IllegalArgumentException("Bill amount is required.");
+			}
+			billAmount = dto.getBillAmount();
+			interestAmount = dto.getInterestAmount();
 		}
 
 		bill.setCardId(dto.getCardId());
 		bill.setBillMonth(dto.getBillMonth());
 		bill.setBillYear(dto.getBillYear());
 		bill.setBillingDate(billingDate);
-		bill.setDueDate(dto.getDueDate());
-		bill.setInterestAmount(dto.getInterestAmount());
-		bill.setOutstandingAmount(dto.getOutstandingAmount());
+		bill.setDueDate(dueDate);
+		bill.setInterestAmount(interestAmount);
+		bill.setBillAmount(billAmount);
 		bill.setPaidAmount(dto.getPaidAmount());
+		bill.setPaidDate(dto.getPaidDate());
+
+		double periodPaidOther = existingPeriodBills.stream()
+				.filter(b -> dto.getId() == null || !b.getId().equals(dto.getId()))
+				.mapToDouble(b -> nz(b.getPaidAmount()))
+				.sum();
+		double remainingAfter = Math.max(0, billAmount - periodPaidOther - paid);
+		bill.setOutstandingAmount(remainingAfter);
 		bill.setUpdatedAt(now);
 		cardBillRepository.save(bill);
 
+		recalculatePeriodOutstanding(dto.getCardId(), dto.getBillMonth(), dto.getBillYear());
 		updateCardOutstandingFromLatestBill(dto.getCardId());
 	}
 
@@ -272,28 +435,79 @@ public class FinanceService {
 	public void deleteCardBill(Long id) {
 		FinanceCreditCardBill bill = requireCardBill(id);
 		Long cardId = bill.getCardId();
+		Integer month = bill.getBillMonth();
+		Integer year = bill.getBillYear();
 		cardBillRepository.delete(bill);
+		recalculatePeriodOutstanding(cardId, month, year);
 		updateCardOutstandingFromLatestBill(cardId);
 	}
 
 	public LocalDate resolveBillingDate(Long cardId, int month, int year) {
 		FinanceCreditCard card = requireCard(cardId);
-		int billingDay = card.getBillingDay() != null ? card.getBillingDay() : 1;
+		if (card.getBillingDay() == null) {
+			throw new IllegalArgumentException("Set a billing day on the credit card before adding a bill.");
+		}
 		LocalDate base = LocalDate.of(year, month, 1);
-		int day = Math.min(billingDay, base.lengthOfMonth());
+		int day = Math.min(card.getBillingDay(), base.lengthOfMonth());
 		return base.withDayOfMonth(day);
+	}
+
+	public LocalDate resolveDueDate(Long cardId, int month, int year) {
+		FinanceCreditCard card = requireCard(cardId);
+		if (card.getDueDay() == null) {
+			throw new IllegalArgumentException("Set a due day on the credit card before adding a bill.");
+		}
+		LocalDate billingDate = resolveBillingDate(cardId, month, year);
+		int dueDay = card.getDueDay();
+		int billingDay = card.getBillingDay();
+		LocalDate dueMonthStart = dueDay <= billingDay
+				? billingDate.plusMonths(1).withDayOfMonth(1)
+				: billingDate.withDayOfMonth(1);
+		int day = Math.min(dueDay, dueMonthStart.lengthOfMonth());
+		return dueMonthStart.withDayOfMonth(day);
 	}
 
 	private void updateCardOutstandingFromLatestBill(Long cardId) {
 		List<FinanceCreditCardBill> bills = cardBillRepository
 				.findByUserIdAndCardIdOrderByBillYearDescBillMonthDescIdDesc(uid(), cardId);
+		FinanceCreditCard card = requireCard(cardId);
 		if (bills.isEmpty()) {
+			card.setOutstandingBalance(0.0);
+			card.setUpdatedAt(LocalDateTime.now());
+			creditCardRepository.save(card);
 			return;
 		}
-		FinanceCreditCard card = requireCard(cardId);
-		card.setOutstandingBalance(nz(bills.get(0).getOutstandingAmount()));
+		Integer latestMonth = bills.get(0).getBillMonth();
+		Integer latestYear = bills.get(0).getBillYear();
+		double statement = 0;
+		double paid = 0;
+		for (FinanceCreditCardBill bill : bills) {
+			if (!latestMonth.equals(bill.getBillMonth()) || !latestYear.equals(bill.getBillYear())) {
+				continue;
+			}
+			statement = Math.max(statement, nz(bill.getBillAmount()));
+			paid += nz(bill.getPaidAmount());
+		}
+		card.setOutstandingBalance(Math.max(0, statement - paid));
 		card.setUpdatedAt(LocalDateTime.now());
 		creditCardRepository.save(card);
+	}
+
+	private void recalculatePeriodOutstanding(Long cardId, Integer month, Integer year) {
+		List<FinanceCreditCardBill> periodBills = cardBillRepository
+				.findByUserIdAndCardIdAndBillMonthAndBillYearOrderByIdAsc(uid(), cardId, month, year);
+		if (periodBills.isEmpty()) {
+			return;
+		}
+		double statement = periodBills.stream().mapToDouble(b -> nz(b.getBillAmount())).max().orElse(0);
+		double paid = periodBills.stream().mapToDouble(b -> nz(b.getPaidAmount())).sum();
+		double remaining = Math.max(0, statement - paid);
+		LocalDateTime now = LocalDateTime.now();
+		for (FinanceCreditCardBill bill : periodBills) {
+			bill.setOutstandingAmount(remaining);
+			bill.setUpdatedAt(now);
+		}
+		cardBillRepository.saveAll(periodBills);
 	}
 
 	private FinanceCreditCardBill requireCardBill(Long id) {
@@ -301,28 +515,106 @@ public class FinanceService {
 				.orElseThrow(() -> new IllegalArgumentException("Card bill not found."));
 	}
 
-	private FinanceCreditCardBillDTO toCardBillDto(FinanceCreditCardBill b, LocalDate today) {
+	private FinanceCreditCardBillDTO toCardBillDto(FinanceCreditCardBill b, Map<String, double[]> periodTotals) {
 		FinanceCreditCardBillDTO dto = new FinanceCreditCardBillDTO();
 		dto.setId(b.getId());
 		dto.setCardId(b.getCardId());
 		creditCardRepository.findByIdAndUserId(b.getCardId(), uid())
-				.ifPresent(c -> dto.setCardName(c.getCardName()));
+				.ifPresent(c -> dto.setCardName(cardDisplayLabel(c)));
 		dto.setBillMonth(b.getBillMonth());
 		dto.setBillYear(b.getBillYear());
+		dto.setFormattedPeriod(formatBillPeriod(b.getBillMonth(), b.getBillYear()));
 		dto.setBillingDate(b.getBillingDate());
-		dto.setFormattedBillingDate(b.getBillingDate() != null ? b.getBillingDate().format(DATE_FMT) : "—");
+		dto.setFormattedBillingDate(b.getBillingDate() != null ? b.getBillingDate().format(DAY_MONTH_FMT) : "—");
 		dto.setDueDate(b.getDueDate());
-		dto.setFormattedDueDate(b.getDueDate() != null ? b.getDueDate().format(DATE_FMT) : "—");
+		dto.setFormattedDueDate(b.getDueDate() != null ? b.getDueDate().format(DAY_MONTH_FMT) : "—");
 		dto.setInterestAmount(b.getInterestAmount());
 		dto.setFormattedInterestAmount(b.getInterestAmount() == null ? "—"
 				: formatterUtils.formatInIndianStyle(b.getInterestAmount()));
+		Double billAmount = b.getBillAmount() != null ? b.getBillAmount() : b.getOutstandingAmount();
+		dto.setBillAmount(billAmount);
+		dto.setFormattedBillAmount(billAmount == null ? "—" : formatterUtils.formatInIndianStyle(billAmount));
 		dto.setOutstandingAmount(b.getOutstandingAmount());
 		dto.setFormattedOutstanding(formatterUtils.formatInIndianStyle(nz(b.getOutstandingAmount())));
 		dto.setPaidAmount(b.getPaidAmount());
-		dto.setFormattedPaidAmount(b.getPaidAmount() == null ? "—"
+		dto.setFormattedPaidAmount(b.getPaidAmount() == null || nz(b.getPaidAmount()) <= 0 ? "—"
 				: formatterUtils.formatInIndianStyle(b.getPaidAmount()));
-		dto.setDueSoon(isDueSoon(b.getDueDate(), today));
+		dto.setPaidDate(b.getPaidDate());
+		dto.setFormattedPaidDate(b.getPaidDate() != null ? b.getPaidDate().format(DAY_MONTH_FMT) : "—");
+		double[] totals = periodTotals.getOrDefault(
+				periodKey(b.getCardId(), b.getBillMonth(), b.getBillYear()),
+				new double[] {nz(billAmount), nz(b.getPaidAmount())});
+		dto.setPaymentStatus(resolvePaymentStatus(totals[0], totals[1]));
 		return dto;
+	}
+
+	private Map<String, double[]> buildPeriodPaidTotals(List<FinanceCreditCardBill> bills) {
+		Map<String, double[]> totals = new LinkedHashMap<>();
+		for (FinanceCreditCardBill bill : bills) {
+			String key = periodKey(bill.getCardId(), bill.getBillMonth(), bill.getBillYear());
+			double[] row = totals.computeIfAbsent(key, k -> new double[] {0, 0});
+			row[0] = Math.max(row[0], nz(bill.getBillAmount()));
+			row[1] += nz(bill.getPaidAmount());
+		}
+		return totals;
+	}
+
+	private static String periodKey(Long cardId, Integer month, Integer year) {
+		return (cardId != null ? cardId : 0) + "|" + (month != null ? month : 0) + "|" + (year != null ? year : 0);
+	}
+
+	private static boolean isPrimaryPeriodBill(FinanceCreditCardBill bill, List<FinanceCreditCardBill> periodBills) {
+		if (periodBills.isEmpty()) {
+			return true;
+		}
+		return periodBills.get(0).getId().equals(bill.getId());
+	}
+
+	private int compareBillsForReport(FinanceCreditCardBillDTO a, FinanceCreditCardBillDTO b) {
+		int monthCmp = Integer.compare(
+				b.getBillMonth() != null ? b.getBillMonth() : 0,
+				a.getBillMonth() != null ? a.getBillMonth() : 0);
+		if (monthCmp != 0) {
+			return monthCmp;
+		}
+		LocalDate aPaid = a.getPaidDate();
+		LocalDate bPaid = b.getPaidDate();
+		if (aPaid == null && bPaid == null) {
+			return Long.compare(a.getId() != null ? a.getId() : 0, b.getId() != null ? b.getId() : 0);
+		}
+		if (aPaid == null) {
+			return 1;
+		}
+		if (bPaid == null) {
+			return -1;
+		}
+		int paidCmp = aPaid.compareTo(bPaid);
+		if (paidCmp != 0) {
+			return paidCmp;
+		}
+		return Long.compare(a.getId() != null ? a.getId() : 0, b.getId() != null ? b.getId() : 0);
+	}
+
+	private static String formatBillPeriod(Integer billMonth, Integer billYear) {
+		if (billMonth == null || billYear == null || billMonth < 1 || billMonth > 12) {
+			return "—";
+		}
+		YearMonth ym = YearMonth.of(billYear, billMonth);
+		LocalDate start = ym.atDay(1);
+		LocalDate end = ym.atEndOfMonth();
+		return start.format(DAY_MONTH_FMT) + "-" + end.format(DAY_MONTH_FMT);
+	}
+
+	private static String resolvePaymentStatus(Double billAmount, Double paidAmount) {
+		double bill = nz(billAmount);
+		double paid = nz(paidAmount);
+		if (paid <= 0) {
+			return "Not paid";
+		}
+		if (paid + 0.009 < bill) {
+			return "Partially paid";
+		}
+		return "Paid";
 	}
 
 	private boolean isDueSoon(LocalDate dueDate, LocalDate today) {
@@ -460,13 +752,14 @@ public class FinanceService {
 		for (FinanceCreditCardBill bill : cardBillRepository.findByUserIdOrderByBillYearDescBillMonthDescIdDesc(uid())) {
 			if (isDueSoon(bill.getDueDate(), today)) {
 				String cardName = creditCardRepository.findByIdAndUserId(bill.getCardId(), uid())
-						.map(FinanceCreditCard::getCardName)
+						.map(FinanceService::cardDisplayLabel)
 						.orElse("Credit card");
+				double billAmount = bill.getBillAmount() != null ? bill.getBillAmount() : nz(bill.getOutstandingAmount());
 				alerts.add(new FinanceAlertDTO(
 						"CREDIT_CARD",
 						cardName,
 						"Bill due on " + bill.getDueDate().format(DATE_FMT)
-								+ " · Outstanding ₹" + formatterUtils.formatInIndianStyle(nz(bill.getOutstandingAmount())),
+								+ " · Bill ₹" + formatterUtils.formatInIndianStyle(billAmount),
 						"warn"));
 			}
 		}
@@ -595,6 +888,102 @@ public class FinanceService {
 
 	private static String blankToNull(String s) {
 		return s == null || s.isBlank() ? null : s.trim();
+	}
+
+	private static String normalizeCardNumber(String raw) {
+		if (raw == null || raw.isBlank()) {
+			throw new IllegalArgumentException("Credit card number is required.");
+		}
+		String digits = raw.replaceAll("[\\s-]", "");
+		if (!digits.matches("\\d{12,19}")) {
+			throw new IllegalArgumentException("Credit card number must be 12 to 19 digits.");
+		}
+		return digits;
+	}
+
+	private static String normalizeCvv(String raw) {
+		if (raw == null || raw.isBlank()) {
+			throw new IllegalArgumentException("CVV is required.");
+		}
+		String cvv = raw.trim();
+		if (!cvv.matches("\\d{3,4}")) {
+			throw new IllegalArgumentException("CVV must be 3 or 4 digits.");
+		}
+		return cvv;
+	}
+
+	private static Integer requireExpiryMonth(Integer month) {
+		if (month == null || month < 1 || month > 12) {
+			throw new IllegalArgumentException("Select a valid expiry month.");
+		}
+		return month;
+	}
+
+	private static Integer requireExpiryYear(Integer year) {
+		int current = Year.now().getValue();
+		if (year == null || year < current - 20 || year > current + 30) {
+			throw new IllegalArgumentException("Select a valid expiry year.");
+		}
+		return year;
+	}
+
+	private static String lastFour(String cardNumber) {
+		if (cardNumber == null || cardNumber.length() < 4) {
+			return cardNumber;
+		}
+		return cardNumber.substring(cardNumber.length() - 4);
+	}
+
+	private static String formatExpiry(Integer month, Integer year) {
+		if (month == null || year == null) {
+			return "—";
+		}
+		return String.format(Locale.ENGLISH, "%02d/%d", month, year);
+	}
+
+	private static String cardDisplayLabel(FinanceCreditCard card) {
+		String bank = shortBankName(card.getBankName());
+		String name = card.getCardName() != null ? card.getCardName().trim() : "";
+		String last4 = lastFour(card.getCardNumber());
+		StringBuilder label = new StringBuilder();
+		if (bank != null && !bank.isBlank()) {
+			label.append(bank);
+		}
+		if (!name.isBlank()) {
+			if (label.length() > 0) {
+				label.append('-');
+			}
+			label.append(name);
+		}
+		if (last4 != null && !last4.isBlank()) {
+			if (label.length() > 0) {
+				label.append('-');
+			}
+			label.append(last4);
+		}
+		return label.length() == 0 ? "Credit card" : label.toString();
+	}
+
+	private static String shortBankName(String bankName) {
+		if (bankName == null || bankName.isBlank()) {
+			return null;
+		}
+		String name = bankName.trim();
+		return switch (name) {
+			case "State Bank of India" -> "SBI";
+			case "Union Bank of India" -> "Union";
+			case "ICICI Bank" -> "ICICI";
+			case "HDFC Bank" -> "HDFC";
+			case "Axis Bank" -> "Axis";
+			case "Kotak Mahindra Bank" -> "Kotak";
+			case "Bank of Baroda" -> "BOB";
+			case "Canara Bank" -> "Canara";
+			case "Punjab National Bank" -> "PNB";
+			case "Indian Bank" -> "Indian";
+			case "Yes Bank" -> "Yes";
+			case "IDFC First Bank" -> "IDFC";
+			default -> name.replace(" Bank", "").replace(" bank", "").trim();
+		};
 	}
 
 	private static Integer sanitizeDay(Integer day) {

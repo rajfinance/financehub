@@ -27,6 +27,43 @@
             </div>
         </div>
 
+        <div class="input-group">
+            <label for="cardNumber">Credit card number<span class="mandatory">*</span></label>
+            <input type="text" id="cardNumber" name="cardNumber" inputmode="numeric" autocomplete="off"
+                   maxlength="23" placeholder="16-digit card number" th:value="${card?.cardNumber}" required/>
+        </div>
+
+        <div class="form-row form-row--3">
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="expiryMonth">Expiry month<span class="mandatory">*</span></label>
+                    <select id="expiryMonth" name="expiryMonth" required>
+                        <option value="">Month</option>
+                        <option th:each="month, status : ${expiryMonths}"
+                                th:value="${status.count}" th:text="${month}"
+                                th:selected="${card != null and card.expiryMonth == status.count}"></option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="expiryYear">Expiry year<span class="mandatory">*</span></label>
+                    <select id="expiryYear" name="expiryYear" required>
+                        <option value="">Year</option>
+                        <option th:each="y : ${expiryYears}" th:value="${y}" th:text="${y}"
+                                th:selected="${card != null and card.expiryYear == y}"></option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="cvv">CVV<span class="mandatory">*</span></label>
+                    <input type="text" id="cvv" name="cvv" inputmode="numeric" autocomplete="off"
+                           maxlength="4" placeholder="3 or 4 digits" th:value="${card?.cvv}" required/>
+                </div>
+            </div>
+        </div>
+
         <div class="form-row form-row--3">
             <div class="form-column">
                 <div class="input-group">
@@ -36,15 +73,16 @@
             </div>
             <div class="form-column">
                 <div class="input-group">
-                    <label for="outstandingBalance">Outstanding<span class="mandatory">*</span></label>
-                    <input type="number" step="0.01" id="outstandingBalance" name="outstandingBalance"
-                           th:value="${card?.outstandingBalance != null ? card.outstandingBalance : 0}" required/>
+                    <label for="billingDay">Billing day (1–31)<span class="mandatory">*</span></label>
+                    <input type="number" min="1" max="31" id="billingDay" name="billingDay"
+                           th:value="${card?.billingDay}" required/>
                 </div>
             </div>
             <div class="form-column">
                 <div class="input-group">
-                    <label for="billingDay">Billing day (1–31)</label>
-                    <input type="number" min="1" max="31" id="billingDay" name="billingDay" th:value="${card?.billingDay}"/>
+                    <label for="dueDay">Due day (1–31)<span class="mandatory">*</span></label>
+                    <input type="number" min="1" max="31" id="dueDay" name="dueDay"
+                           th:value="${card?.dueDay}" required/>
                 </div>
             </div>
         </div>

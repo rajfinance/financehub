@@ -34,6 +34,10 @@ CREATE TABLE IF NOT EXISTS finance_credit_cards (
     user_id              BIGINT          NOT NULL,
     card_name            VARCHAR(120)    NOT NULL,
     bank_name            VARCHAR(120),
+    card_number          VARCHAR(19),
+    expiry_month         INT,
+    expiry_year          INT,
+    cvv                  VARCHAR(4),
     credit_limit         DOUBLE PRECISION,
     outstanding_balance  DOUBLE PRECISION NOT NULL DEFAULT 0,
     billing_day          INT,
@@ -48,6 +52,7 @@ CREATE INDEX IF NOT EXISTS idx_finance_cards_user ON finance_credit_cards (user_
 
 -- If finance_credit_cards already exists without interest_rate, run:
 -- ALTER TABLE finance_credit_cards ADD COLUMN IF NOT EXISTS interest_rate DOUBLE PRECISION;
+-- Card number, expiry, CVV, and bill amount: src/main/resources/db/finance_credit_card_details.sql
 
 CREATE TABLE IF NOT EXISTS finance_insurance_policies (
     id                 BIGSERIAL PRIMARY KEY,

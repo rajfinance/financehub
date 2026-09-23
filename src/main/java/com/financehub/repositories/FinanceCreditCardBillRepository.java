@@ -16,9 +16,6 @@ public interface FinanceCreditCardBillRepository extends JpaRepository<FinanceCr
 
 	Optional<FinanceCreditCardBill> findByIdAndUserId(Long id, Long userId);
 
-	boolean existsByUserIdAndCardIdAndBillMonthAndBillYearAndIdNot(
-			Long userId, Long cardId, Integer billMonth, Integer billYear, Long id);
-
-	boolean existsByUserIdAndCardIdAndBillMonthAndBillYear(
+	List<FinanceCreditCardBill> findByUserIdAndCardIdAndBillMonthAndBillYearOrderByIdAsc(
 			Long userId, Long cardId, Integer billMonth, Integer billYear);
 }
