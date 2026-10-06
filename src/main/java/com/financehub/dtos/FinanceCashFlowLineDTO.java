@@ -11,5 +11,5 @@ public class FinanceCashFlowLineDTO {
 	private String label;
 	private String formattedAmount;
 	private double amount;
-	private boolean inflow;
+	private String direction;
 }

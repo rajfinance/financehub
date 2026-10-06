@@ -2347,6 +2347,11 @@ button.fh-btn:active,
 
 #reportContent table:not(.app-table) td a {
     margin-right: 15px;
+    text-decoration: none;
+}
+
+#reportContent table:not(.app-table) td a img {
+    vertical-align: middle;
 }
 
 #reportContent table:not(.app-table) .delete-btn img,
@@ -2846,6 +2851,16 @@ button.fh-btn:active,
 
 .fh-report-detail strong {
     color: var(--fh-text, #0f172a);
+    font-weight: 650;
+}
+
+.fh-due-red {
+    color: #b91c1c;
+    font-weight: 700;
+}
+
+.fh-due-light-red {
+    color: #ef4444;
     font-weight: 650;
 }
 
@@ -4769,14 +4784,16 @@ body.account-spa-shell #page-content .fh-profile-update-form .form-actions-foote
     flex-wrap: wrap;
     gap: 0.75rem;
     margin: 0 0 1.25rem;
+    justify-content: center;
 }
 
 .fh-finance-summary-chip {
     min-width: 8.5rem;
     padding: 0.75rem 0.95rem;
     border-radius: 10px;
-    border: 1px solid rgba(0, 100, 148, 0.14);
+    border: 1px solid rgba(0, 100, 148, 0.28);
     background: rgba(255, 255, 255, 0.9);
+    text-align: center;
 }
 
 .fh-finance-summary-chip span {
@@ -4796,18 +4813,30 @@ body.account-spa-shell #page-content .fh-profile-update-form .form-actions-foote
 }
 
 .fh-finance-summary-chip--in {
-    border-color: rgba(15, 118, 110, 0.25);
-    background: rgba(15, 118, 110, 0.06);
+    border-color: rgba(15, 118, 110, 0.45);
+    background: rgba(15, 118, 110, 0.22);
 }
 
 .fh-finance-summary-chip--out {
-    border-color: rgba(180, 83, 9, 0.25);
-    background: rgba(180, 83, 9, 0.06);
+    border-color: rgba(180, 83, 9, 0.45);
+    background: rgba(180, 83, 9, 0.22);
 }
 
 .fh-finance-summary-chip--net {
-    border-color: rgba(0, 100, 148, 0.3);
-    background: rgba(0, 100, 148, 0.08);
+    border-color: rgba(0, 100, 148, 0.5);
+    background: rgba(0, 100, 148, 0.24);
+}
+
+.fh-cash-flow-report .fh-cash-flow-table th.fh-summary-total-col,
+.fh-cash-flow-report .fh-cash-flow-table td.fh-summary-total-col {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+#reportContent.fh-cash-flow-report table:not(.app-table) {
+    width: 70%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .fh-alerts {

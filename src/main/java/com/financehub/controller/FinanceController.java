@@ -217,18 +217,6 @@ public class FinanceController {
 		return "redirect:/api/finance/insurance/add" + (policy.getId() != null ? "?id=" + policy.getId() : "");
 	}
 
-	@GetMapping("/insurance/markPaid")
-	public String markInsurancePaid(@RequestParam("id") Long id, Model model) {
-		try {
-			financeService.markInsurancePaid(id);
-			model.addAttribute("successMessage", "Marked paid — next due date advanced.");
-		} catch (IllegalArgumentException e) {
-			model.addAttribute("errorMessage", e.getMessage());
-		}
-		model.addAttribute("policies", financeService.listInsurance());
-		return "views/finance/insuranceReport";
-	}
-
 	@GetMapping("/insuranceReport")
 	public String insuranceReport(Model model) {
 		model.addAttribute("policies", financeService.listInsurance());
@@ -253,16 +241,6 @@ public class FinanceController {
 		model.addAttribute("years", financeService.reportYears());
 		model.addAttribute("selectedYear", y);
 		return "views/finance/cashFlowReport";
-	}
-
-	/* Year-end pack */
-	@GetMapping("/yearEndPackReport")
-	public String yearEndPack(@RequestParam(value = "year", required = false) Integer year, Model model) {
-		int y = year != null ? year : Year.now().getValue();
-		model.addAttribute("pack", financeService.buildYearEndPack(y));
-		model.addAttribute("years", financeService.reportYears());
-		model.addAttribute("selectedYear", y);
-		return "views/finance/yearEndPackReport";
 	}
 
 	private List<String> monthAbbreviations() {

@@ -28,14 +28,10 @@
                     <td th:text="${c.bankName != null ? c.bankName : '—'}"></td>
                     <td class="fh-summary-total-col" th:text="${c.formattedOutstanding}"></td>
                     <td>
-                        <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/cards/add?id=${c.id}')|">
-                            <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:20px;height:20px;margin-right:12px;"/>
-                        </a>
+                        <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/cards/add?id=${c.id}')|"><img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:20px;height:20px;"/></a>
                         <a href="javascript:void(0);"
                            th:attr="data-report-type='creditCardsReport', data-id=${c.id}"
-                           th:onclick="'deleteEntity(this, \'Credit card\', \'/api/finance/deleteCreditCard\')'">
-                            <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:20px;height:20px;"/>
-                        </a>
+                           th:onclick="'deleteEntity(this, \'Credit card\', \'/api/finance/deleteCreditCard\')'"><img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:20px;height:20px;"/></a>
                     </td>
                 </tr>
                 <tr class="fh-report-detail-row" hidden>

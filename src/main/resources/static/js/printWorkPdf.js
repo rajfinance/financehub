@@ -41,7 +41,7 @@ function prepareUrl(reportType) {
             || type === 'yearlyPaidLoansReport') {
         baseUrl = '/api/loan/' + type;
     } else if (type === 'accountsReport' || type === 'creditCardsReport' || type === 'cardBillsReport'
-            || type === 'insuranceReport' || type === 'cashFlowReport' || type === 'yearEndPackReport') {
+            || type === 'insuranceReport' || type === 'cashFlowReport') {
         baseUrl = '/api/finance/' + type;
     }
     if (type === 'loanEmiReport') {

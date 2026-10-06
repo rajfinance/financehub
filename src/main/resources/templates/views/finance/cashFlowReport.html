@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <body>
-<div id="reportContent" class="fh-finance-report">
+<div id="reportContent" class="fh-finance-report fh-cash-flow-report">
     <div class="fh-report-toolbar">
-        <h1 class="h1report fh-report-title-plain"
-            th:text="'Cash Flow — ' + ${selectedYear}">Cash Flow</h1>
+        <h1 class="h1report fh-report-title-plain">Cash Flow</h1>
         <div class="report-buttons fh-report-actions">
             <button id="printReport" class="print-btn" type="button" title="Print"><img th:src="@{/images/print.png}" alt="Print"/></button>
         </div>
@@ -33,7 +32,7 @@
         </div>
     </div>
 
-    <table class="summaryTable" th:if="${report != null}">
+    <table class="summaryTable fh-cash-flow-table" th:if="${report != null}">
         <thead>
         <tr>
             <th>Line</th>
@@ -44,7 +43,7 @@
         <tbody>
         <tr th:each="line : ${report.lines}">
             <td th:text="${line.label}"></td>
-            <td th:text="${line.inflow ? 'Inflow' : 'Outflow'}"></td>
+            <td th:text="${line.direction}"></td>
             <td class="fh-summary-total-col" th:text="${line.formattedAmount}"></td>
         </tr>
         </tbody>

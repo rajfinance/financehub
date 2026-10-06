@@ -83,14 +83,22 @@ public class FormatterUtils {
     }
 
     private String applyIndianNumberingSystem(String number) {
+        if (number == null || number.isEmpty()) {
+            return "0";
+        }
+        boolean negative = number.startsWith("-");
+        if (negative) {
+            number = number.substring(1);
+        }
         String[] parts = number.split("\\.");
         String integerPart = parts[0];
         String decimalPart = parts.length > 1 ? parts[1] : "";
         String grouped = groupIndianDigits(integerPart);
         if (decimalPart == null || decimalPart.isEmpty()) {
-            return grouped;
+            return negative ? "-" + grouped : grouped;
         }
-        return grouped + "." + decimalPart;
+        String formatted = grouped + "." + decimalPart;
+        return negative ? "-" + formatted : formatted;
     }
 
     private String groupIndianDigits(String integerPart) {

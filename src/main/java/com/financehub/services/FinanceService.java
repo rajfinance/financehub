@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -22,7 +23,8 @@ import java.util.stream.Collectors;
 @Service
 public class FinanceService {
 
-	private static final int INSURANCE_ALERT_DAYS = 30;
+	private static final int INSURANCE_DUE_RED_DAYS = 5;
+	private static final int INSURANCE_DUE_WARN_DAYS = 15;
 	private static final int CARD_DUE_SOON_DAYS = 7;
 	private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd-MMM-yyyy", Locale.ENGLISH);
 	private static final DateTimeFormatter DAY_MONTH_FMT = DateTimeFormatter.ofPattern("dd/MM", Locale.ENGLISH);
@@ -33,7 +35,6 @@ public class FinanceService {
 	private final FinanceInsurancePolicyRepository insuranceRepository;
 	private final SalaryRepository salaryRepository;
 	private final ExpensesRepository expensesRepository;
-	private final RentPaymentRepository rentPaymentRepository;
 	private final UserService userService;
 	private final FormatterUtils formatterUtils;
 	private final LoanService loanService;
@@ -44,7 +45,6 @@ public class FinanceService {
 			FinanceInsurancePolicyRepository insuranceRepository,
 			SalaryRepository salaryRepository,
 			ExpensesRepository expensesRepository,
-			RentPaymentRepository rentPaymentRepository,
 			UserService userService,
 			FormatterUtils formatterUtils,
 			LoanService loanService) {
@@ -54,7 +54,6 @@ public class FinanceService {
 		this.insuranceRepository = insuranceRepository;
 		this.salaryRepository = salaryRepository;
 		this.expensesRepository = expensesRepository;
-		this.rentPaymentRepository = rentPaymentRepository;
 		this.userService = userService;
 		this.formatterUtils = formatterUtils;
 		this.loanService = loanService;
@@ -625,8 +624,10 @@ public class FinanceService {
 		return days >= 0 && days <= CARD_DUE_SOON_DAYS;
 	}
 
+	@Transactional
 	public List<FinanceInsuranceDTO> listInsurance() {
 		LocalDate today = LocalDate.now();
+		advanceOverdueInsurance(today);
 		return insuranceRepository.findByUserIdOrderByNextDueDateAsc(uid()).stream()
 				.map(p -> toInsuranceDto(p, today))
 				.collect(Collectors.toList());
@@ -641,11 +642,32 @@ public class FinanceService {
 		if (dto.getPolicyName() == null || dto.getPolicyName().isBlank()) {
 			throw new IllegalArgumentException("Policy name is required.");
 		}
+		if (dto.getInsurerName() == null || dto.getInsurerName().isBlank()) {
+			throw new IllegalArgumentException("Insurer is required.");
+		}
+		if (dto.getPolicyNumber() == null || dto.getPolicyNumber().isBlank()) {
+			throw new IllegalArgumentException("Policy number is required.");
+		}
 		if (dto.getPremiumAmount() == null || dto.getPremiumAmount() <= 0) {
 			throw new IllegalArgumentException("Premium amount must be greater than zero.");
 		}
 		if (dto.getNextDueDate() == null) {
 			throw new IllegalArgumentException("Next due date is required.");
+		}
+		if (dto.getPolicyTermYears() != null && (dto.getPolicyTermYears() < 1 || dto.getPolicyTermYears() > 99)) {
+			throw new IllegalArgumentException("Policy term must be between 1 and 99 years.");
+		}
+		if (dto.getPremiumPaymentTermYears() != null
+				&& (dto.getPremiumPaymentTermYears() < 1 || dto.getPremiumPaymentTermYears() > 99)) {
+			throw new IllegalArgumentException("Premium payment term must be between 1 and 99 years.");
+		}
+		if (dto.getPolicyTermYears() != null && dto.getPremiumPaymentTermYears() != null
+				&& dto.getPremiumPaymentTermYears() > dto.getPolicyTermYears()) {
+			throw new IllegalArgumentException("Premium payment term cannot be more than the policy term.");
+		}
+		if (dto.getCommencementDate() != null && dto.getMaturityDate() != null
+				&& dto.getMaturityDate().isBefore(dto.getCommencementDate())) {
+			throw new IllegalArgumentException("Maturity date cannot be before commencement date.");
 		}
 		LocalDateTime now = LocalDateTime.now();
 		FinanceInsurancePolicy policy;
@@ -657,24 +679,21 @@ public class FinanceService {
 			policy.setCreatedAt(now);
 		}
 		policy.setPolicyName(dto.getPolicyName().trim());
-		policy.setInsurerName(blankToNull(dto.getInsurerName()));
+		policy.setInsurerName(dto.getInsurerName().trim());
+		policy.setPolicyNumber(dto.getPolicyNumber().trim());
 		policy.setPolicyType(dto.getPolicyType() == null || dto.getPolicyType().isBlank()
 				? "OTHER" : dto.getPolicyType().trim().toUpperCase(Locale.ROOT));
 		policy.setPremiumAmount(dto.getPremiumAmount());
 		policy.setPremiumFrequency(dto.getPremiumFrequency() == null || dto.getPremiumFrequency().isBlank()
 				? "YEARLY" : dto.getPremiumFrequency().trim().toUpperCase(Locale.ROOT));
 		policy.setNextDueDate(dto.getNextDueDate());
+		policy.setCommencementDate(dto.getCommencementDate());
+		policy.setMaturityDate(dto.getMaturityDate());
+		policy.setPolicyTermYears(dto.getPolicyTermYears());
+		policy.setPremiumPaymentTermYears(dto.getPremiumPaymentTermYears());
 		policy.setCoverAmount(dto.getCoverAmount());
 		policy.setNotes(blankToNull(dto.getNotes()));
 		policy.setUpdatedAt(now);
-		insuranceRepository.save(policy);
-	}
-
-	@Transactional
-	public void markInsurancePaid(Long id) {
-		FinanceInsurancePolicy policy = requireInsurance(id);
-		policy.setNextDueDate(advanceDueDate(policy.getNextDueDate(), policy.getPremiumFrequency()));
-		policy.setUpdatedAt(LocalDateTime.now());
 		insuranceRepository.save(policy);
 	}
 
@@ -693,28 +712,61 @@ public class FinanceService {
 		dto.setId(p.getId());
 		dto.setPolicyName(p.getPolicyName());
 		dto.setInsurerName(p.getInsurerName());
+		dto.setPolicyNumber(p.getPolicyNumber());
 		dto.setPolicyType(p.getPolicyType());
 		dto.setPremiumAmount(p.getPremiumAmount());
 		dto.setFormattedPremium(formatterUtils.formatInIndianStyle(nz(p.getPremiumAmount())));
 		dto.setPremiumFrequency(p.getPremiumFrequency());
 		dto.setNextDueDate(p.getNextDueDate());
 		dto.setFormattedDueDate(p.getNextDueDate() != null ? p.getNextDueDate().format(DATE_FMT) : "—");
+		dto.setCommencementDate(p.getCommencementDate());
+		dto.setFormattedCommencementDate(p.getCommencementDate() != null ? p.getCommencementDate().format(DATE_FMT) : "—");
+		dto.setMaturityDate(p.getMaturityDate());
+		dto.setFormattedMaturityDate(p.getMaturityDate() != null ? p.getMaturityDate().format(DATE_FMT) : "—");
+		dto.setPolicyTermYears(p.getPolicyTermYears());
+		dto.setPremiumPaymentTermYears(p.getPremiumPaymentTermYears());
 		dto.setCoverAmount(p.getCoverAmount());
 		dto.setFormattedCover(p.getCoverAmount() == null ? "—" : formatterUtils.formatInIndianStyle(p.getCoverAmount()));
 		dto.setNotes(p.getNotes());
-		boolean overdue = p.getNextDueDate() != null && p.getNextDueDate().isBefore(today);
-		boolean dueSoon = !overdue && p.getNextDueDate() != null
-				&& !p.getNextDueDate().isAfter(today.plusDays(INSURANCE_ALERT_DAYS));
-		dto.setOverdue(overdue);
-		dto.setDueSoon(dueSoon);
-		if (overdue) {
-			dto.setAlertLabel("Overdue");
-		} else if (dueSoon) {
-			dto.setAlertLabel("Due soon");
-		} else {
-			dto.setAlertLabel("");
-		}
+		dto.setCommencementYear(p.getCommencementDate() != null ? p.getCommencementDate().getYear() : null);
+		dto.setDueUrgency(resolveInsuranceDueUrgency(p.getNextDueDate(), today));
 		return dto;
+	}
+
+	private String resolveInsuranceDueUrgency(LocalDate dueDate, LocalDate today) {
+		if (dueDate == null) {
+			return "";
+		}
+		long days = ChronoUnit.DAYS.between(today, dueDate);
+		if (days < 0) {
+			return "";
+		}
+		if (days <= INSURANCE_DUE_RED_DAYS) {
+			return "red";
+		}
+		if (days <= INSURANCE_DUE_WARN_DAYS) {
+			return "light";
+		}
+		return "";
+	}
+
+	private void advanceOverdueInsurance(LocalDate today) {
+		List<FinanceInsurancePolicy> policies = insuranceRepository.findByUserIdOrderByNextDueDateAsc(uid());
+		LocalDateTime now = LocalDateTime.now();
+		for (FinanceInsurancePolicy policy : policies) {
+			LocalDate due = policy.getNextDueDate();
+			if (due == null || !due.isBefore(today)) {
+				continue;
+			}
+			int guard = 0;
+			while (due != null && due.isBefore(today) && guard < 120) {
+				due = advanceDueDate(due, policy.getPremiumFrequency());
+				guard++;
+			}
+			policy.setNextDueDate(due);
+			policy.setUpdatedAt(now);
+			insuranceRepository.save(policy);
+		}
 	}
 
 	private LocalDate advanceDueDate(LocalDate from, String frequency) {
@@ -734,20 +786,40 @@ public class FinanceService {
 		return from.plusYears(1);
 	}
 
+	private LocalDate reverseDueDate(LocalDate from, String frequency) {
+		if (from == null) {
+			return null;
+		}
+		String freq = frequency == null ? "YEARLY" : frequency.toUpperCase(Locale.ROOT);
+		if ("MONTHLY".equals(freq)) {
+			return from.minusMonths(1);
+		}
+		if ("QUARTERLY".equals(freq)) {
+			return from.minusMonths(3);
+		}
+		if ("HALF_YEARLY".equals(freq)) {
+			return from.minusMonths(6);
+		}
+		return from.minusYears(1);
+	}
+
 	public List<FinanceAlertDTO> getDashboardAlerts() {
 		List<FinanceAlertDTO> alerts = new ArrayList<>();
 		LocalDate today = LocalDate.now();
-		LocalDate horizon = today.plusDays(INSURANCE_ALERT_DAYS);
+		advanceOverdueInsurance(today);
+		LocalDate horizon = today.plusDays(INSURANCE_DUE_WARN_DAYS);
 		for (FinanceInsurancePolicy p : insuranceRepository
 				.findByUserIdAndNextDueDateLessThanEqualOrderByNextDueDateAsc(uid(), horizon)) {
-			boolean overdue = p.getNextDueDate().isBefore(today);
+			if (p.getNextDueDate() == null || p.getNextDueDate().isBefore(today)) {
+				continue;
+			}
+			long days = ChronoUnit.DAYS.between(today, p.getNextDueDate());
 			alerts.add(new FinanceAlertDTO(
 					"INSURANCE",
 					p.getPolicyName(),
-					(overdue ? "Premium overdue since " : "Premium due on ")
-							+ p.getNextDueDate().format(DATE_FMT)
+					"Premium due on " + p.getNextDueDate().format(DATE_FMT)
 							+ " · ₹" + formatterUtils.formatInIndianStyle(nz(p.getPremiumAmount())),
-					overdue ? "danger" : "warn"));
+					days <= INSURANCE_DUE_RED_DAYS ? "danger" : "warn"));
 		}
 		for (FinanceCreditCardBill bill : cardBillRepository.findByUserIdOrderByBillYearDescBillMonthDescIdDesc(uid())) {
 			if (isDueSoon(bill.getDueDate(), today)) {
@@ -767,15 +839,17 @@ public class FinanceService {
 	}
 
 	public FinanceCashFlowReportDTO buildCashFlow(int year) {
-		YearTotals totals = loadYearTotals(year);
+		int throughMonth = cashFlowThroughMonth(year);
+		YearTotals totals = loadYearTotals(year, throughMonth);
 		FinanceCashFlowReportDTO report = new FinanceCashFlowReportDTO();
 		report.setYear(year);
 		List<FinanceCashFlowLineDTO> lines = new ArrayList<>();
-		addLine(lines, "Salary (Professional)", totals.salary, true);
-		addLine(lines, "Rental income", totals.rent, true);
-		addLine(lines, "Expenses", totals.expense, false);
-		addLine(lines, "Loans paid (EMI / settlements)", totals.loansPaid, false);
-		addLine(lines, "Credit card bills paid", totals.cardBillsPaid, false);
+		addLine(lines, "Bank balance", totals.bankBalance, "Balance");
+		addLine(lines, "Salary", totals.salary, "Inflow");
+		addLine(lines, "Expenses", totals.expense, "Outflow");
+		addLine(lines, "Loans", totals.loansPaid, "Outflow");
+		addLine(lines, "Credit card", totals.cardBillsPaid, "Outflow");
+		addLine(lines, "Insurance", totals.insurancePaid, "Outflow");
 		report.setLines(lines);
 		report.setInflow(totals.inflow());
 		report.setOutflow(totals.outflow());
@@ -786,99 +860,137 @@ public class FinanceService {
 		return report;
 	}
 
-	public FinanceYearEndPackDTO buildYearEndPack(int year) {
-		YearTotals totals = loadYearTotals(year);
-		FinanceYearEndPackDTO pack = new FinanceYearEndPackDTO();
-		pack.setYear(year);
-		List<FinanceYearEndSectionDTO> sections = new ArrayList<>();
-		sections.add(section("Salary", totals.salary, true));
-		sections.add(section("Rental income", totals.rent, true));
-		sections.add(section("Expenses", totals.expense, false));
-		sections.add(section("Loans paid", totals.loansPaid, false));
-		sections.add(section("Credit card bills paid", totals.cardBillsPaid, false));
-		sections.add(section("Insurance (annualised estimate)", totals.insuranceEstimate, false));
-		pack.setSections(sections);
-		double net = totals.inflow() - totals.outflow();
-		pack.setNet(net);
-		pack.setFormattedNet(formatterUtils.formatInIndianStyle(net));
-		return pack;
-	}
-
-	private YearTotals loadYearTotals(int year) {
+	private YearTotals loadYearTotals(int year, int throughMonth) {
 		long userId = uid();
 		YearTotals t = new YearTotals();
-		t.salary = salaryRepository.sumAmountByUserIdAndYear(userId, year);
-		t.expense = sumActualExpensesForYear(userId, year);
-		t.rent = rentPaymentRepository.sumAmountByUserIdAndYear(userId, year);
-		t.loansPaid = loanService.getYearlyPaidLoansReportRows().stream()
-				.filter(r -> String.valueOf(year).equals(r.getYear()))
-				.mapToDouble(YearlyAmountRowDTO::getAmount)
-				.findFirst()
-				.orElse(0);
-		t.cardBillsPaid = sumCardBillsPaidForYear(year);
-		t.insuranceEstimate = estimateInsuranceAnnual();
+		t.bankBalance = sumBankBalances();
+		t.salary = sumSalaryForYear(userId, year, throughMonth);
+		t.expense = sumActualExpensesForYear(userId, year, throughMonth);
+		t.loansPaid = loanService.sumPaidLoansForYearThroughMonth(year, throughMonth);
+		t.cardBillsPaid = sumCardBillsPaidForYear(year, throughMonth);
+		t.insurancePaid = sumInsurancePaidForYear(year, throughMonth);
 		return t;
 	}
 
-	private double sumCardBillsPaidForYear(int year) {
+	private int cashFlowThroughMonth(int year) {
+		LocalDate today = LocalDate.now();
+		if (year < today.getYear()) {
+			return 12;
+		}
+		if (year > today.getYear()) {
+			return 0;
+		}
+		return today.getMonthValue();
+	}
+
+	private double sumBankBalances() {
+		return accountRepository.findByUserIdOrderByNameAsc(uid()).stream()
+				.mapToDouble(a -> nz(a.getCurrentBalance()))
+				.sum();
+	}
+
+	private double sumSalaryForYear(long userId, int year, int throughMonth) {
+		return salaryRepository.findByUserIdAndSalaryYear(userId, year).stream()
+				.filter(s -> s.getSalaryMonth() > 0 && s.getSalaryMonth() <= throughMonth)
+				.mapToDouble(s -> nz(s.getSalaryAmount()))
+				.sum();
+	}
+
+	private double sumCardBillsPaidForYear(int year, int throughMonth) {
 		return cardBillRepository.findByUserIdOrderByBillYearDescBillMonthDescIdDesc(uid()).stream()
-				.filter(b -> b.getBillYear() != null && b.getBillYear() == year)
+				.filter(b -> {
+					if (b.getPaidDate() != null) {
+						return b.getPaidDate().getYear() == year && b.getPaidDate().getMonthValue() <= throughMonth;
+					}
+					return b.getBillYear() != null && b.getBillYear() == year
+							&& b.getBillMonth() != null && b.getBillMonth() <= throughMonth;
+				})
 				.mapToDouble(b -> nz(b.getPaidAmount()))
 				.sum();
 	}
 
-	private double sumActualExpensesForYear(long userId, int year) {
+	private double sumActualExpensesForYear(long userId, int year, int throughMonth) {
 		List<Expenses> rows = expensesRepository.findByUserIdAndExpenseYearOrderByExpenseMonth(userId, year);
 		double total = 0;
 		for (Expenses expense : rows) {
+			if (expense.getExpenseMonth() == null || expense.getExpenseMonth() > throughMonth) {
+				continue;
+			}
 			if (expense.getActualExpenses() == null) {
 				continue;
 			}
-			total += expense.getActualExpenses().values().stream().mapToDouble(Double::doubleValue).sum();
+			total += expense.getActualExpenses().values().stream()
+					.mapToDouble(FinanceService::nz)
+					.sum();
 		}
 		return total;
 	}
 
-	private double estimateInsuranceAnnual() {
+	private double sumInsurancePaidForYear(int year, int throughMonth) {
+		if (throughMonth <= 0) {
+			return 0;
+		}
+		LocalDate today = LocalDate.now();
+		advanceOverdueInsurance(today);
+		LocalDate periodStart = LocalDate.of(year, 1, 1);
+		LocalDate periodEnd = YearMonth.of(year, throughMonth).atEndOfMonth();
 		double total = 0;
-		for (FinanceInsurancePolicy p : insuranceRepository.findByUserIdOrderByNextDueDateAsc(uid())) {
-			double premium = nz(p.getPremiumAmount());
-			String freq = p.getPremiumFrequency() == null ? "YEARLY" : p.getPremiumFrequency().toUpperCase(Locale.ROOT);
-			int times = 1;
-			if ("MONTHLY".equals(freq)) {
-				times = 12;
-			} else if ("QUARTERLY".equals(freq)) {
-				times = 4;
-			} else if ("HALF_YEARLY".equals(freq)) {
-				times = 2;
-			}
-			total += premium * times;
+		for (FinanceInsurancePolicy policy : insuranceRepository.findByUserIdOrderByNextDueDateAsc(uid())) {
+			total += sumPolicyPremiumsInPeriod(policy, periodStart, periodEnd, today);
 		}
 		return total;
 	}
 
-	private void addLine(List<FinanceCashFlowLineDTO> lines, String label, double amount, boolean inflow) {
-		lines.add(new FinanceCashFlowLineDTO(label, formatterUtils.formatInIndianStyle(amount), amount, inflow));
+	private double sumPolicyPremiumsInPeriod(FinanceInsurancePolicy policy, LocalDate periodStart,
+			LocalDate periodEnd, LocalDate today) {
+		if (policy.getNextDueDate() == null) {
+			return 0;
+		}
+		double premium = nz(policy.getPremiumAmount());
+		if (premium <= 0) {
+			return 0;
+		}
+		LocalDate commencement = policy.getCommencementDate();
+		LocalDate lastPremiumDate = policy.getMaturityDate();
+		if (commencement != null && policy.getPremiumPaymentTermYears() != null) {
+			LocalDate paymentEnd = commencement.plusYears(policy.getPremiumPaymentTermYears());
+			lastPremiumDate = lastPremiumDate == null || paymentEnd.isBefore(lastPremiumDate)
+					? paymentEnd : lastPremiumDate;
+		}
+		double total = 0;
+		LocalDate due = policy.getNextDueDate();
+		int guard = 0;
+		while (due != null && !due.isBefore(periodStart) && guard < 240) {
+			boolean inPeriod = !due.isAfter(periodEnd) && !due.isAfter(today);
+			boolean afterStart = commencement == null || !due.isBefore(commencement);
+			boolean beforeEnd = lastPremiumDate == null || !due.isAfter(lastPremiumDate);
+			if (inPeriod && afterStart && beforeEnd) {
+				total += premium;
+			}
+			due = reverseDueDate(due, policy.getPremiumFrequency());
+			guard++;
+		}
+		return total;
 	}
 
-	private FinanceYearEndSectionDTO section(String title, double total, boolean inflow) {
-		return new FinanceYearEndSectionDTO(title, formatterUtils.formatInIndianStyle(total), total, inflow);
+	private void addLine(List<FinanceCashFlowLineDTO> lines, String label, double amount, String direction) {
+		lines.add(new FinanceCashFlowLineDTO(label, formatterUtils.formatInIndianStyle(amount), amount, direction));
 	}
 
 	private static class YearTotals {
+		double bankBalance;
 		double salary;
 		double expense;
-		double rent;
 		double loansPaid;
 		double cardBillsPaid;
-		double insuranceEstimate;
+		double insurancePaid;
 
 		double inflow() {
-			return salary + rent;
+			return bankBalance + salary;
 		}
 
 		double outflow() {
-			return expense + loansPaid + cardBillsPaid;
+			return expense + loansPaid + cardBillsPaid + insurancePaid;
 		}
 	}
 

@@ -8,52 +8,64 @@
             <button id="printReport" class="print-btn" type="button" title="Print"><img th:src="@{/images/print.png}" alt="Print"/></button>
         </div>
     </div>
-    <div th:if="${successMessage != null}" class="form-banner form-banner--success" th:text="${successMessage}"></div>
-    <div th:if="${errorMessage != null}" class="form-banner form-banner--error" th:text="${errorMessage}"></div>
     <th:block th:if="${policies != null and !policies.isEmpty()}">
         <table class="summaryTable">
             <thead>
             <tr>
                 <th>Policy</th>
-                <th>Type</th>
+                <th>Insurer</th>
                 <th class="fh-summary-total-col">Premium</th>
-                <th>Frequency</th>
                 <th>Next due</th>
-                <th>Alert</th>
                 <th>Action</th>
             </tr>
             </thead>
             <tbody>
-            <tr th:each="p : ${policies}">
-                <td>
-                    <div th:text="${p.policyName}"></div>
-                    <div class="fh-muted" th:text="${p.insurerName}"></div>
-                </td>
-                <td th:text="${p.policyType}"></td>
-                <td class="fh-summary-total-col" th:text="${p.formattedPremium}"></td>
-                <td th:text="${p.premiumFrequency}"></td>
-                <td th:text="${p.formattedDueDate}"></td>
-                <td>
-                    <span th:if="${p.overdue}" class="fh-status-badge fh-status-partial">Overdue</span>
-                    <span th:if="${p.dueSoon and !p.overdue}" class="fh-status-badge fh-status-pending">Due soon</span>
-                    <span th:if="${!p.dueSoon and !p.overdue}">—</span>
-                </td>
-                <td>
-                    <a href="javascript:void(0);"
-                       title="Mark paid / advance due"
-                       th:onclick="|loadIntoHubPanel('/api/finance/insurance/markPaid?id=${p.id}', {reportType:'insuranceReport'})|">
-                        Mark paid
-                    </a>
-                    <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/insurance/add?id=${p.id}')|" style="margin-left:10px;">
-                        <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:20px;height:20px;"/>
-                    </a>
-                    <a href="javascript:void(0);" style="margin-left:10px;"
-                       th:attr="data-report-type='insuranceReport', data-id=${p.id}"
-                       th:onclick="'deleteEntity(this, \'Insurance\', \'/api/finance/deleteInsurance\')'">
-                        <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:20px;height:20px;"/>
-                    </a>
-                </td>
-            </tr>
+            <th:block th:each="p : ${policies}">
+                <tr>
+                    <td>
+                        <a href="javascript:void(0);" class="fh-report-link" onclick="toggleReportDetailRow(this)"
+                           aria-expanded="false"
+                           th:text="${p.policyNumber != null and !p.policyNumber.isEmpty()} ? ${p.policyNumber} : '—'"></a>
+                    </td>
+                    <td th:text="${p.insurerName != null ? p.insurerName : '—'}"></td>
+                    <td class="fh-summary-total-col" th:text="${p.formattedPremium}"></td>
+                    <td th:classappend="${p.dueUrgency == 'red'} ? ' fh-due-red' : (${p.dueUrgency == 'light'} ? ' fh-due-light-red' : '')"
+                        th:text="${p.formattedDueDate}"></td>
+                    <td>
+                        <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/insurance/add?id=${p.id}')|"><img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:20px;height:20px;"/></a>
+                        <a href="javascript:void(0);"
+                           th:attr="data-report-type='insuranceReport', data-id=${p.id}"
+                           th:onclick="'deleteEntity(this, \'Insurance\', \'/api/finance/deleteInsurance\')'"><img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:20px;height:20px;"/></a>
+                    </td>
+                </tr>
+                <tr class="fh-report-detail-row" hidden>
+                    <td colspan="5">
+                        <div class="fh-report-detail">
+                            <span><strong>Policy name:</strong>
+                                <th:block th:text="${p.policyName != null ? p.policyName : '—'}"></th:block>
+                            </span>
+                            <span><strong>Type:</strong>
+                                <th:block th:text="${p.policyType != null ? p.policyType : '—'}"></th:block>
+                            </span>
+                            <span><strong>Frequency:</strong>
+                                <th:block th:text="${p.premiumFrequency != null ? p.premiumFrequency : '—'}"></th:block>
+                            </span>
+                            <span><strong>Commencement year:</strong>
+                                <th:block th:text="${p.commencementYear != null ? p.commencementYear : '—'}"></th:block>
+                            </span>
+                            <span><strong>Maturity date:</strong>
+                                <th:block th:text="${p.formattedMaturityDate}"></th:block>
+                            </span>
+                            <span><strong>Policy years:</strong>
+                                <th:block th:text="${p.policyTermYears != null ? p.policyTermYears : '—'}"></th:block>
+                            </span>
+                            <span><strong>Payment years:</strong>
+                                <th:block th:text="${p.premiumPaymentTermYears != null ? p.premiumPaymentTermYears : '—'}"></th:block>
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+            </th:block>
             </tbody>
         </table>
     </th:block>

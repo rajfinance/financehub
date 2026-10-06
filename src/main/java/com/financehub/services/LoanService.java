@@ -796,6 +796,36 @@ public class LoanService {
         return rows;
     }
 
+    public double sumPaidLoansForYearThroughMonth(int year, int throughMonth) {
+        ScheduleContext context = buildScheduleContext();
+        LocalDate today = LocalDate.now();
+        double total = 0;
+        for (Loan loan : context.loans) {
+            LoanPreClosureDTO preClosure = context.preClosureByLoan.get(loan.getId());
+            Map<Integer, LoanEmiPayment> overrides =
+                    context.overridesByLoan.getOrDefault(loan.getId(), Map.of());
+            for (ScheduleAmountSlice slice : buildScheduleAmountSlices(loan, null, preClosure, overrides)) {
+                LocalDate paidDate = slice.deductionDate();
+                if (paidDate == null || paidDate.isAfter(today)) {
+                    continue;
+                }
+                if (paidDate.getYear() == year && paidDate.getMonthValue() <= throughMonth) {
+                    total += slice.amount();
+                }
+            }
+            if (preClosure != null
+                    && preClosure.getPreClosureDate() != null
+                    && preClosure.getSettlementAmount() != null
+                    && preClosure.getSettlementAmount() > 0
+                    && !preClosure.getPreClosureDate().isAfter(today)
+                    && preClosure.getPreClosureDate().getYear() == year
+                    && preClosure.getPreClosureDate().getMonthValue() <= throughMonth) {
+                total += preClosure.getSettlementAmount();
+            }
+        }
+        return total;
+    }
+
     public List<Integer> getScheduleYearsForUser() {
         ScheduleContext context = buildScheduleContext();
         Set<Integer> years = new TreeSet<>();

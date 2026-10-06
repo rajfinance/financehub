@@ -73,14 +73,10 @@
                                     <span th:if="${b.paymentStatus == 'Not paid'}" class="fh-status-badge fh-status-pending">Unpaid</span>
                                 </td>
                                 <td class="fh-card-bills-actions">
-                                    <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/cardBills/add?id=${b.id}')|">
-                                        <img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:18px;height:18px;margin-right:8px;"/>
-                                    </a>
+                                    <a href="javascript:void(0);" th:onclick="|loadEditPageContent('/api/finance/cardBills/add?id=${b.id}')|"><img th:src="@{/images/edit-icon.png}" alt="Edit" style="width:18px;height:18px;"/></a>
                                     <a href="javascript:void(0);"
                                        th:attr="data-report-type='cardBillsReport', data-id=${b.id}"
-                                       th:onclick="'deleteEntity(this, \'Monthly bill\', \'/api/finance/deleteCardBill\')'">
-                                        <img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:18px;height:18px;"/>
-                                    </a>
+                                       th:onclick="'deleteEntity(this, \'Monthly bill\', \'/api/finance/deleteCardBill\')'"><img th:src="@{/images/delete-icon.png}" alt="Delete" style="width:18px;height:18px;"/></a>
                                 </td>
                             </tr>
                             </tbody>

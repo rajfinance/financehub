@@ -8,17 +8,23 @@
         <div th:if="${errorMessage != null}" class="form-banner form-banner--error" th:text="${errorMessage}"></div>
         <input type="hidden" name="id" th:value="${policy?.id}" th:if="${policy != null and policy.id != null}"/>
 
-        <div class="form-row">
+        <div class="form-row form-row--3">
             <div class="form-column">
                 <div class="input-group">
-                    <label for="policyName">Policy name<span class="mandatory">*</span></label>
-                    <input type="text" id="policyName" name="policyName" th:value="${policy?.policyName}" required/>
+                    <label for="insurerName">Insurer<span class="mandatory">*</span></label>
+                    <input type="text" id="insurerName" name="insurerName" th:value="${policy?.insurerName}" required/>
                 </div>
             </div>
             <div class="form-column">
                 <div class="input-group">
-                    <label for="insurerName">Insurer</label>
-                    <input type="text" id="insurerName" name="insurerName" th:value="${policy?.insurerName}"/>
+                    <label for="policyNumber">Policy number<span class="mandatory">*</span></label>
+                    <input type="text" id="policyNumber" name="policyNumber" th:value="${policy?.policyNumber}" required/>
+                </div>
+            </div>
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="policyName">Policy name<span class="mandatory">*</span></label>
+                    <input type="text" id="policyName" name="policyName" th:value="${policy?.policyName}" required/>
                 </div>
             </div>
         </div>
@@ -35,11 +41,43 @@
             </div>
             <div class="form-column">
                 <div class="input-group">
+                    <label for="commencementDate">Commencement date</label>
+                    <input type="date" id="commencementDate" name="commencementDate" th:value="${policy?.commencementDate}"/>
+                </div>
+            </div>
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="maturityDate">Maturity date</label>
+                    <input type="date" id="maturityDate" name="maturityDate" th:value="${policy?.maturityDate}"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row form-row--3">
+            <div class="form-column">
+                <div class="input-group">
                     <label for="premiumAmount">Premium<span class="mandatory">*</span></label>
                     <input type="number" step="0.01" min="0.01" id="premiumAmount" name="premiumAmount"
                            th:value="${policy?.premiumAmount}" required/>
                 </div>
             </div>
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="policyTermYears">Policy term (years)</label>
+                    <input type="number" min="1" max="99" id="policyTermYears" name="policyTermYears"
+                           placeholder="e.g. 15" th:value="${policy?.policyTermYears}"/>
+                </div>
+            </div>
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="premiumPaymentTermYears">Premium payment term (years)</label>
+                    <input type="number" min="1" max="99" id="premiumPaymentTermYears" name="premiumPaymentTermYears"
+                           placeholder="e.g. 10" th:value="${policy?.premiumPaymentTermYears}"/>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row form-row--3">
             <div class="form-column">
                 <div class="input-group">
                     <label for="premiumFrequency">Frequency<span class="mandatory">*</span></label>
@@ -49,19 +87,16 @@
                     </select>
                 </div>
             </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-column">
-                <div class="input-group">
-                    <label for="nextDueDate">Next due date<span class="mandatory">*</span></label>
-                    <input type="date" id="nextDueDate" name="nextDueDate" th:value="${policy?.nextDueDate}" required/>
-                </div>
-            </div>
             <div class="form-column">
                 <div class="input-group">
                     <label for="coverAmount">Cover amount</label>
                     <input type="number" step="0.01" id="coverAmount" name="coverAmount" th:value="${policy?.coverAmount}"/>
+                </div>
+            </div>
+            <div class="form-column">
+                <div class="input-group">
+                    <label for="nextDueDate">Next due date<span class="mandatory">*</span></label>
+                    <input type="date" id="nextDueDate" name="nextDueDate" th:value="${policy?.nextDueDate}" required/>
                 </div>
             </div>
         </div>

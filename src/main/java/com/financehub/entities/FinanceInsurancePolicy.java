@@ -24,6 +24,9 @@ public class FinanceInsurancePolicy {
 	@Column(name = "insurer_name", length = 120)
 	private String insurerName;
 
+	@Column(name = "policy_number", length = 80)
+	private String policyNumber;
+
 	@Column(name = "policy_type", nullable = false, length = 40)
 	private String policyType;
 
@@ -36,6 +39,18 @@ public class FinanceInsurancePolicy {
 
 	@Column(name = "next_due_date", nullable = false)
 	private LocalDate nextDueDate;
+
+	@Column(name = "commencement_date")
+	private LocalDate commencementDate;
+
+	@Column(name = "maturity_date")
+	private LocalDate maturityDate;
+
+	@Column(name = "policy_term_years")
+	private Integer policyTermYears;
+
+	@Column(name = "premium_payment_term_years")
+	private Integer premiumPaymentTermYears;
 
 	@Column(name = "cover_amount")
 	private Double coverAmount;
